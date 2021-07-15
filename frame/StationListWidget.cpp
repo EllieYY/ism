@@ -1,7 +1,8 @@
 #include "StationListWidget.h"
 #include "ui_StationListWidget.h"
+#include "Station.h"
 
-StationListWidget::StationListWidget(QString lineName, QList<QString> stations, QWidget *parent) :
+StationListWidget::StationListWidget(QString lineName, QList<Station*> stations, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::StationListWidget)
 {
@@ -14,7 +15,9 @@ StationListWidget::StationListWidget(QString lineName, QList<QString> stations, 
 
     // 显示列表
     ui->listWidget->clear();
-    for (QString item:stations ) {
+    for (Station* s:stations ) {
+        QListWidgetItem* item = new QListWidgetItem(s->name(), ui->listWidget);
+        item->setToolTip(s->code());
         ui->listWidget->addItem(item);
     }
     connect(ui->listWidget, &QListWidget::itemClicked, this, &StationListWidget::onSelected);
@@ -28,7 +31,8 @@ StationListWidget::~StationListWidget()
 void StationListWidget::onSelected(QListWidgetItem *item)
 {
     QString station = item->text();
-    emit selected(m_lineName, station);
+    QString code = item->toolTip();
+    emit selected(m_lineName, station, code);
 }
 
 void StationListWidget::setStyle()

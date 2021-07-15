@@ -4,6 +4,9 @@
 #include <QObject>
 #include <QDateTime>
 
+/*
+ * 交易信息
+ */
 class TransactionInfo : public QObject
 {
     Q_OBJECT

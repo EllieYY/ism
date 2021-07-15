@@ -15,6 +15,15 @@ DataCenter::DataCenter(QObject *parent) : QObject(parent)
     init();
 }
 
+DataCenter::~DataCenter()
+{
+    // 数据备份
+    SettingCenter::getThis()->saveLineBasicInfo(m_lineList);
+    SettingCenter::getThis()->saveLineStations(m_lineStations);
+    SettingCenter::getThis()->saveLineInterchanes(m_lineInterchanges);
+    SettingCenter::getThis()->saveLineTimeTables(m_lineTimeTables);
+}
+
 DataCenter *DataCenter::getThis()
 {
     if (m_pInstance == NULL)
@@ -31,13 +40,6 @@ void DataCenter::secEvent()
 
 void DataCenter::init()
 {
-    logger()->info("读取配置文件。");
-    m_stationName = SettingCenter::getThis()->getBasicInfo();
-    m_lineStations.append(SettingCenter::getThis()->getLineStations());
-    m_lineTimeTables.append(SettingCenter::getThis()->getLineTimeTables());
-    m_lineInterchanges.append(SettingCenter::getThis()->getLineInterchanes());
-    logger()->info("配置文件读取完毕。");
-
     logger()->info("基础数据更新");
     // 获取基础数据并更新数据 #7
 //    HttpTool::getThis()->requestLineBaseInfo();
@@ -47,6 +49,16 @@ void DataCenter::init()
 //    HttpTool::getThis()->requestStationMap();
 //    HttpTool::getThis()->requestStationPreMap();
 //    HttpTool::getThis()->requestLineMap();
+
+    logger()->info("读取配置文件。");
+    m_stationName = SettingCenter::getThis()->getBasicInfo();
+    m_lineStations.append(SettingCenter::getThis()->getLineStations());
+    m_lineTimeTables.append(SettingCenter::getThis()->getLineTimeTables());
+    m_lineInterchanges.append(SettingCenter::getThis()->getLineInterchanes());
+    m_lineList.append(SettingCenter::getThis()->getLineBasicInfo());
+    logger()->info("配置文件读取完毕。");
+
+    emit lineReceived();
 
     // 测试数据生成
     // TODO:
@@ -222,7 +234,16 @@ void DataCenter::setLineList(const QList<LineInfo *> &lineList)
 {
     m_lineList.clear();
     m_lineList.append(lineList);
+}
 
+void DataCenter::setLineMap(QString lineCode, QString mapPath)
+{
+    for (LineInfo* info:m_lineList) {
+        if (info->getCode().compare(lineCode) == 0) {
+            info->setPicPath(mapPath);
+            break;
+        }
+    }
 }
 
 

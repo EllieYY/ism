@@ -17,6 +17,8 @@ public:
     explicit LineWidget(QWidget *parent = nullptr);
     ~LineWidget();
 
+    void onReadLines();
+
 private:
     void init();
     void onLineChange(int id);
@@ -24,6 +26,7 @@ private:
 private:
     QList<LineInfo*>        m_lineInfoLst;
     QButtonGroup*           m_btnGroup;
+    QVBoxLayout*            m_layout;
 
 private:
     Ui::LineWidget *ui;

@@ -44,6 +44,7 @@ private:
     QByteArray stationParam();
 
     void parse(QJsonObject data);
+    void parseLineMaps(QJsonObject data);
 
 private:
     QNetworkAccessManager* m_manager;

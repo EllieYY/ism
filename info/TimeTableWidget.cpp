@@ -105,15 +105,15 @@ void TimeTableWidget::setTestData()
 {
     QList<LineTimeTables*> lineList;
     // 测试数据
-    LineTimeTables* line1 = new LineTimeTables("1号线", "images/info/line1.png", "#F01C4B");
+    LineTimeTables* line1 = new LineTimeTables("1号线", "", "images/info/line1.png", "#F01C4B");
     line1->addTimeTable(new ISMTimeTable("瑶湖西", "双港", "06:00", "22:00"));
     line1->addTimeTable(new ISMTimeTable("双港", "瑶湖西", "06:00", "22:00"));
 
-    LineTimeTables* line2 = new LineTimeTables("2号线", "images/info/line2.png", "#FFC931");
+    LineTimeTables* line2 = new LineTimeTables("2号线", "", "images/info/line2.png", "#FFC931");
     line2->addTimeTable(new ISMTimeTable("南路", "辛家庵", "06:00", "22:00"));
     line2->addTimeTable(new ISMTimeTable("辛家庵", "南路", "06:00", "22:00"));
 
-    LineTimeTables* line3 = new LineTimeTables("3号线", "images/info/line3.png", "#1E5789");
+    LineTimeTables* line3 = new LineTimeTables("3号线", "", "images/info/line3.png", "#1E5789");
     line3->addTimeTable(new ISMTimeTable("银三角北", "京东大道", "06:00", "22:30"));
     line3->addTimeTable(new ISMTimeTable("京东大道", "银三角北", "06:00", "22:30"));
 

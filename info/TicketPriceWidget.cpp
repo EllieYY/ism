@@ -1,5 +1,6 @@
 #include "TicketPriceWidget.h"
 #include "ui_TicketPriceWidget.h"
+#include "HttpTool.h"
 
 TicketPriceWidget::TicketPriceWidget(QWidget *parent) :
     WidgetBase(parent),
@@ -26,17 +27,32 @@ void TicketPriceWidget::init()
             this, &TicketPriceWidget::onEnStationSelect);
     connect(ui->selectBtn3, &QPushButton::clicked,
             this, &TicketPriceWidget::onExStationSelect);
+    connect(ui->priceCalBtn, &QPushButton::clicked,
+            this, &TicketPriceWidget::onPriceCal);
 
 }
 
-void TicketPriceWidget::onStationSelected(QString lineName, QString stationName)
+void TicketPriceWidget::onStationSelected(QString lineName, QString stationName, QString stationCode)
 {
     if (m_curBtn) {
         ui->lineEdit_2->setText(stationName);
+        ui->lineEdit_2->setToolTip(stationCode);
     } else {
         ui->lineEdit->setText(stationName);
+        ui->lineEdit->setToolTip(stationCode);
     }
+}
 
+void TicketPriceWidget::onPriceCal()
+{
+    QString enStationCode = ui->lineEdit->toolTip();
+    QString exdStationCode = ui->lineEdit_2->toolTip();
+    HttpTool::getThis()->requestPrice(enStationCode, exdStationCode);
+}
+
+void TicketPriceWidget::onPriceRecv(double price)
+{
+    ui->lineEdit_3->setText(QString("%1").arg(price));
 }
 
 

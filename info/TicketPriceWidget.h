@@ -16,13 +16,17 @@ public:
     explicit TicketPriceWidget(QWidget *parent = nullptr);
     ~TicketPriceWidget();
 
+    void onPriceRecv(double price);
+
 private:
     void setStyle();
     void init();
 
     void onEnStationSelect();
     void onExStationSelect();
-    void onStationSelected(QString lineName, QString stationName);
+    void onStationSelected(QString lineName, QString stationName, QString stationCode);
+    void onPriceCal();
+
 
 private:
     int m_curBtn;    // 0-en  1-ex

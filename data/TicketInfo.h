@@ -4,6 +4,9 @@
 #include <QObject>
 #include <QDate>
 
+/*
+ * 票卡信息
+ */
 class TicketInfo : public QObject
 {
     Q_OBJECT

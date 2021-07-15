@@ -64,18 +64,24 @@ bool MetroInterchangeWidget::showData()
             QHBoxLayout *layout = new QHBoxLayout(frame);
             layout->setMargin(0);
             layout->setSpacing(50);
-
-            QPushButton* curBtn = new QPushButton(curLineName, frame);
-            curBtn->setProperty("type", "lineBtn");
-            curBtn->setStyleSheet("background-color: " + line->getColor() + ";");
-            QPushButton* otherBtn = new QPushButton(info->lineName(), frame);
-            otherBtn->setProperty("type", "lineBtn");
-            otherBtn->setStyleSheet("background-color: " + info->lineColor() + ";");
-
             QSpacerItem* spaceLR = new QSpacerItem(10, 5, QSizePolicy::Expanding, QSizePolicy::Minimum);
             layout->addSpacerItem(spaceLR);
-            layout->addWidget(curBtn);
-            layout->addWidget(otherBtn);
+
+            QList<LineInfo*> transLines = info->lineList();
+            for (LineInfo* transLine:transLines) {
+                QPushButton* lineBtn = new QPushButton(transLine->getName(), frame);
+                lineBtn->setProperty("type", "lineBtn");
+                lineBtn->setStyleSheet("background-color: " + transLine->getColor() + ";");
+                layout->addWidget(lineBtn);
+            }
+//            QPushButton* curBtn = new QPushButton(curLineName, frame);
+//            curBtn->setProperty("type", "lineBtn");
+//            curBtn->setStyleSheet("background-color: " + line->getColor() + ";");
+//            QPushButton* otherBtn = new QPushButton(info->lineName(), frame);
+//            otherBtn->setProperty("type", "lineBtn");
+//            otherBtn->setStyleSheet("background-color: " + info->lineColor() + ";");
+
+
             layout->addSpacerItem(spaceLR);
 
             ui->tableWidget->setCellWidget(row, 2, frame);
@@ -117,24 +123,24 @@ void MetroInterchangeWidget::init()
 void MetroInterchangeWidget::setTestData()
 {
     QList<LineInterchangeInfo*> lineList;
-    // 测试数据
-    LineInterchangeInfo* line1 = new LineInterchangeInfo("1号线", "images/info/line1.png", "#F01C4B");
-    line1->addInterchangeInfo(new InterchangeInfo("地铁大厦", "2号线", "#FFC931"));
-    line1->addInterchangeInfo(new InterchangeInfo("八一馆", "3号线", "#1E5789"));
-    line1->addInterchangeInfo(new InterchangeInfo("八一广场", "2号线", "#FFC931"));
+//    // 测试数据
+//    LineInterchangeInfo* line1 = new LineInterchangeInfo("1号线", "", "images/info/line1.png", "#F01C4B");
+//    line1->addInterchangeInfo(new InterchangeInfo("地铁大厦", "2号线", "#FFC931"));
+//    line1->addInterchangeInfo(new InterchangeInfo("八一馆", "3号线", "#1E5789"));
+//    line1->addInterchangeInfo(new InterchangeInfo("八一广场", "2号线", "#FFC931"));
 
-    LineInterchangeInfo* line2 = new LineInterchangeInfo("2号线", "images/info/line2.png", "#FFC931");
-    line2->addInterchangeInfo(new InterchangeInfo("地铁大厦", "1号线", "#F01C4B"));
-    line2->addInterchangeInfo(new InterchangeInfo("青山路口", "3号线", "#1E5789"));
-    line2->addInterchangeInfo(new InterchangeInfo("八一广场", "1号线", "#F01C4B"));
+//    LineInterchangeInfo* line2 = new LineInterchangeInfo("2号线", "", "images/info/line2.png", "#FFC931");
+//    line2->addInterchangeInfo(new InterchangeInfo("地铁大厦", "1号线", "#F01C4B"));
+//    line2->addInterchangeInfo(new InterchangeInfo("青山路口", "3号线", "#1E5789"));
+//    line2->addInterchangeInfo(new InterchangeInfo("八一广场", "1号线", "#F01C4B"));
 
-    LineInterchangeInfo* line3 = new LineInterchangeInfo("3号线", "images/info/line3.png", "#1E5789");
-    line3->addInterchangeInfo(new InterchangeInfo("青山路口", "2号线", "#FFC931"));
-    line3->addInterchangeInfo(new InterchangeInfo("八一馆", "1号线", "#F01C4B"));
+//    LineInterchangeInfo* line3 = new LineInterchangeInfo("3号线", "", "images/info/line3.png", "#1E5789");
+//    line3->addInterchangeInfo(new InterchangeInfo("青山路口", "2号线", "#FFC931"));
+//    line3->addInterchangeInfo(new InterchangeInfo("八一馆", "1号线", "#F01C4B"));
 
-    lineList.append(line1);
-    lineList.append(line2);
-    lineList.append(line3);
+//    lineList.append(line1);
+//    lineList.append(line2);
+//    lineList.append(line3);
 
     DataCenter::getThis()->setLineInterchanges(lineList);
 

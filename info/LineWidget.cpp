@@ -2,6 +2,7 @@
 #include "ui_LineWidget.h"
 #include "CommonHead.h"
 #include "LineInfo.h"
+#include "DataCenter.h"
 
 #include <QVBoxLayout>
 
@@ -21,28 +22,25 @@ LineWidget::~LineWidget()
 
 void LineWidget::init()
 {
-    //TODO:获取配置文件
-    QList<LineInfo*> lineInfoLst;
-    LineInfo* item = new LineInfo("1号线", "line1.png", "#F01C4B", this);
-    lineInfoLst.append(item);
-    item = new LineInfo("2号线", "line2.png", "#FFC931", this);
-    lineInfoLst.append(item);
-    item = new LineInfo("3号线", "line3.png", "#1E5789", this);
-    lineInfoLst.append(item);
-    item = new LineInfo("4号线（在建）", "line4.png", "#3BA954", this);
-    lineInfoLst.append(item);
+}
 
-    QVBoxLayout *layout = new QVBoxLayout();
+void LineWidget::onReadLines()
+{
+    m_lineInfoLst.clear();
+    m_lineInfoLst = DataCenter::getThis()->getLineList();
 
-    m_lineInfoLst.append(lineInfoLst);
+    delete m_layout;
+    m_layout = new QVBoxLayout();
+
+    delete m_btnGroup;
     m_btnGroup = new QButtonGroup(this);
-    int lineNum = lineInfoLst.size();
+    int lineNum = m_lineInfoLst.size();
     for (int i = 0; i < lineNum; i++){
         QPushButton* btn = new QPushButton(this);
-        btn->setText(lineInfoLst[i]->getName());
+        btn->setText(m_lineInfoLst[i]->getName());
         btn->setProperty("pname", "line");
-        btn->setStyleSheet("background-color: " + lineInfoLst[i]->getColor() + ";");
-        layout->addWidget(btn);
+        btn->setStyleSheet("background-color: " + m_lineInfoLst[i]->getColor() + ";");
+        m_layout->addWidget(btn);
         m_btnGroup->addButton(btn, i);
 
         if (i == 0) {
@@ -51,19 +49,15 @@ void LineWidget::init()
         }
     }
 
-    layout->setContentsMargins(42, 60, 42, 1);
-    layout->setSpacing(60);
-    layout->addSpacerItem(new QSpacerItem(5, 100, QSizePolicy::Minimum, QSizePolicy::Expanding));
+    m_layout->setContentsMargins(42, 60, 42, 1);
+    m_layout->setSpacing(60);
+    m_layout->addSpacerItem(new QSpacerItem(5, 100, QSizePolicy::Minimum, QSizePolicy::Expanding));
 
     connect(m_btnGroup, &QButtonGroup::idClicked,
             this, &LineWidget::onLineChange);
     m_btnGroup->setExclusive(true);
 
-
-    ui->lineFrame1->setLayout(layout);
-
-
-
+    ui->lineFrame1->setLayout(m_layout);
 }
 
 void LineWidget::onLineChange(int id)

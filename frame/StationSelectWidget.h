@@ -26,13 +26,13 @@ private:
     void setTestData();
 
     void onClose();
-    void onSelected(QString lineName, QString stationName);
+    void onSelected(QString lineName, QString stationName, QString stationCode);
 
 private:
    CustomTabWidget* m_tabWidget;
 
 signals:
-   void stationSelected(QString lineName, QString stationName);
+   void stationSelected(QString lineName, QString stationName, QString stationCode);
 
 private:
     Ui::StationSelectWidget *ui;

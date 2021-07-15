@@ -28,6 +28,7 @@
 #include "myhelper.h"
 #include "StationSelectWidget.h"
 #include <QGuiApplication>
+#include "HttpTool.h"
 
 ISMFrame::ISMFrame(QWidget *parent) :
     QFrame(parent),
@@ -101,7 +102,13 @@ void ISMFrame::initWgt()
     registerWidget(layoutWnd, new MainWidget(this), MAIN_DLG, true);
     registerWidget(layoutWnd, new TicketMainWidget(this), CARD_DLG, false);
     registerWidget(layoutWnd, new QrCodeMainWidget(this), QRCODE_DLG, false);
-    registerWidget(layoutWnd, new InquiryMainWidget(this), INQUIRY_DLG, false);
+
+    InquiryMainWidget* inquiryWidget = new InquiryMainWidget(this);
+    connect(HttpTool::getThis(), &HttpTool::hotIssuesReceived,
+            inquiryWidget, &InquiryMainWidget::onHotIssues);
+    connect(HttpTool::getThis(), &HttpTool::answerReceived,
+            inquiryWidget, &InquiryMainWidget::onAnswerShow);
+    registerWidget(layoutWnd, inquiryWidget, INQUIRY_DLG, false);
     registerWidget(layoutWnd, new InfoMainWidget(this), INFO_DLG, false);
     registerWidget(layoutWnd, new GuideMainWidget(this), GUID_DLG, false);
     // 票卡
@@ -115,11 +122,20 @@ void ISMFrame::initWgt()
     registerWidget(layoutWnd, new QrReregisterWidget(this), QR_REREGISTER_DLG, false);
     // 信息查询
     registerWidget(layoutWnd, new MapWidget(this), MAP_DLG, false);
-    registerWidget(layoutWnd, new LineWidget(this), LINE_DLG, false);
-    registerWidget(layoutWnd, new TicketPriceWidget(this), PRICE_DLG, false);
+
+    LineWidget* lineWidget = new LineWidget(this);
+    registerWidget(layoutWnd, lineWidget, LINE_DLG, false);
+    TicketPriceWidget* priceWidget = new TicketPriceWidget(this);
+    registerWidget(layoutWnd, priceWidget, PRICE_DLG, false);
+
     registerWidget(layoutWnd, new MetroInterchangeWidget(this), TRANSFER_DLG, false);
     registerWidget(layoutWnd, new TimeTableWidget(this), TIME_DLG, false);
     registerWidget(layoutWnd, new MetroPeripheralWidget(this), PERIPHERY_DLG, false);
+
+    connect(DataCenter::getThis(), &DataCenter::lineReceived,
+            lineWidget, &LineWidget::onReadLines);
+    connect(HttpTool::getThis(), &HttpTool::priceReceived,
+            priceWidget, &TicketPriceWidget::onPriceRecv);
 
     //# 总体布局
     QVBoxLayout *layoutMain = new QVBoxLayout();
