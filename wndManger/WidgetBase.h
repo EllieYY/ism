@@ -3,9 +3,6 @@
 
 #include "CommonHead.h"
 
-
-#define MAX_DATA_TYPE_NUM	7
-
 class WidgetBase : public QWidget
 {
 	Q_OBJECT
@@ -16,8 +13,7 @@ public:
     virtual void secEvent();
     virtual void dataUpdate(int para_id);
     virtual bool showData();
-	virtual void setStyle();
-    virtual void onStationSelected(QString lineName, QString stationName, QString stationCode);
+    virtual void setStyle();
 public:
     virtual void showWgt();
     virtual void hideWgt();
@@ -37,8 +33,8 @@ protected:
     bool					m_dataUpdateNum[MAX_DATA_TYPE_NUM];
 
 
-signals:
-    void selectStation();    // 选择车站
+//signals:
+//    void selectStation();    // 选择车站
 
 };
 

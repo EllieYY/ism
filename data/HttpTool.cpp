@@ -67,7 +67,7 @@ void HttpTool::replyFinished(QNetworkReply *reply)
 
     // 根节点 -- 返回数据
     if(!rootObject.contains("data")) {
-        logger()->error("Invalid json format.");
+//        logger()->error("Invalid json format.");
         return;
     }
 
@@ -147,16 +147,43 @@ void HttpTool::requestHotIssues()
 }
 
 // post -- 智能问答
-void HttpTool::requestAnswer(QString question)
+void HttpTool::requestAnswer(QString question, QString seesionId)
 {
     QJsonObject obj;
     QJsonDocument docum;
     obj.insert("deviceId", m_deviceId);
+    obj.insert("sessionId", seesionId);
     obj.insert("question", question);
     docum.setObject(obj);
     QByteArray param = docum.toJson(QJsonDocument::Compact);
 
     post(param, "intelligentQA");
+}
+
+void HttpTool::updateStates(QString readerState)
+{
+    QJsonObject obj;
+    QJsonDocument docum;
+    obj.insert("deviceId", m_deviceId);
+    obj.insert("writer", readerState);
+    docum.setObject(obj);
+    QByteArray param = docum.toJson(QJsonDocument::Compact);
+
+    post(param, "deviceStateUpload");
+
+}
+
+void HttpTool::updateTicketInfo(QString type, QString detail, QString state)
+{
+    QJsonObject obj;
+    QJsonDocument docum;
+    obj.insert("errorState", type);
+    obj.insert("tradeDetail", detail);
+    obj.insert("saveStatus", state);
+    docum.setObject(obj);
+    QByteArray param = docum.toJson(QJsonDocument::Compact);
+
+    post(param, "ticketDataUpload");
 }
 
 void HttpTool::setId(const QString &deviceId, const QString &stationId)
@@ -182,7 +209,7 @@ void HttpTool::post(QByteArray data, QString path)
     logger()->info("body: " + data);
 
     request.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/json"));
-    QNetworkReply *reply = m_manager->post(request,data);
+    QNetworkReply *reply = m_manager->post(request, data);
     qDebug() << reply->error();
 }
 
@@ -292,10 +319,14 @@ void HttpTool::parse(QJsonObject data)
     if (data.contains("hotIssues") && data.value("hotIssues").isArray()) {
         QJsonArray jsonArray = data.value("hotIssues").toArray();
         QList<QString> hotIssues;
+        int count = 1;
         for(auto iter = jsonArray.constBegin(); iter != jsonArray.constEnd(); ++iter)
         {
             QString issue = (*iter).toString();
             hotIssues.append(issue);
+            if (count++ >= 5) {
+                break;
+            }
         }
         emit hotIssuesReceived(hotIssues);
         return;

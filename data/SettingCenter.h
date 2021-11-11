@@ -9,6 +9,7 @@ class LineTimeTables;
 class LineStations;
 class LineInterchangeInfo;
 class InterchangeInfo;
+class BasicInfo;
 class SettingCenter : public QObject
 {
     Q_OBJECT
@@ -38,20 +39,13 @@ public:
     QList<LineInterchangeInfo*> getLineInterchanes();
     QList<LineInterchangeInfo*> parseLineInterchanes(QJsonObject obj);
 
-    QString getBasicInfo();
-    QString getHciLogPath();
+    BasicInfo* getBasicInfo();
 
 private:
     QList<InterchangeInfo*> matchInterchangeStations(QList<InterchangeInfo*> stations, QString lineCode);
     void clearJsonObject(QJsonObject &object);
     void saveJsonFile(QJsonObject rootObject, const QString &fileName);
     QJsonDocument readJsonFile(const QString &fileName);
-
-private:
-    QString m_stationName;      // 站点名称
-    QString m_hciLogPath;       // 日志路径
-
-signals:
 
 };
 

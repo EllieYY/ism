@@ -1,6 +1,7 @@
 #include "TicketPriceWidget.h"
 #include "ui_TicketPriceWidget.h"
 #include "HttpTool.h"
+#include "StationSelectWidget.h"
 
 TicketPriceWidget::TicketPriceWidget(QWidget *parent) :
     WidgetBase(parent),
@@ -23,13 +24,19 @@ void TicketPriceWidget::init()
     setStyle();
 
     m_curBtn = 0;
-    connect(ui->selectBtn2, &QPushButton::clicked,
-            this, &TicketPriceWidget::onEnStationSelect);
-    connect(ui->selectBtn3, &QPushButton::clicked,
-            this, &TicketPriceWidget::onExStationSelect);
-    connect(ui->priceCalBtn, &QPushButton::clicked,
-            this, &TicketPriceWidget::onPriceCal);
 
+    //# 选择车站
+    StationSelectWidget* stationSelectedWidget = new StationSelectWidget();
+    stationSelectedWidget->hide();
+    connect(this, &TicketPriceWidget::selectStation, stationSelectedWidget, &StationSelectWidget::showData);
+    connect(stationSelectedWidget, &StationSelectWidget::stationSelected, this, &TicketPriceWidget::onStationSelected);
+
+    connect(ui->selectBtn0, &QPushButton::clicked, this, &TicketPriceWidget::onEnStationSelect);
+    connect(ui->selectBtn1, &QPushButton::clicked, this, &TicketPriceWidget::onExStationSelect);
+    connect(ui->priceCalBtn, &QPushButton::clicked, this, &TicketPriceWidget::onPriceCal);
+
+    // 票价查询
+    connect(HttpTool::getThis(), &HttpTool::priceReceived, this, &TicketPriceWidget::onPriceRecv);
 }
 
 void TicketPriceWidget::onStationSelected(QString lineName, QString stationName, QString stationCode)

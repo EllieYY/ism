@@ -24,6 +24,11 @@ public:
 private:
     bool showData();
     void setTestData();
+    void showLogoutBtn(bool isMain);
+    void onLogout();
+
+signals:
+    void logout();
 
 private:
     QTimer* m_timer;

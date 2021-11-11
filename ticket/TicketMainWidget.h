@@ -8,6 +8,7 @@ namespace Ui {
 class TicketMainWidget;
 }
 
+class CardReadWidget;
 class TicketMainWidget : public WidgetBase
 {
     Q_OBJECT
@@ -16,17 +17,16 @@ public:
     explicit TicketMainWidget(QWidget *parent = nullptr);
     ~TicketMainWidget();
 
-protected:
-    void registerBtn(QToolButton *btn, int id);
-
-private slots:
-    void onBtn(int btnId);
+    void secEvent();
 
 private:
     void init();
+    void onBtn(int btnId);
+    void onDataOk(int widgetId);
 
 private:
-    QButtonGroup *m_buttonGroup;
+    QButtonGroup*   m_buttonGroup;
+    CardReadWidget* m_cardReadWidget;
 
 private:
     Ui::TicketMainWidget *ui;

@@ -3,6 +3,7 @@
 #include "CommonHead.h"
 #include "WidgetMng.h"
 #include "DataCenter.h"
+#include "LogoutDlg.h"
 
 static StatusBar* afx_this = NULL;
 StatusBar::StatusBar(QWidget *parent) :
@@ -12,13 +13,9 @@ StatusBar::StatusBar(QWidget *parent) :
     ui->setupUi(this);
     afx_this = this;
 
-    connect(ui->returnBtn, &QPushButton::clicked,
-            WidgetMng::getThis(), &WidgetMng::onReturn);
-    connect(ui->homeBtn, &QPushButton::clicked,
-            WidgetMng::getThis(), &WidgetMng::onHome);
-    connect(WidgetMng::getThis(), &WidgetMng::returnCtl,
-            this, &StatusBar::showButtons);
-
+    connect(ui->returnBtn, &QPushButton::clicked, WidgetMng::getThis(), &WidgetMng::onReturn);
+    connect(ui->homeBtn, &QPushButton::clicked, WidgetMng::getThis(), &WidgetMng::onHome);
+    connect(WidgetMng::getThis(), &WidgetMng::returnCtl, this, &StatusBar::showButtons);
 
 
 #if IS_TEST_MODE

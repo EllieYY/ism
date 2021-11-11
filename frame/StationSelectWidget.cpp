@@ -43,7 +43,7 @@ bool StationSelectWidget::showData()
         return true;
     }
 
-    return false;
+//    return false;
 }
 
 void StationSelectWidget::setStyle()

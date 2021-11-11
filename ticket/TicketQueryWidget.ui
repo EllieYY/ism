@@ -465,12 +465,12 @@ border-radius: 3px;
            </column>
            <column>
             <property name="text">
-             <string>消费金额/消费次数</string>
+             <string>交易金额</string>
             </property>
            </column>
            <column>
             <property name="text">
-             <string>余额/剩余次数</string>
+             <string>交易终端SAM卡号</string>
             </property>
            </column>
            <item row="0" column="0">

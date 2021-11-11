@@ -19,9 +19,11 @@ public:
 
     void onReadLines();
 
+
 private:
     void init();
     void onLineChange(int id);
+    bool showData();
 
 private:
     QList<LineInfo*>        m_lineInfoLst;

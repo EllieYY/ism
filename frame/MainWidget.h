@@ -16,15 +16,14 @@ public:
     explicit MainWidget(QWidget *parent = nullptr);
     ~MainWidget();
 
-protected:
-    void registerBtn(QToolButton *btn, int id);
-
 private slots:
     void onBtn(int btnId);
 
 private:
     void init();
     void setTestData();
+
+    void secEvent();
 
 private:
     QButtonGroup *m_buttonGroup;

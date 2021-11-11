@@ -9,8 +9,9 @@ namespace Ui {
 class ISMFrame;
 }
 
-class StationSelectWidget;
+
 class WidgetBase;
+class LoginDlg;
 class ISMFrame : public QFrame
 {
     Q_OBJECT
@@ -18,6 +19,9 @@ class ISMFrame : public QFrame
 public:
     explicit ISMFrame(QWidget *parent = nullptr);
     ~ISMFrame();
+
+    void login();
+    void logout();
 
 private:
     void init();
@@ -30,7 +34,7 @@ private:
 private:
     QTimer*   m_time;
     QDateTime m_oldtime;
-    StationSelectWidget* m_stationSelectedWidget;
+    LoginDlg* m_loginDlg;
 
 private:
     Ui::ISMFrame *ui;

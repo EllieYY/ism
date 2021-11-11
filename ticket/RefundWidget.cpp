@@ -2,7 +2,7 @@
 #include "ui_RefundWidget.h"
 #include "CommonHead.h"
 #include "DataCenter.h"
-#include "TicketInfo.h"
+#include "TicketBasicInfo.h"
 
 RefundWidget::RefundWidget(QWidget *parent) :
     WidgetBase(parent),
@@ -26,7 +26,8 @@ RefundWidget::~RefundWidget()
 
 bool RefundWidget::showData()
 {
-    TicketInfo* info = DataCenter::getThis()->getTicketInfo();
+    // TODO:触发车票信息获取
+    TicketBasicInfo* info = DataCenter::getThis()->getTicketBasicInfo();
     QList<QTableWidgetItem*> itemList = DataCenter::getThis()->getTicketItems(info);
 
     int index = 0;
@@ -65,7 +66,7 @@ void RefundWidget::setStyle()
 
 void RefundWidget::setTestData()
 {
-    TicketInfo* info = new TicketInfo("一卡通", "20001379", QDate(2019, 10, 1), QDate(2022, 10, 1), 0, 1, 18.0);
+//    TicketBasicInfo* info = new TicketBasicInfo("一卡通", "20001379", QDate(2019, 10, 1), QDate(2022, 10, 1), 0, 1, 18.0);
 
-    DataCenter::getThis()->setTicketInfo(info);
+//    DataCenter::getThis()->setTicketBasicInfo(info);
 }

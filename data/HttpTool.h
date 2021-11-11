@@ -30,7 +30,11 @@ public:
     void requestInterchanges();
     void requestTimeTables();
     void requestHotIssues();
-    void requestAnswer(QString question);
+    void requestAnswer(QString question, QString seesionId);
+
+    // 数据更新
+    void updateStates(QString readerState);
+    void updateTicketInfo(QString type, QString detail, QString state);
 
 
     // 来源于配置文件

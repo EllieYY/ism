@@ -20,11 +20,8 @@ TicketTransactionWidget::~TicketTransactionWidget()
 
 void TicketTransactionWidget::init()
 {
-    connect(ui->payBtn, &QPushButton::clicked,
-            this, &TicketTransactionWidget::onPurchase);
-    connect(ui->selectBtn1, &QPushButton::clicked,
-            this, &WidgetBase::selectStation);
-
+    connect(ui->payBtn, &QPushButton::clicked, this, &TicketTransactionWidget::onPurchase);
+//    connect(ui->selectBtn1, &QPushButton::clicked, this, &WidgetBase::selectStation);
 }
 
 void TicketTransactionWidget::onPurchase()

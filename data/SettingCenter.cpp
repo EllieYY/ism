@@ -1,3 +1,7 @@
+/* 配置中心
+ * 各种信息与json文件的转换
+ *
+*/
 #include "SettingCenter.h"
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -14,6 +18,8 @@
 #include "HttpTool.h"
 #include "DataCenter.h"
 #include "Station.h"
+#include "ASRHttpTool.h"
+#include "BasicInfo.h"
 
 SettingCenter* SettingCenter::m_pInstance = NULL;
 SettingCenter::SettingCenter(QObject *parent) : QObject(parent)
@@ -101,8 +107,6 @@ QList<LineInfo *> SettingCenter::parseLineBasicInfo(QJsonObject rootObject)
     }
     return lines;
 }
-
-
 
 // 线路信息存储
 void SettingCenter::saveLineStations(QList<LineStations *> lines)
@@ -240,14 +244,14 @@ QList<LineTimeTables *> SettingCenter::getLineTimeTables()
 QList<LineTimeTables *> SettingCenter::parseLineTimeTables(QJsonObject rootObject)
 {
     QList<LineTimeTables *> lines;
-    if(!rootObject.contains("lineTimeTables") || !rootObject.value("lineTimeTables").isArray())
+    if(!rootObject.contains("lineTime") || !rootObject.value("lineTime").isArray())
     {
         qDebug() << "No target value";
         qDebug() << rootObject.keys();
         return lines;
     }
 
-    QJsonArray jsonArray = rootObject.value("lineTimeTables").toArray();
+    QJsonArray jsonArray = rootObject.value("lineTime").toArray();
     for(auto iter = jsonArray.constBegin(); iter != jsonArray.constEnd(); ++iter)
     {
         QJsonObject jsonObject = (*iter).toObject();
@@ -383,18 +387,18 @@ QList<LineInterchangeInfo *> SettingCenter::getLineInterchanes()
             QString stationCode = subJsonObject.value("stationCode").toString();
 
             QList<LineInfo*> transLines;
-            QJsonArray lineJsonArray = jsonObject.value( "lines" ).toArray();
+            QJsonArray lineJsonArray = subJsonObject.value("lines").toArray();
             for(auto lineIter = lineJsonArray.constBegin(); lineIter != lineJsonArray.constEnd(); ++lineIter)
             {
-                QJsonObject subJsonObject = (*subIter).toObject();
-                if (subJsonObject.contains("lineName") && subJsonObject.value("lineName").isString() &&
-                    subJsonObject.contains("lineColor") && subJsonObject.value("lineColor").isString() &&
-                    subJsonObject.contains("lineCode") && subJsonObject.value("lineCode").isString()) {
+                QJsonObject lineJsonObject = (*lineIter).toObject();
+                if (lineJsonObject.contains("lineName") && lineJsonObject.value("lineName").isString() &&
+                    lineJsonObject.contains("lineColor") && lineJsonObject.value("lineColor").isString() &&
+                    lineJsonObject.contains("lineCode") && lineJsonObject.value("lineCode").isString()) {
 
-                    LineInfo* info = new LineInfo(subJsonObject.value("lineName").toString(),
-                                                  subJsonObject.value("lineCode").toString(),
+                    LineInfo* info = new LineInfo(lineJsonObject.value("lineName").toString(),
+                                                  lineJsonObject.value("lineCode").toString(),
                                                   "",
-                                                  subJsonObject.value("lineColor").toString());
+                                                  lineJsonObject.value("lineColor").toString());
                     transLines.append(info);
                 }
             }
@@ -504,17 +508,15 @@ QList<InterchangeInfo*> SettingCenter::matchInterchangeStations(QList<Interchang
 
 
 // 基础信息获取
-QString SettingCenter::getBasicInfo()
+BasicInfo* SettingCenter::getBasicInfo()
 {
-    m_stationName = "";
-
     QString filePath = QDir::currentPath() + QDir::separator() + QDir::separator() + "setting.json";
     QFile file(filePath);
     if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         qDebug() << QString("fail to open the file: %1, %2, %3")
                     .arg(__FILE__).arg(__LINE__).arg(__FUNCTION__);
-        return m_stationName;
+        return NULL;
     }
     QByteArray array = file.readAll();
     file.close();
@@ -524,32 +526,73 @@ QString SettingCenter::getBasicInfo()
     if(QJsonParseError::NoError != jsonParseError.error)
     {
         qDebug() << QString("JsonParseError: %1").arg(jsonParseError.errorString());
-        return m_stationName;
+        return NULL;
     }
 
     QJsonObject rootObject = jsonDocument.object();
     if(!rootObject.keys().contains("stationName"))
     {
         qDebug() << "No target value";
-        return m_stationName;
+        return NULL;
     }
 
+    BasicInfo* info = new BasicInfo(this);
+    info->setStationName(rootObject.value("stationName").toString());
+    info->setStationCode(rootObject.value("stationCode").toString());
+    info->setDeviceId(rootObject.value("deviceId").toString());
+    info->setIsPayZone(rootObject.value("isPayZone").toBool());
 
-    m_stationName = rootObject.value("stationName").toString();
-    QString ip = rootObject.value("ip").toString();
-    long port = rootObject.value("port").toInt();
-    QString deviceId = rootObject.value("deviceId").toString();
-    HttpTool::getThis()->setId(deviceId, m_stationName);
-    HttpTool::getThis()->setServUrl(ip, port);
+    // ism后台连接
+    if(rootObject.contains("ismService"))
+    {
+        QJsonObject item = rootObject.value("ismService").toObject();
+        info->setIsmServiceIp(item.value("ip").toString());
+        info->setIsmServicePort(item.value("port").toInt());
+    }
 
-    m_hciLogPath = rootObject.value("hciLogPath").toString();
+    // asr后台连接信息
+    if(rootObject.contains("asrInfo"))
+    {
+        QJsonObject item = rootObject.value("asrInfo").toObject();
+        info->setAsrServiceIp(item.value("asrIp").toString());
+        info->setAsrServicePort(item.value("asrPort").toInt());
+        info->setAppkey(item.value("appkey").toString());
+        info->setSecret(item.value("secret").toString());
+    }
 
-    return m_stationName;
-}
+    // 硬件设备信息
+    if(rootObject.contains("deviceInfo"))
+    {
+        QJsonObject item = rootObject.value("deviceInfo").toObject();
+        info->setReaderPort(item.value("readerPort").toInt());
+        info->setAntiNo(item.value("anti").toInt());
+        info->setBrcPort(item.value("brcPort").toInt());
+        info->setF53Port(item.value("f53Port").toInt());
+        info->setBimPort(item.value("bimPort").toInt());
+    }
 
-QString SettingCenter::getHciLogPath()
-{
-    return m_hciLogPath;
+    // AFC通讯信息
+    if(rootObject.contains("afcInfo"))
+    {
+        QJsonObject item = rootObject.value("afcInfo").toObject();
+        info->setScId(item.value("scId").toString());
+        info->setScIP(item.value("scIP").toString());
+        info->setScPort(item.value("scPort").toInt());
+        info->setLocalIP(item.value("localIp").toString());
+        info->setLocalPort(item.value("localPort").toInt());
+    }
+
+//    // ism后台连接
+//    info->setIsmServiceIp(rootObject.value("ip").toString());
+//    info->setIsmServicePort(rootObject.value("port").toInt());
+
+    // asr后台连接信息
+//    info->setAsrServiceIp(rootObject.value("asrIp").toString());
+//    info->setAsrServicePort(rootObject.value("asrPort").toInt());
+//    info->setAppkey(rootObject.value("appkey").toString());
+//    info->setSecret(rootObject.value("secret").toString());
+
+    return info;
 }
 
 

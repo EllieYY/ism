@@ -14,6 +14,8 @@ namespace Ui {
 class InquiryMainWidget;
 }
 class QNChatMessage;
+class AsrResult;
+class AsrConfig;
 class InquiryMainWidget : public WidgetBase
 {
     Q_OBJECT
@@ -22,8 +24,9 @@ public:
     explicit InquiryMainWidget(QWidget *parent = nullptr);
     ~InquiryMainWidget();
 
-    void onHotIssues(QList<QString> issues);
-    void onAnswerShow(QString answer);
+    void onHotIssuesShow(QList<QString> issues);        //# 热点问题显示
+    void onAnswerShow(QString answer);                  //# 问答结果显示
+    void onAsrResultShow(QString text);                 //# 语音转文字结果显示
 
 private:
     bool showData();
@@ -33,9 +36,9 @@ private:
     void initAudio();
     void setTestData();
 
-    void onMsgSend();
+    void onMsgSend();                                       //# 问题发送
     void onService(QString msg);
-    void onHotIssue(QListWidgetItem* item);
+    void onQuickHotIssue(QListWidgetItem* item);            //# 热点问题快速问答
     void onVoice();
     void onStartVoice();
     void onStopVoice();
@@ -51,9 +54,16 @@ private:
 
 private:
     bool            m_isAudio;     // 是否正在录音
-    QFile           m_destinationFile;
     QAudioInput*    m_audio;
     QIODevice*      m_audioDevice;
+    AsrConfig*      m_asrConfig;
+
+    // test.
+    QByteArray      m_voiceData;
+    QBuffer         m_bufDevice;
+    QString         m_sessionId;    // 会话Id
+
+    bool            m_asrOk;
 
 private:
     Ui::InquiryMainWidget *ui;

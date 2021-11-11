@@ -1,3 +1,11 @@
+/* ISMFrame:
+ * 1、提供秒驱动
+ * 2、窗口注册及管理
+ *
+ *
+*/
+
+
 #include "ISMFrame.h"
 #include "ui_ISMFrame.h"
 #include "CommonHead.h"
@@ -25,10 +33,14 @@
 #include "MetroInterchangeWidget.h"
 #include "MetroPeripheralWidget.h"
 #include "TimeTableWidget.h"
-#include "myhelper.h"
+#include "MyHelper.h"
 #include "StationSelectWidget.h"
 #include <QGuiApplication>
 #include "HttpTool.h"
+#include "ASRHttpTool.h"
+#include "SettingCenter.h"
+#include "LoginDlg.h"
+#include "LogoutDlg.h"
 
 ISMFrame::ISMFrame(QWidget *parent) :
     QFrame(parent),
@@ -46,6 +58,20 @@ ISMFrame::ISMFrame(QWidget *parent) :
 ISMFrame::~ISMFrame()
 {
     delete ui;
+}
+
+void ISMFrame::login()
+{
+    this->hide();
+    m_loginDlg->initShow();
+}
+
+void ISMFrame::logout()
+{
+    // 签退
+    LogoutDlg* dlg = new LogoutDlg();
+    connect(dlg, &LogoutDlg::logoutOk, this, &ISMFrame::login);
+    dlg->show();
 }
 
 void ISMFrame::init()
@@ -72,13 +98,17 @@ void ISMFrame::onTimer()
     }
 }
 
-
+//# 秒驱动
 void ISMFrame::secEvent()
 {
+    // TODO:未签到时，这里加控制
     DataCenter::getThis()->secEvent();
     StatusBar::getThis()->secEvent();
     TitleBar::getThis()->secEvent();
-    WidgetMng::getThis()->secEvent();
+
+    WidgetMng::getThis()->secEvent();    // 子窗口的秒驱动
+
+    // TODO:定时自动签退
 
 }
 
@@ -87,55 +117,42 @@ void ISMFrame::initWgt()
     //# 页面管理员
     new WidgetMng();
 
-    // 选择车站 - 公用
-    m_stationSelectedWidget = new StationSelectWidget();
-    m_stationSelectedWidget->hide();
-
-    //# 公用部分
+    //# 固定页面
     TitleBar* titleBar = new TitleBar(this);
     StatusBar* statusBar = new StatusBar(this);
+
+    connect(titleBar, &TitleBar::logout, this, &ISMFrame::logout);
 
     //# 窗口注册
     QHBoxLayout *layoutWnd = new QHBoxLayout();
     layoutWnd->setSpacing(0);
     layoutWnd->setMargin(0);
+
     registerWidget(layoutWnd, new MainWidget(this), MAIN_DLG, true);
     registerWidget(layoutWnd, new TicketMainWidget(this), CARD_DLG, false);
-    registerWidget(layoutWnd, new QrCodeMainWidget(this), QRCODE_DLG, false);
-
-    InquiryMainWidget* inquiryWidget = new InquiryMainWidget(this);
-    connect(HttpTool::getThis(), &HttpTool::hotIssuesReceived,
-            inquiryWidget, &InquiryMainWidget::onHotIssues);
-    connect(HttpTool::getThis(), &HttpTool::answerReceived,
-            inquiryWidget, &InquiryMainWidget::onAnswerShow);
-    registerWidget(layoutWnd, inquiryWidget, INQUIRY_DLG, false);
+    registerWidget(layoutWnd, new InquiryMainWidget(this), INQUIRY_DLG, false);      // 2021-10-20
     registerWidget(layoutWnd, new InfoMainWidget(this), INFO_DLG, false);
     registerWidget(layoutWnd, new GuideMainWidget(this), GUID_DLG, false);
-    // 票卡
-    registerWidget(layoutWnd, new TicketTransactionWidget(this), PURCHASE_DLG, false);
-    registerWidget(layoutWnd, new RefundWidget(this), REFUND_DLG, false);
+
+    // 票卡 -- 暂时移除购票和退款功能（PaymentWidget是二级页面），2021-09-26
+//    registerWidget(layoutWnd, new TicketTransactionWidget(this), PURCHASE_DLG, false);
+//    registerWidget(layoutWnd, new RefundWidget(this), REFUND_DLG, false);
     registerWidget(layoutWnd, new TicketQueryWidget(this), QUERY_DLG, false);
     registerWidget(layoutWnd, new TicketReregisterWidget(this), REREGISTER_DLG, false);
-    registerWidget(layoutWnd, new PaymentWidget(this), PAYMENT_DLG, false);
-    // 二维码
-    registerWidget(layoutWnd, new QrQueryWidget(this), QR_QUERY_DLG, false);
-    registerWidget(layoutWnd, new QrReregisterWidget(this), QR_REREGISTER_DLG, false);
+//    registerWidget(layoutWnd, new PaymentWidget(this), PAYMENT_DLG, false);
+
+//    // 二维码 -- 暂时移除该功能 {Ellie 2021-09-26}  -- 会议定稿：互联网支付相关业务去掉 20211012
+//    registerWidget(layoutWnd, new QrCodeMainWidget(this), QRCODE_DLG, false);
+//    registerWidget(layoutWnd, new QrQueryWidget(this), QR_QUERY_DLG, false);
+//    registerWidget(layoutWnd, new QrReregisterWidget(this), QR_REREGISTER_DLG, false);
+
     // 信息查询
     registerWidget(layoutWnd, new MapWidget(this), MAP_DLG, false);
-
-    LineWidget* lineWidget = new LineWidget(this);
-    registerWidget(layoutWnd, lineWidget, LINE_DLG, false);
-    TicketPriceWidget* priceWidget = new TicketPriceWidget(this);
-    registerWidget(layoutWnd, priceWidget, PRICE_DLG, false);
-
+    registerWidget(layoutWnd, new LineWidget(this), LINE_DLG, false);
+    registerWidget(layoutWnd, new TicketPriceWidget(this), PRICE_DLG, false);
     registerWidget(layoutWnd, new MetroInterchangeWidget(this), TRANSFER_DLG, false);
     registerWidget(layoutWnd, new TimeTableWidget(this), TIME_DLG, false);
     registerWidget(layoutWnd, new MetroPeripheralWidget(this), PERIPHERY_DLG, false);
-
-    connect(DataCenter::getThis(), &DataCenter::lineReceived,
-            lineWidget, &LineWidget::onReadLines);
-    connect(HttpTool::getThis(), &HttpTool::priceReceived,
-            priceWidget, &TicketPriceWidget::onPriceRecv);
 
     //# 总体布局
     QVBoxLayout *layoutMain = new QVBoxLayout();
@@ -150,6 +167,11 @@ void ISMFrame::initWgt()
     titleBar->show();
     WidgetMng::getThis()->showWidget(MAIN_DLG);
     statusBar->show();
+
+
+    m_loginDlg = new LoginDlg();
+    connect(m_loginDlg, &LoginDlg::loginOk, this, &ISMFrame::show);
+    m_loginDlg->hide();
 }
 
 /** 窗口管理 */
@@ -168,10 +190,4 @@ void ISMFrame::registerWidget(QHBoxLayout *layout, WidgetBase *widget, int widge
     WidgetMng::getThis()->insertWidget(widget);
 
     layout->addWidget(widget);
-
-    // 选择车站
-    connect(widget, &WidgetBase::selectStation,
-            m_stationSelectedWidget, &StationSelectWidget::showData);
-    connect(m_stationSelectedWidget, &StationSelectWidget::stationSelected,
-            widget, &WidgetBase::onStationSelected);
 }

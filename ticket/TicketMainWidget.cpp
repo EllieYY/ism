@@ -2,6 +2,7 @@
 #include "ui_TicketMainWidget.h"
 #include "WidgetMng.h"
 #include "CommonHead.h"
+#include "CardReadWidget.h"
 
 TicketMainWidget::TicketMainWidget(QWidget *parent) :
     WidgetBase(parent),
@@ -17,31 +18,39 @@ TicketMainWidget::~TicketMainWidget()
     delete ui;
 }
 
+void TicketMainWidget::secEvent()
+{
+    if (m_cardReadWidget->isVisible()) {
+        m_cardReadWidget->secEvent();
+    }
+}
 
+const int  TICKET_WIDGET_NUM = 2;
 void TicketMainWidget::onBtn(int btnId)
 {
-    int widgetIdx[4] =
+
+    int widgetIdx[TICKET_WIDGET_NUM] =
     {
-        PURCHASE_DLG,                   //# 购票界面
-        REFUND_DLG,                //# 退款
+//        PURCHASE_DLG,                   //# 购票界面
+//        REFUND_DLG,                //# 退款
         QUERY_DLG,                 //# 票卡查询
         REREGISTER_DLG                   //# 票卡补登
     };
 
-    if  (btnId >= 0 && btnId < 4)
+    if  (btnId >= 0 && btnId < TICKET_WIDGET_NUM)
     {
-        WidgetMng::getThis()->showWidget(widgetIdx[btnId]);
+        m_cardReadWidget->show();
+        m_cardReadWidget->readCard(widgetIdx[btnId]);
     }
+}
+
+void TicketMainWidget::onDataOk(int widgetId)
+{
+    WidgetMng::getThis()->showWidget(widgetId);
 }
 
 void TicketMainWidget::init()
 {
-    m_buttonGroup = new QButtonGroup(this);
-    registerBtn(ui->purchaseBtn, 0);
-    registerBtn(ui->refundBtn, 1);
-    registerBtn(ui->queryBtn, 2);
-    registerBtn(ui->reregisterBtn, 3);
-
     ui->purchaseBtn->setText("单程票购买");
     ui->refundBtn->setText("单程票退款");
     ui->queryBtn->setText("票卡查询");
@@ -52,12 +61,29 @@ void TicketMainWidget::init()
     ui->queryBtn->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     ui->reregisterBtn->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
+    // 2021-09-26 隐藏单程票购买功能和退款功能入口
+    ui->purchaseBtn->hide();
+    ui->refundBtn->hide();
+    ui->horizontalSpacer_3->changeSize(0, 1, QSizePolicy::Fixed, QSizePolicy::Fixed);
+    ui->horizontalSpacer_4->changeSize(0, 1, QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+    QList<QToolButton*> btnList;
+//    btnList.append(ui->purchaseBtn);
+//    btnList.append(ui->refundBtn);
+    btnList.append(ui->queryBtn);
+    btnList.append(ui->reregisterBtn);
+
+    m_buttonGroup = new QButtonGroup(this);
+    int id = 0;
+    for(QToolButton* btn : btnList) {
+        m_buttonGroup->addButton(btn, id++);
+    }
 
     connect(m_buttonGroup, &QButtonGroup::idClicked, this, &TicketMainWidget::onBtn);
 
-}
 
-void TicketMainWidget::registerBtn(QToolButton *btn, int id)
-{
-    this->m_buttonGroup->addButton(btn, id);
+    // 读卡提示页面
+    m_cardReadWidget = new CardReadWidget();
+    m_cardReadWidget->hide();
+    connect(m_cardReadWidget, &CardReadWidget::readOk, this, &TicketMainWidget::onDataOk);
 }

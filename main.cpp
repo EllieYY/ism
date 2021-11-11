@@ -4,6 +4,8 @@
 #include "LogHandler.h"
 #include "logger.h"
 #include "propertyconfigurator.h"
+#include "LoginDlg.h"
+#include <iostream>
 
 /**
  * @Author: Ellie
@@ -14,6 +16,7 @@
 
 int main(int argc, char *argv[])
 {
+//    qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboard"));
     QApplication a(argc, argv);
 
 //    Singleton<LogHandler>::getInstance().installMessageHandler();
@@ -31,7 +34,9 @@ int main(int argc, char *argv[])
 //    a.setPalette(QPalette(QColor("#F0F0F0")));
 
 
+
     ISMFrame w;
+//    w.login();
     w.show();
 
     int ret = a.exec();

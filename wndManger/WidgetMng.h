@@ -22,7 +22,7 @@ public:
     void setMainWidget(WidgetBase* wgt);
 
 signals:
-    void returnCtl(bool isMainWnd);
+    void returnCtl(bool isMainWnd);         //# 控制主页的返回和home按钮显示
 
 public slots:
     void onReturn();

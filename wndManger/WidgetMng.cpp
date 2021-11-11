@@ -1,7 +1,7 @@
 /*
  *class CSQWidgetMng 
  *1. 在CSQFrameDlg::initWgt()中实例化
- *2. 实例化CSQFocusManager
+ *2. 控制页面的显示和数据更新
  */
 #include "WidgetMng.h"
 #include "WidgetBase.h"
@@ -69,6 +69,7 @@ void WidgetMng::showWidget(int wgtId,bool isReturn/*default false*/)
             m_wgtList[i]->showWgt();
 			m_currentWgt = m_wgtList[i];	//# 
 
+            // 主窗口不显示返回按钮和home按钮
             bool isMainWnd = (wgtId == MAIN_DLG);
             emit returnCtl(isMainWnd);
 			break;

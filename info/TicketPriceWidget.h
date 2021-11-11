@@ -31,6 +31,9 @@ private:
 private:
     int m_curBtn;    // 0-en  1-ex
 
+signals:
+    void selectStation();    // 选择车站
+
 private:
     Ui::TicketPriceWidget *ui;
 };

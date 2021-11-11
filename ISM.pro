@@ -10,6 +10,12 @@ CONFIG += c++11
 
 TARGET = ISM
 DESTDIR = ../ISM_BIN/
+#UI_DIR += $$PWD/forms
+#RCC_DIR += $$PWD/tmp
+#MOC_DIR += $$PWD/tmp
+#OBJECTS_DIR += $$PWD/tmp
+#DEPENDPATH += . forms include qrc sources
+
 
 # 定义 Log4Qt 源码根目录
 LOG4QT_ROOT_PATH = $$PWD/../Log4Qt-master
@@ -23,10 +29,14 @@ greaterThan(QT_MAJOR_VERSION,4){
 }
 contains(TARGET_ARCH, x86_64){
         message("64-bit")
-        LIBS += -L$$PWD/../ISM_BIN/log4Qt/x64/release -llog4qt
+        LIBS += -L$$PWD/sdk/lib/log4qt/x64/release -llog4qt
+        LIBS += -L$$PWD/sdk/lib/ticket/x64/release -lNC_ReaderLib -lNCNetwork_Lib -lBIM2020A
 }else{
         message("32-bit")
+        LIBS += -L$$PWD/sdk/lib/log4qt/x86 -llog4qt
+        LIBS += -L$$PWD/sdk/lib/ticket/x86/release -lBRCBoard -lBIM2020 -lF53Board -lIOBoard -lNC_ReaderLib
 }
+
 
 INCLUDEPATH += 	frame \
     wndManger \
@@ -37,20 +47,25 @@ INCLUDEPATH += 	frame \
     guide \
     data \
     data/line \
-    sdk/include \
+    data/asr \
+    data/ticket \
+    sdk/include/ticket \
     $$LOG4QT_ROOT_PATH/src \
     $$LOG4QT_ROOT_PATH/src/log4qt \
     $$LOG4QT_ROOT_PATH/include \
     $$LOG4QT_ROOT_PATH/include/log4qt
 
 SOURCES += \
-    data/CardInfo.cpp \
+    data/BasicInfo.cpp \
     data/DataCenter.cpp \
     data/HttpTool.cpp \
-    data/QRCodeInfo.cpp \
+    data/LoginInfo.cpp \
     data/SettingCenter.cpp \
-    data/TicketInfo.cpp \
-    data/TransactionInfo.cpp \
+    data/asr/ASRHttpTool.cpp \
+    data/asr/AsrConfig.cpp \
+    data/asr/AsrError.cpp \
+    data/asr/AsrResult.cpp \
+    data/asr/AsrReturn.cpp \
     data/line/ISMTimeTable.cpp \
     data/line/InterchangeInfo.cpp \
     data/line/InterchangeStation.cpp \
@@ -59,8 +74,18 @@ SOURCES += \
     data/line/LineStations.cpp \
     data/line/LineTimeTables.cpp \
     data/line/Station.cpp \
+    data/ticket/QRCodeInfo.cpp \
+    data/ticket/ReregisterInfo.cpp \
+    data/ticket/TicketBasicInfo.cpp \
+    data/ticket/TransactionInfo.cpp \
+    frame/AFCTaskTimer.cpp \
+    frame/AmountCheckTimer.cpp \
+    frame/AsyncTimer.cpp \
     frame/CustomTabWidget.cpp \
     frame/ISMFrame.cpp \
+    frame/ISMMessageBox.cpp \
+    frame/LoginDlg.cpp \
+    frame/LogoutDlg.cpp \
     frame/MainWidget.cpp \
     frame/StationListWidget.cpp \
     frame/StationSelectWidget.cpp \
@@ -80,6 +105,8 @@ SOURCES += \
     qrCode/QrCodeMainWidget.cpp \
     qrCode/QrQueryWidget.cpp \
     qrCode/QrReregisterWidget.cpp \
+    ticket/CardReadWidget.cpp \
+    ticket/CompensationFareWidget.cpp \
     ticket/PaymentWidget.cpp \
     ticket/RefundWidget.cpp \
     ticket/TicketMainWidget.cpp \
@@ -91,13 +118,16 @@ SOURCES += \
 
 HEADERS += \
     CommonHead.h \
-    data/CardInfo.h \
+    data/BasicInfo.h \
     data/DataCenter.h \
     data/HttpTool.h \
-    data/QRCodeInfo.h \
+    data/LoginInfo.h \
     data/SettingCenter.h \
-    data/TicketInfo.h \
-    data/TransactionInfo.h \
+    data/asr/ASRHttpTool.h \
+    data/asr/AsrConfig.h \
+    data/asr/AsrError.h \
+    data/asr/AsrResult.h \
+    data/asr/AsrReturn.h \
     data/line/ISMTimeTable.h \
     data/line/InterchangeInfo.h \
     data/line/InterchangeStation.h \
@@ -106,15 +136,25 @@ HEADERS += \
     data/line/LineStations.h \
     data/line/LineTimeTables.h \
     data/line/Station.h \
+    data/ticket/QRCodeInfo.h \
+    data/ticket/ReregisterInfo.h \
+    data/ticket/TicketBasicInfo.h \
+    data/ticket/TransactionInfo.h \
+    frame/AFCTaskTimer.h \
+    frame/AmountCheckTimer.h \
+    frame/AsyncTimer.h \
     frame/CustomTabWidget.h \
     frame/ISMFrame.h \
+    frame/ISMMessageBox.h \
+    frame/LoginDlg.h \
+    frame/LogoutDlg.h \
     frame/MainWidget.h \
+    frame/MyHelper.h \
     frame/Singleton.h \
     frame/StationListWidget.h \
     frame/StationSelectWidget.h \
     frame/StatusBar.h \
     frame/TitleBar.h \
-    frame/myhelper.h \
     guide/GuideMainWidget.h \
     info/InfoMainWidget.h \
     info/LineWidget.h \
@@ -128,6 +168,8 @@ HEADERS += \
     qrCode/QrCodeMainWidget.h \
     qrCode/QrQueryWidget.h \
     qrCode/QrReregisterWidget.h \
+    ticket/CardReadWidget.h \
+    ticket/CompensationFareWidget.h \
     ticket/PaymentWidget.h \
     ticket/RefundWidget.h \
     ticket/TicketMainWidget.h \
@@ -139,6 +181,9 @@ HEADERS += \
 
 FORMS += \
     frame/ISMFrame.ui \
+    frame/ISMMessageBox.ui \
+    frame/LoginDlg.ui \
+    frame/LogoutDlg.ui \
     frame/MainWidget.ui \
     frame/StationListWidget.ui \
     frame/StationSelectWidget.ui \
@@ -156,6 +201,8 @@ FORMS += \
     qrCode/QrCodeMainWidget.ui \
     qrCode/QrQueryWidget.ui \
     qrCode/QrReregisterWidget.ui \
+    ticket/CardReadWidget.ui \
+    ticket/CompensationFareWidget.ui \
     ticket/PaymentWidget.ui \
     ticket/RefundWidget.ui \
     ticket/TicketMainWidget.ui \
@@ -167,3 +214,7 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+
+
+

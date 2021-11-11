@@ -1,6 +1,7 @@
 #include "TitleBar.h"
 #include "ui_TitleBar.h"
 #include "DataCenter.h"
+#include "WidgetMng.h"
 
 
 static TitleBar* afx_this = NULL;
@@ -10,6 +11,9 @@ TitleBar::TitleBar(QWidget *parent) :
 {
     ui->setupUi(this);
     afx_this = this;
+
+    connect(ui->tLogoutBtn, &QPushButton::clicked, this, &TitleBar::onLogout);
+    connect(WidgetMng::getThis(), &WidgetMng::returnCtl, this, &TitleBar::showLogoutBtn);
 
 #if IS_TEST_MODE
     setTestData();
@@ -29,6 +33,12 @@ TitleBar *TitleBar::getThis()
 
 bool TitleBar::showData()
 {
+    if (!m_dataUpdateNum[AFC_ONLINE_STATE_ID])
+    {
+        return true;
+    }
+    m_dataUpdateNum[AFC_ONLINE_STATE_ID] = false;
+
     // 服务状态
     int serviceState = DataCenter::getThis()->getServiceState();
     QString serviceStateStr = "暂停服务";
@@ -55,6 +65,17 @@ bool TitleBar::showData()
 void TitleBar::setTestData()
 {
     DataCenter::getThis()->setServiceState(0);
+}
+
+void TitleBar::showLogoutBtn(bool isMainWnd)
+{
+    ui->tLogoutBtn->setVisible(isMainWnd);
+}
+
+void TitleBar::onLogout()
+{
+    // TODO:用户名+密码验证
+    emit logout();
 }
 
 void TitleBar::secEvent()

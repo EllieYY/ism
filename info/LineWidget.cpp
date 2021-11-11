@@ -22,6 +22,8 @@ LineWidget::~LineWidget()
 
 void LineWidget::init()
 {
+    m_layout = NULL;
+    connect(DataCenter::getThis(), &DataCenter::lineReceived, this, &LineWidget::onReadLines);
 }
 
 void LineWidget::onReadLines()
@@ -29,10 +31,12 @@ void LineWidget::onReadLines()
     m_lineInfoLst.clear();
     m_lineInfoLst = DataCenter::getThis()->getLineList();
 
-    delete m_layout;
+//    if (NULL != m_layout) {
+//        delete m_layout;
+//    }
     m_layout = new QVBoxLayout();
 
-    delete m_btnGroup;
+//    delete m_btnGroup;
     m_btnGroup = new QButtonGroup(this);
     int lineNum = m_lineInfoLst.size();
     for (int i = 0; i < lineNum; i++){
@@ -68,4 +72,9 @@ void LineWidget::onLineChange(int id)
 
     QString styleStr = "border-image: url(images/info/"+ m_lineInfoLst[id]->getPicPath() + ");";
     ui->lineFrame3->setStyleSheet(styleStr);
+}
+
+bool LineWidget::showData()
+{
+    onReadLines();
 }

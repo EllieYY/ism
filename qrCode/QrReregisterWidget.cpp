@@ -25,16 +25,16 @@ QrReregisterWidget::~QrReregisterWidget()
 
 bool QrReregisterWidget::showData()
 {
-    QRCodeInfo* info = DataCenter::getThis()->getQrCodeInfo();
+//    QRCodeInfo* info = DataCenter::getThis()->getQrCodeInfo();
 
-    ui->lineEdit1->setText(info->tips());
+//    ui->lineEdit1->setText(info->tips());
 
-    // TODO:类型转换
-    ui->lineEdit2->setText(QString::number(info->channel()));
+//    // TODO:类型转换
+//    ui->lineEdit2->setText(QString::number(info->channel()));
 
-    ui->lineEdit3->setText(info->enterStation());
-    ui->lineEdit4->setText(info->enterTime().toString("yyyy-MM-dd HH:mm:ss"));
-    ui->lineEdit5->setText(info->exitStation());
+//    ui->lineEdit3->setText(info->enterStation());
+//    ui->lineEdit4->setText(info->enterTime().toString("yyyy-MM-dd HH:mm:ss"));
+//    ui->lineEdit5->setText(info->exitStation());
 
     // TODO:
 //    ui->lineEdit8->setText();
@@ -63,9 +63,9 @@ void QrReregisterWidget::setStyle()
 
 void QrReregisterWidget::setTestData()
 {
-    QString tips = "提示信息";
-    QDateTime enterTime = QDateTime::currentDateTime().addDays(-3);
+//    QString tips = "提示信息";
+//    QDateTime enterTime = QDateTime::currentDateTime().addDays(-3);
 
-    QRCodeInfo* info = new QRCodeInfo(tips, 1, "地铁大厦",enterTime,"八一广场", true);
-    DataCenter::getThis()->setQrCodeInfo(info);
+//    QRCodeInfo* info = new QRCodeInfo(tips, 1, "地铁大厦",enterTime,"八一广场", true);
+//    DataCenter::getThis()->setQrCodeInfo(info);
 }

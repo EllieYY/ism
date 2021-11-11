@@ -4,6 +4,11 @@
 #include "SettingCenter.h"
 #include "QNChatMessage.h"
 #include "HttpTool.h"
+#include "ASRHttpTool.h"
+#include "AsrResult.h"
+#include "AsrConfig.h"
+#include "DataCenter.h"
+#include "MyHelper.h"
 
 InquiryMainWidget::InquiryMainWidget(QWidget *parent) :
     WidgetBase(parent),
@@ -28,11 +33,15 @@ bool InquiryMainWidget::showData()
 {
     ui->msgListWidget->clear();
     showMsg("请问有什么可以帮您？", QNChatMessage::User_She);
+
+    m_sessionId = DataCenter::getThis()->getDeviceId() + QDateTime::currentSecsSinceEpoch();
+    HttpTool::getThis()->requestHotIssues();
     return true;
 }
 
 void InquiryMainWidget::init()
 {
+    m_asrOk = false;
     initAudio();
     m_isAudio = false;
     ui->voice->setCheckable(true);
@@ -45,22 +54,20 @@ void InquiryMainWidget::init()
 
     setStyle();
     connect(ui->send, &QPushButton::clicked, this, &InquiryMainWidget::onMsgSend);
-    connect(ui->hotListWidget, &QListWidget::itemClicked, this, &InquiryMainWidget::onHotIssue);
-
-    // 录音开始和结束
+    connect(ui->hotListWidget, &QListWidget::itemClicked, this, &InquiryMainWidget::onQuickHotIssue);
     connect(ui->voice, &QPushButton::clicked, this, &InquiryMainWidget::onVoice);
+
+    // 热点问题&智能问答
+    connect(HttpTool::getThis(), &HttpTool::hotIssuesReceived, this, &InquiryMainWidget::onHotIssuesShow);
+    connect(HttpTool::getThis(), &HttpTool::answerReceived, this, &InquiryMainWidget::onAnswerShow);
+    connect(ASRHttpTool::getThis(), &ASRHttpTool::asrResultOk, this, &InquiryMainWidget::onAsrResultShow);
 }
 
 
 // 录音机初始化
 void InquiryMainWidget::initAudio()
 {
-    QString filePath = QDir::currentPath() + QDir::separator() + QDir::separator() + "test.raw";
-    m_destinationFile.setFileName(filePath);
-    m_destinationFile.open( QIODevice::WriteOnly | QIODevice::Truncate );
-
     QAudioFormat format;
-    // Set up the desired format, for example:
     format.setSampleRate(16000);
     format.setChannelCount(1);
     format.setSampleSize(16);
@@ -69,23 +76,36 @@ void InquiryMainWidget::initAudio()
     format.setSampleType(QAudioFormat::SignedInt);
 
     QAudioDeviceInfo info = QAudioDeviceInfo::defaultInputDevice();
+    if(info.isNull()) {
+        MyHelper::ShowMessageBoxError("未找到录音设备，语音提问功能暂时不可用。");
+        logger()->error("未找到录音设备");
+        return;
+    }
     if (!info.isFormatSupported(format)) {
-        qWarning() << "Default format not supported, trying to use the nearest.";
+        logger()->warn("Default format not supported, trying to use the nearest.");
         format = info.nearestFormat(format);
     }
 
     m_audio = NULL;
-    m_audio = new QAudioInput(format, this);
+    m_audio = new QAudioInput(info, format, this);
     if (m_audio != NULL) {
         connect(m_audio, &QAudioInput::stateChanged, this, &InquiryMainWidget::handleStateChanged);
     }
+
+    // 内存IO对象
+    m_bufDevice.setBuffer(&m_voiceData);
+
+    // 语音转文字配置信息
+    m_asrConfig = new AsrConfig();
+    m_asrConfig->setAudioFormat("pcm_s16le_16k");
+    m_asrConfig->setIsAddPunc(true);
 }
 
 
 void InquiryMainWidget::setTestData()
 {
     QList<QString> issues = QList<QString>() << "票价" << "无法扫码进站" << "无法正常生成乘车二维码";
-    onHotIssues(issues);
+    onHotIssuesShow(issues);
 }
 
 void InquiryMainWidget::onMsgSend()
@@ -97,7 +117,7 @@ void InquiryMainWidget::onMsgSend()
     showMsg(msg, QNChatMessage::User_Me);
 
     // 调用应答接口
-    HttpTool::getThis()->requestAnswer(msg);
+    HttpTool::getThis()->requestAnswer(msg, m_sessionId);
 }
 
 void InquiryMainWidget::onService(QString msg)
@@ -106,7 +126,7 @@ void InquiryMainWidget::onService(QString msg)
 }
 
 // 热门问题显示
-void InquiryMainWidget::onHotIssues(QList<QString> issues)
+void InquiryMainWidget::onHotIssuesShow(QList<QString> issues)
 {
     ui->hotListWidget->clear();
     for (QString issue:issues) {
@@ -120,13 +140,26 @@ void InquiryMainWidget::onAnswerShow(QString answer)
     showMsg(answer, QNChatMessage::User_She);
 }
 
+// 语音转文字结果处理
+void InquiryMainWidget::onAsrResultShow(QString text)
+{
+    // 对于识别结果不好的，进行提示
+    if (text.isEmpty()) {
+        MyHelper::ShowMessageBoxInfo("语音识别效果不好，请您再说一遍。");
+        return;
+    }
+    ui->lineEdit->setText(text);
+}
+
 // 热门问题快速访问
-void InquiryMainWidget::onHotIssue(QListWidgetItem* item)
+void InquiryMainWidget::onQuickHotIssue(QListWidgetItem* item)
 {
     item->setSelected(false);
     QString issue = item->text();
     showMsg(issue, QNChatMessage::User_Me);
-    // TODO:
+
+    // 调用应答接口
+    HttpTool::getThis()->requestAnswer(issue, m_sessionId);
 }
 
 void InquiryMainWidget::onVoice()
@@ -141,12 +174,8 @@ void InquiryMainWidget::onVoice()
 
 void InquiryMainWidget::onStartVoice()
 {
-//    QTimer::singleShot(6000, this, &InquiryMainWidget::onStopVoice);
-
-    // 开始录音
-    m_audioDevice = m_audio->start();
-    connect(m_audioDevice, &QIODevice::readyRead,
-           this, &InquiryMainWidget::audioReadyRead);
+    m_bufDevice.open(QIODevice::WriteOnly | QIODevice::Truncate);
+    m_audio->start(&m_bufDevice);
 
     ui->voice->setChecked(true);
     m_isAudio = true;
@@ -156,8 +185,10 @@ void InquiryMainWidget::onStopVoice()
 {
     // 抬起停止录音，并开始识别
     m_audio->stop();
-    qDebug() << "录音设备是否开启:" << m_audioDevice->isOpen();
+    QString data = m_bufDevice.buffer().toBase64();
+    ASRHttpTool::getThis()->postForVoiceToText(m_asrConfig, data);
 
+    m_bufDevice.close();
     ui->voice->setChecked(false);
     m_isAudio = false;
 }
@@ -181,16 +212,6 @@ void InquiryMainWidget::handleStateChanged(QAudio::State newState)
         // ... other cases as appropriate
         break;
     }
-}
-
-void InquiryMainWidget::audioReadyRead()
-{
-
-    QByteArray audio = m_audioDevice->readAll();
-
-    size_t length = audio.size();
-//    std::unique_ptr<char[]> data(new char[length]);
-    char* data = audio.data();
 }
 
 void InquiryMainWidget::showMsg(QString msg, QNChatMessage::User_Type type)

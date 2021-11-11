@@ -32,7 +32,7 @@ void WidgetBase::dataUpdate(int paraId)
 {
     if (paraId < 0 || paraId > MAX_DATA_TYPE_NUM)
         return;
-    m_dataUpdateNum[paraId - 1] = true;
+    m_dataUpdateNum[paraId] = true;
 }
 
 //#03.刷新界面
@@ -46,10 +46,6 @@ void WidgetBase::setStyle()
 {
 }
 
-void WidgetBase::onStationSelected(QString lineName, QString stationName, QString stationCode)
-{
-
-}
 
 //#05.显示窗口
 void WidgetBase::showWgt()
