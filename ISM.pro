@@ -61,6 +61,7 @@ SOURCES += \
     data/HttpTool.cpp \
     data/LoginInfo.cpp \
     data/SettingCenter.cpp \
+    data/TestWidget.cpp \
     data/asr/ASRHttpTool.cpp \
     data/asr/AsrConfig.cpp \
     data/asr/AsrError.cpp \
@@ -78,18 +79,21 @@ SOURCES += \
     data/ticket/ReregisterInfo.cpp \
     data/ticket/TicketBasicInfo.cpp \
     data/ticket/TransactionInfo.cpp \
-    frame/AFCTaskTimer.cpp \
+    frame/AFCTaskThread.cpp \
     frame/AmountCheckTimer.cpp \
     frame/AsyncTimer.cpp \
     frame/CustomTabWidget.cpp \
+    frame/HeartTimer.cpp \
     frame/ISMFrame.cpp \
     frame/ISMMessageBox.cpp \
+    frame/ISMWaiting.cpp \
     frame/LoginDlg.cpp \
     frame/LogoutDlg.cpp \
     frame/MainWidget.cpp \
     frame/StationListWidget.cpp \
     frame/StationSelectWidget.cpp \
     frame/StatusBar.cpp \
+    frame/TimerThread.cpp \
     frame/TitleBar.cpp \
     guide/GuideMainWidget.cpp \
     info/InfoMainWidget.cpp \
@@ -123,6 +127,7 @@ HEADERS += \
     data/HttpTool.h \
     data/LoginInfo.h \
     data/SettingCenter.h \
+    data/TestWidget.h \
     data/asr/ASRHttpTool.h \
     data/asr/AsrConfig.h \
     data/asr/AsrError.h \
@@ -140,12 +145,14 @@ HEADERS += \
     data/ticket/ReregisterInfo.h \
     data/ticket/TicketBasicInfo.h \
     data/ticket/TransactionInfo.h \
-    frame/AFCTaskTimer.h \
+    frame/AFCTaskThread.h \
     frame/AmountCheckTimer.h \
     frame/AsyncTimer.h \
     frame/CustomTabWidget.h \
+    frame/HeartTimer.h \
     frame/ISMFrame.h \
     frame/ISMMessageBox.h \
+    frame/ISMWaiting.h \
     frame/LoginDlg.h \
     frame/LogoutDlg.h \
     frame/MainWidget.h \
@@ -154,6 +161,7 @@ HEADERS += \
     frame/StationListWidget.h \
     frame/StationSelectWidget.h \
     frame/StatusBar.h \
+    frame/TimerThread.h \
     frame/TitleBar.h \
     guide/GuideMainWidget.h \
     info/InfoMainWidget.h \
@@ -180,8 +188,10 @@ HEADERS += \
     wndManger/WidgetMng.h
 
 FORMS += \
+    data/TestWidget.ui \
     frame/ISMFrame.ui \
     frame/ISMMessageBox.ui \
+    frame/ISMWaiting.ui \
     frame/LoginDlg.ui \
     frame/LogoutDlg.ui \
     frame/MainWidget.ui \

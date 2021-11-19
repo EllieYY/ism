@@ -40,11 +40,12 @@ private:
     void readTransactionInfo();     // 读取交易信息
     void readReregisterInfo();      // 读取票卡更新信息
 
-    // 票卡详情
+    /* 票卡信息 */
     BYTE readTicketInfo(BYTE anti);    // 票卡信息读取
-//    void readULTicketInfo(BYTE* array);
-//    void readMetroTicketInfo(BYTE* array);
-    void readOCTTicketInfo(BYTE type, BYTE* array);
+    BYTE readHistoryTrade(BYTE anti);   // 卡片历史交易信息
+
+
+    void setTestData();    // 生成测试数据
 
 private:
     int  m_ticketWidgetId;

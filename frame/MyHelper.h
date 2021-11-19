@@ -113,7 +113,6 @@ public:
     {
         QByteArray byteArray;
         bool ok;
-        //如果str的长度 不是2的倍数  那么直接返回空
         if(str.size() % 2 != 0){
             return QByteArray::fromHex("字符串不符合标准");
         }
@@ -122,6 +121,22 @@ public:
             byteArray.append(str.mid(i,2).toUpper().toUShort(&ok,16));
         }
         return byteArray;
+    }
+
+    // 字符转16进制 "12aB" -> 0x12AB
+    static void hexStrToByte(QString str, int len, BYTE* des) {
+        QByteArray byteArray = MyHelper::hexStrToByte(str);
+        BYTE* desByte = (BYTE*)byteArray.data();
+        memcpy(des, desByte, len);
+    }
+
+    // int转字节数字（网络序：高位在前）
+    static void intToBigEndianByte(int src, int len, BYTE* des)
+    {
+        for(int i = 0; i < len; i++)
+        {
+            des[i] = (src >> (8 * (len - i - 1))) & 0xFF;
+        }
     }
 
 };

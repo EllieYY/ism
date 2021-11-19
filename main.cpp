@@ -25,15 +25,12 @@ int main(int argc, char *argv[])
     Log4Qt::PropertyConfigurator::configure(a.applicationDirPath()
     + "/log4qt.conf");
 
-
     //样式应用
     QFile file("style.css");
     file.open(QFile::ReadOnly);
     QString qss = QLatin1String(file.readAll());
     a.setStyleSheet(qss);
 //    a.setPalette(QPalette(QColor("#F0F0F0")));
-
-
 
     ISMFrame w;
 //    w.login();

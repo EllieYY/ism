@@ -38,6 +38,30 @@ public:
     int typeNum() const;
     void setTypeNum(int typeNum);
 
+    bool isAllowUpdate() const;
+    void setIsAllowUpdate(bool isAllowUpdate);
+
+    bool isAllowOctPay() const;
+    void setIsAllowOctPay(bool isAllowOctPay);
+
+    int updateType() const;
+    void setUpdateType(int updateType);
+
+    QDateTime enTime() const;
+    void setEnTime(const QString &enTime);
+
+    QDateTime exTime() const;
+    void setExTime(const QString &exTime);
+
+    QString enStationCode() const;
+    void setEnStationCode(const QString &enStationCode);
+
+    QString exStationCode() const;
+    void setExStationCode(const QString &exStationCode);
+
+    uint updateAmount() const;
+    void setUpdateAmount(const uint &updateAmount);
+
 private:
     QString     m_type;         // 卡类型
     QString     m_number;       // 卡号
@@ -48,6 +72,14 @@ private:
     float       m_balance;      // 余额
     int         m_typeNum;
 
+    bool        m_isAllowUpdate;  // 是否允许更新
+    bool        m_isAllowOctPay;  // 是否允许卡扣更新
+    int         m_updateType;     // 更新类型
+    QString     m_enStationCode;  // 进站车站编号
+    QString     m_exStationCode;  // 出站车站编号
+    QDateTime   m_enTime;         // 进站时间
+    QDateTime   m_exTime;         // 出站时间
+    uint        m_updateAmount;   // 票卡更新应收罚金
 
 signals:
 

@@ -1,6 +1,6 @@
 #include "CardReadWidget.h"
 #include "ui_CardReadWidget.h"
-#include "ReaderLib.h"
+#include "NC_ReaderLib.h"
 #include "DataCenter.h"
 #include "MyHelper.h"
 #include "TransactionInfo.h"
@@ -68,7 +68,6 @@ void CardReadWidget::setStyle()
     int screenWidth = mm.width();
     int screenHeight = mm.height();
     this->setFixedSize(screenWidth, screenHeight);
-
 }
 
 void CardReadWidget::onClose()
@@ -89,12 +88,12 @@ void CardReadWidget::onRefundTicket()
 
 void CardReadWidget::readTransactionInfo()
 {
-    // TODO: 读取卡信息: 新的接口暂未提供
-    BYTE  anti = 0x01;
+    BYTE anti = DataCenter::getThis()->getAntiNo();
 
     // 票卡信息获取
     int ret = readTicketInfo(anti);
     if (ret != 0x00) {
+        ui->readerInfoLabel->setText("票卡信息读取失败");
         QString errMsg = DataCenter::getThis()->getReaderErrorStr(ret);
         MyHelper::ShowMessageBoxInfo(QString("票卡信息获取失败[%1]:%2，如有疑问，请联系工作人员。")
                                      .arg(ret).arg(errMsg));
@@ -102,6 +101,7 @@ void CardReadWidget::readTransactionInfo()
         return;
     }
 
+    // 卡历史信息读取限制：排除token票
     int cardType = DataCenter::getThis()->getTicketBasicInfo()->typeNum();
     if (cardType == UL_CARD) {
         initReadState();
@@ -116,28 +116,9 @@ void CardReadWidget::readTransactionInfo()
 
 
     // 票卡交易历史
-    HISTORY_RESP cardHistory = {0};
-    BYTE hisRet = readCardHistory(anti, &cardHistory);
-    if (hisRet == 0x00) {
-        // 交易条数
-        QList<TransactionInfo*> transList;
-        int count = cardHistory.HistoryCount;
-        for (int i = 0; i < count; i++) {
-            CARD_HISTORY item = cardHistory.HistoryInfo[i];
-            // 交易序号 | 交易时间 | 交易金额（分） | 交易类型 | 终端SAM卡号
-            bool ok;
-//            long serialNum = QByteArray((char*)item.TradeSerialNum, 2).toHex().toLong(&ok, 16);
-            QString time = QByteArray((char*)item.TradeDate, 7).toHex();
-            long amount = QByteArray((char*)item.TradeAmount, 4).toHex().toLong(&ok, 16);
-            int type = item.TradeType;
-            QString devCode = QByteArray((char*)item.PsamID, 6).toHex().toUpper();
-
-            transList.append(new TransactionInfo(time, type, amount, devCode));
-        }
-
-        DataCenter::getThis()->setTransInfoList(transList);
-
-    } else {
+    int hisRet = readHistoryTrade(anti);
+    if (hisRet != 0x00) {
+        ui->readerInfoLabel->setText("票卡历史交易信息读取失败");
         QString errMsg = DataCenter::getThis()->getReaderErrorStr(hisRet);
         MyHelper::ShowMessageBoxInfo(QString("票卡历史交易获取失败[%1]:%2，如有疑问，请联系工作人员。")
                                      .arg(hisRet).arg(errMsg));
@@ -155,10 +136,26 @@ void CardReadWidget::readTransactionInfo()
 
 void CardReadWidget::readReregisterInfo()
 {
-    // TODO:
-    // TODO:test.
-    delayMSec(1000);
-    ui->readBtn->setDisabled(false);
+    BYTE anti = DataCenter::getThis()->getAntiNo();
+
+    // 票卡信息获取
+    int ret = readTicketInfo(anti);
+
+//    // TODO: 使用测试数据
+//    ret = 0;
+//    setTestData();
+
+
+    if (ret != 0x00) {
+        ui->readerInfoLabel->setText("票卡信息读取失败");
+        QString errMsg = DataCenter::getThis()->getReaderErrorStr(ret);
+        MyHelper::ShowMessageBoxInfo(QString("票卡信息获取失败[%1]:%2，如有疑问，请联系工作人员。")
+                                     .arg(ret).arg(errMsg));
+        initReadState();
+        return;
+    }
+
+    initReadState();
     ui->readerInfoLabel->setText("票卡读取完成……");
 
     delayMSec(500);
@@ -167,60 +164,114 @@ void CardReadWidget::readReregisterInfo()
     close();
 }
 
+
 BYTE CardReadWidget::readTicketInfo(BYTE anti)
 {
     BYTE zone = DataCenter::getThis()->isPayZone() ? PAY : FREE;
     ANALYSECARD_RESP analyseInfo = {0};
-    BYTE ret = cardAnalyse(anti,zone, &analyseInfo);
+    BYTE ret = cardAnalyse(anti, zone, &analyseInfo);
     if (ret != 0) {
         return ret;
     }
 
-    BYTE type = analyseInfo.ICType;
-    switch(type) {
-    case UL_CARD:
-        break;
-    case METRO_CARD:
-        break;
-    case OCT_CARD:
-        readOCTTicketInfo(type, analyseInfo.CardInfo);
-        break;
-    default:
-        break;
-    }
+    /* 字段解析 ------------*/
+    // 卡类型 | 逻辑卡号 | 发卡时间 | 有效期 | 卡状态 | 旅程状态 | 余额
+    int typeNum = analyseInfo.ticketType;
+    QString type = DataCenter::getThis()->getTicketTypeString(typeNum);
+    QString number = QByteArray((char*)analyseInfo.logicID, 10).toHex().toUpper();
+    QString startDate = QByteArray((char*)analyseInfo.issueStartDate, 4).toHex();
+    QString validDate = QByteArray((char*)analyseInfo.issueOutDate, 4).toHex();
+
+    int state = analyseInfo.ticketStatus;
+    int tripState = analyseInfo.ticketStatus;   // TODO:旅程状态待定
+    bool ok;
+    long balance = QByteArray((char*)analyseInfo.balance, 4).toHex().toLong(&ok, 16);
+
+    // 允许更新 | 卡扣更新 | 更新类型 | 应收费用
+    bool isAllowUpdate = analyseInfo.isAllowUpdate;
+    bool isAllowOctPay = analyseInfo.isAllowOctPay;
+    int updateType = analyseInfo.UpdateType;
+    uint amount = analyseInfo.UpdateAmount;
+
+    // 进站车站 | 进站时间 | 出站车站 | 出站时间
+    QString enStation = QByteArray((char*)analyseInfo.lastEnrtyStation, 2).toHex().toUpper();
+    QString exStation = QByteArray((char*)analyseInfo.lastExitStation, 2).toHex().toUpper();
+    QString enTime = QByteArray((char*)analyseInfo.lastEntryTime, 7).toHex();
+    QString exTime = QByteArray((char*)analyseInfo.lastExitTime, 7).toHex();
+
+    TicketBasicInfo* ticket = new TicketBasicInfo(
+                typeNum, type, number, startDate, validDate, state, tripState, balance);
+    ticket->setIsAllowOctPay(isAllowOctPay);
+    ticket->setIsAllowUpdate(isAllowUpdate);
+    ticket->setUpdateType(updateType);
+    ticket->setEnStationCode(enStation);
+    ticket->setEnTime(enTime);
+    ticket->setExStationCode(exStation);
+    ticket->setExTime(exTime);
+    ticket->setUpdateAmount(amount);
+
+    DataCenter::getThis()->setTicketBasicInfo(ticket);
 
     return ret;
 }
 
-//void CardReadWidget::readULTicketInfo(BYTE* array)
-//{
-//    ULAnalyseOut *getByte = (ULAnalyseOut*)array;
-
-//}
-
-//void CardReadWidget::readMetroTicketInfo(BYTE* array)
-//{
-
-//}
-
-void CardReadWidget::readOCTTicketInfo(BYTE cardType, BYTE* array)
+BYTE CardReadWidget::readHistoryTrade(BYTE anti)
 {
-    OCTAnalyseOut* info = (OCTAnalyseOut*)array;
-    // 卡类型 | 逻辑卡号 | 发卡时间 | 有效期 | 卡状态 | 旅程状态 | 余额
-    QString type = DataCenter::getThis()->getTicketTypeString(UL_CARD);
-    QString number = QByteArray((char*)info->logicID, 8).toHex().toUpper();
-    QString startDate = QByteArray((char*)info->appStartDate, 4).toHex();
-    QString validDate = QByteArray((char*)info->appAvailDate, 4).toHex();
+    HISTORY_RESP cardHistory = {0};
+    BYTE hisRet = readCardHistory(anti, &cardHistory);
+    if (hisRet != 0x00) {
+        return hisRet;
+    }
 
-    int state = info->StatusFlag;
-    int tripState = info->StatusFlag;   // TODO:旅程状态待定
-    bool ok;
-    long balance = QByteArray((char*)info->balance, 4).toHex().toLong(&ok, 16);
+    // 交易条数
+    QList<TransactionInfo*> transList;
+    int count = cardHistory.HistoryCount;
+    for (int i = 0; i < count; i++) {
+        CARD_HISTORY item = cardHistory.HistoryInfo[i];
+        // 交易时间 | 交易金额（分） | 交易类型 | 终端SAM卡号
+        bool ok;
+        QString time = QByteArray((char*)item.TradeDate, 7).toHex();
+        long amount = QByteArray((char*)item.TradeAmount, 4).toHex().toLong(&ok, 16);
+        int type = item.TradeType;
+        QString devCode = QByteArray((char*)item.PsamID, 6).toHex().toUpper();
 
+        transList.append(new TransactionInfo(time, type, amount, devCode));
+    }
+
+    DataCenter::getThis()->setTransInfoList(transList);
+}
+
+void CardReadWidget::setTestData()
+{
     TicketBasicInfo* ticket = new TicketBasicInfo(
-                cardType, type, number, startDate, validDate, state, tripState, balance);
+                UL_CARD, "临时卡", "30010088562007", "20200901", "20231001", 1, 1, 500);
+    ticket->setIsAllowOctPay(false);
+    ticket->setIsAllowUpdate(true);
+    ticket->setUpdateType(FARE_EN);
+    ticket->setEnStationCode("0203");
+    ticket->setEnTime("20211115212305");
+    ticket->setExStationCode("0306");
+    ticket->setExTime("20211115212606");
+    ticket->setUpdateAmount(3);
 
     DataCenter::getThis()->setTicketBasicInfo(ticket);
+
+
+//    QList<TransactionInfo*> transList;
+//    int count = cardHistory.HistoryCount;
+//    for (int i = 0; i < count; i++) {
+//        CARD_HISTORY item = cardHistory.HistoryInfo[i];
+//        // 交易时间 | 交易金额（分） | 交易类型 | 终端SAM卡号
+//        bool ok;
+//        QString time = QByteArray((char*)item.TradeDate, 7).toHex();
+//        long amount = QByteArray((char*)item.TradeAmount, 4).toHex().toLong(&ok, 16);
+//        int type = item.TradeType;
+//        QString devCode = QByteArray((char*)item.PsamID, 6).toHex().toUpper();
+
+//        transList.append(new TransactionInfo(time, type, amount, devCode));
+//    }
+
+//    DataCenter::getThis()->setTransInfoList(transList);
 }
 
 

@@ -16,6 +16,7 @@ class InquiryMainWidget;
 class QNChatMessage;
 class AsrResult;
 class AsrConfig;
+class ISMWaiting;
 class InquiryMainWidget : public WidgetBase
 {
     Q_OBJECT
@@ -64,6 +65,8 @@ private:
     QString         m_sessionId;    // 会话Id
 
     bool            m_asrOk;
+
+    ISMWaiting*     m_waiting;    // 等待窗口
 
 private:
     Ui::InquiryMainWidget *ui;

@@ -46,6 +46,9 @@ void TicketMainWidget::onBtn(int btnId)
 
 void TicketMainWidget::onDataOk(int widgetId)
 {
+    if (widgetId < 0) {
+        return;
+    }
     WidgetMng::getThis()->showWidget(widgetId);
 }
 
@@ -54,7 +57,7 @@ void TicketMainWidget::init()
     ui->purchaseBtn->setText("单程票购买");
     ui->refundBtn->setText("单程票退款");
     ui->queryBtn->setText("票卡查询");
-    ui->reregisterBtn->setText("票卡补登");
+    ui->reregisterBtn->setText("票卡更新");
 
     ui->purchaseBtn->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     ui->refundBtn->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);

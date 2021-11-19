@@ -5,13 +5,17 @@
 #include <QThread>
 #include <QTimer>
 
+class TimerThread;
 class AsyncTimer : public QObject
 {
     Q_OBJECT
 public:
-    explicit AsyncTimer(int msec=1000, QObject *parent = nullptr);
+    explicit AsyncTimer(QObject *parent = nullptr);
     virtual ~AsyncTimer();
 
+    void startTimer(int msec = 1000);
+    void pauseTimer();
+    void resumeTimer();
     void stopTimer();
 
 protected:
@@ -20,9 +24,10 @@ protected:
 protected slots:
     virtual void run() = 0;
 
-private:
-    QThread thread;
+protected:
+    QThread* thread;
     QTimer* timer;
+    bool pauseFlag;
 
 signals:
     void stop();

@@ -41,6 +41,7 @@
 #include "SettingCenter.h"
 #include "LoginDlg.h"
 #include "LogoutDlg.h"
+#include "TestWidget.h"
 
 ISMFrame::ISMFrame(QWidget *parent) :
     QFrame(parent),
@@ -116,6 +117,7 @@ void ISMFrame::initWgt()
 {
     //# 页面管理员
     new WidgetMng();
+    DataCenter::getThis();
 
     //# 固定页面
     TitleBar* titleBar = new TitleBar(this);
@@ -127,6 +129,8 @@ void ISMFrame::initWgt()
     QHBoxLayout *layoutWnd = new QHBoxLayout();
     layoutWnd->setSpacing(0);
     layoutWnd->setMargin(0);
+
+//    registerWidget(layoutWnd, new TestWidget(this), TEST_DLG, true);
 
     registerWidget(layoutWnd, new MainWidget(this), MAIN_DLG, true);
     registerWidget(layoutWnd, new TicketMainWidget(this), CARD_DLG, false);
@@ -166,8 +170,11 @@ void ISMFrame::initWgt()
     //# 初始显示状态
     titleBar->show();
     WidgetMng::getThis()->showWidget(MAIN_DLG);
-    statusBar->show();
 
+    // test
+//    WidgetMng::getThis()->showWidget(TEST_DLG);
+
+    statusBar->show();
 
     m_loginDlg = new LoginDlg();
     connect(m_loginDlg, &LoginDlg::loginOk, this, &ISMFrame::show);

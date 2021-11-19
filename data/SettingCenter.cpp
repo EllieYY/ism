@@ -34,6 +34,50 @@ SettingCenter *SettingCenter::getThis()
     return m_pInstance;
 }
 
+
+// 交易序列号
+void SettingCenter::saveTradeSerial(int serial)
+{
+    QJsonObject rootObject;
+
+    rootObject.insert("datetime", QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"));
+    rootObject.insert("serialNo", serial);
+
+    saveJsonFile(rootObject, "tradeSerial.json");
+}
+
+int SettingCenter::getTradeSerial()
+{
+    int tradeSerial = 1;
+    QJsonDocument jsonDocument = readJsonFile("tradeSerial.json");
+    if (jsonDocument.isNull() || jsonDocument.isEmpty()) {
+        return tradeSerial;
+    }
+    QJsonObject rootObject = jsonDocument.object();
+    QList<LineInfo *> lines;
+    if(!rootObject.contains("datetime") || !rootObject.value("datetime").isString() ||
+            !rootObject.contains("serialNo"))
+    {
+        qDebug() << "No target value";
+        qDebug() << rootObject.keys();
+        return tradeSerial;
+    }
+
+    QString timeStr = rootObject.value("datetime").toString();
+    QDate dDate = QDateTime::fromString(timeStr, "yyyy-MM-dd HH:mm:ss").date();
+    QDate curDate = QDate::currentDate();
+
+    // 非当天记录
+    if (dDate.daysTo(curDate) > 0) {
+        return tradeSerial;
+    }
+
+    tradeSerial = rootObject.value("serialNo").toInt();
+    return tradeSerial;
+}
+
+
+// 线路基本信息
 void SettingCenter::saveLineBasicInfo(QList<LineInfo *> lines)
 {
     QJsonArray jsonArray;

@@ -19,6 +19,10 @@ public:
     static SettingCenter* m_pInstance;
 
 public:
+    // 交易序列号
+    void saveTradeSerial(int serial);
+    int getTradeSerial();
+
     // 线路基础信息
     void saveLineBasicInfo(QList<LineInfo*> lines);
     QList<LineInfo*> getLineBasicInfo();

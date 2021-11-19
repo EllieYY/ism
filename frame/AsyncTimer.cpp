@@ -1,21 +1,24 @@
 #include "AsyncTimer.h"
-
+#include "TimerThread.h"
+#include <QDebug>
 /**
  * @brief AsyncTimer::AsyncTimer
  * 建立线程，定时器
  * @param msec  超时时间
  * @param parent  父节点
  */
-AsyncTimer::AsyncTimer(int msec, QObject *parent) : QObject(parent)
+AsyncTimer::AsyncTimer(QObject *parent) : QObject(parent)
 {
     timer = new QTimer();
-    timer->setInterval(msec);
-    timer->moveToThread(&thread);
+    thread = new QThread(this);
+
     connect(timer, SIGNAL(timeout()), this, SLOT(run()), Qt::DirectConnection);
-    connect(&thread, &QThread::finished, timer, &QTimer::deleteLater);
-    connect(&thread, SIGNAL(started()), timer, SLOT(start()));
+    connect(thread, &QThread::finished, timer, &QTimer::deleteLater);
+    connect(thread, SIGNAL(started()), timer, SLOT(start()));
     connect(this, &AsyncTimer::stop, timer, &QTimer::stop);
-    thread.start();
+
+    timer->moveToThread(thread);
+    pauseFlag = false;
 }
 
 /**
@@ -27,9 +30,31 @@ AsyncTimer::~AsyncTimer()
     waitForQuit();
 }
 
+void AsyncTimer::startTimer(int msec)
+{
+    if (!thread->isRunning()) {
+        timer->setInterval(msec);
+        thread->start();
+    }
+}
+
+void AsyncTimer::pauseTimer()
+{
+    pauseFlag = true;
+}
+
+void AsyncTimer::resumeTimer()
+{
+    pauseFlag = false;
+}
+
 void AsyncTimer::stopTimer()
 {
-    emit stop();
+    if (thread->isRunning())
+    {
+        thread->quit();
+        thread->wait();
+    }
 }
 
 /**
@@ -39,6 +64,8 @@ void AsyncTimer::stopTimer()
  */
 void AsyncTimer::waitForQuit()
 {
-    thread.quit();
-    thread.wait();
+//    timer->deleteLater();
+    thread->quit();
+    thread->wait();
 }
+

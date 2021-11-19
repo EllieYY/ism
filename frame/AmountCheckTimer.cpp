@@ -1,16 +1,14 @@
 #include "AmountCheckTimer.h"
+#include <QDebug>
+#include <QDateTime>
+#include "BIM2020.h"
 
+#define MIN_5 5*60
 
-//TestTimer timer;
-//TestTimer::connect(&timer, &TestTimer::statusChanged, [=] (int result) {
-//    qDebug() << "task result : " << result <<  " in thread : " << QThread::currentThreadId();
-//});
-
-
-AmountCheckTimer::AmountCheckTimer(int msec, QObject *parent)
-    : AsyncTimer(msec, parent)
+AmountCheckTimer::AmountCheckTimer(QObject *parent)
+    : AsyncTimer(parent)
 {
-
+    m_startTime = -1;
 }
 
 AmountCheckTimer::~AmountCheckTimer()
@@ -24,12 +22,33 @@ AmountCheckTimer::~AmountCheckTimer()
 
 void AmountCheckTimer::run()
 {
+    long currentTime = QDateTime::currentSecsSinceEpoch();
+    if (m_startTime < 0) {
+        m_startTime = currentTime;
+    }
 
-    // 调用
+    if (!pauseFlag) {
+        m_startTime = currentTime;
+        return;
+    }
+    long diff = currentTime - m_startTime;
 
-    // to do ...
-//    qDebug() << "do task in thread : " << QThread::currentThreadId();
-    QThread::msleep(1000);  // 模拟do somthing
+    // 投币完成检测
+    int bankNoteCount = 0;
+    int coinCount = 0;
+    int ret = CheckCoinStatus(&bankNoteCount, &coinCount);
+    if (ret == 0) {
+        m_startTime = -1;
+        emit receiveOk(bankNoteCount, coinCount);
+    }
 
-    emit statusChanged(0);  // 处理完毕，返回结果
+    // 超时：调用停止投币接口
+    if (diff > MIN_5) {
+        int bankNotes = 0;
+        int coins = 0;
+        StopPutCoin(&bankNotes, &coins);
+
+        m_startTime = -1;
+        emit timeoutReceive(bankNotes, coins);
+    }
 }

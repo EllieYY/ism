@@ -9,6 +9,7 @@ namespace Ui {
 class CompensationFareWidget;
 }
 
+class AmountCheckTimer;
 class CompensationFareWidget : public QWidget
 {
     Q_OBJECT
@@ -18,12 +19,7 @@ public:
     explicit CompensationFareWidget(QWidget *parent = nullptr);
     ~CompensationFareWidget();
 
-    void secEvent();
-
-    void getFare(double difference, uchar devState);
-    void setAmout(double amout);
-
-    void initShow();
+    void initShow(int difference, uchar devState);
 
 signals:
     void stopPaying();
@@ -32,44 +28,31 @@ signals:
 
 private:
     void init();
-    void initDevice();          // 设备初始化
     void setStyle();
 
-    void deviceCheck();         // 投币检测
-    void specieReturnCheck();   // 硬币退币检测
+    void activePaying();                            // 启用投币
+    void startPaying();                             // 开始投币
+    void continuePaying();                          // 继续投币
+    void amountCheck();                             // 投币金额检查
+    void onStopPaying();                            // 手动停止投币
+    void onReturnMoney();                           // 退币
+    void onAmountConfirm(int banknotes, int coins); // 投币金额确认
 
-    bool deviceOpen();          // 投币闸门打开
-    bool deviceClose();         // 投币闸门关闭
-
-    void deviceStateShow();     // 设备在线状态显示
-    int requestBanknotesIn();   // 查询接收到的纸币金额
-
-    void onAmountConfirm();     // 投币金额确认
-    void onReturnMoney();       // 手动退币
-
-    void onStopPaying();        // 停止投币
-    bool onChange(int amount);   // 找零
+    void deviceStateShow();                         // 设备在线状态显示
+    void showInfo(QString info);                    // 操作信息显示
 
 private:
+    /* 操作参数 */
     int        m_difference;            // 需补足的差额
-    int        m_amount;                // 投币金额
-    int        m_banknotesAmount;       // 收到的纸币金额
-    int        m_specieAmount;          // 收到的硬币金额
-    int        m_reSpecieAmount;        // 待退回的硬币金额
-    int        m_initSpecieAmount;      // 找零开始时，硬币器中余额
-    bool       m_startPaying;           // 开始投币
-    bool       m_isSpecieReturn;        // 硬币找零 or退币
-    int        m_sReturnRetryCnt;        // 硬币余额读取重试次数
+    int        m_income;                // 投币金额
 
-    bool       m_successFlag;           // 操作成功标记
+    /* 设备状态 */
+    bool       m_isBanknotesOn;         // 纸币模块状态
+    bool       m_isSpecieOn;            // 硬币模块状态
 
-    // 阀门打开重试次数
-    int        m_sDoorOpenCount;           // 硬币
-    int        m_bDoorOpenCount;           // 纸币
+    int        m_payingState;           // 0-开始投币   1-继续投币   2-停止投币
 
-    bool       m_isBanknotesOn;            // 纸币模块状态
-    bool       m_isBanknotesReturnOn;      // 纸币找零模块状态
-    bool       m_isSpecieOn;               // 硬币模块状态
+    AmountCheckTimer*  m_timer;
 
 private:
     Ui::CompensationFareWidget *ui;

@@ -3,6 +3,8 @@
 
 #include <QWidget>
 #include "WidgetBase.h"
+#include "logger.h"
+#include "propertyconfigurator.h"
 
 namespace Ui {
 class TicketReregisterWidget;
@@ -12,12 +14,10 @@ class CompensationFareWidget;
 class TicketReregisterWidget : public WidgetBase
 {
     Q_OBJECT
-
+    LOG4QT_DECLARE_QCLASS_LOGGER
 public:
     explicit TicketReregisterWidget(QWidget *parent = nullptr);
     ~TicketReregisterWidget();
-
-    void secEvent();
 
 private:
     bool showData();
@@ -32,14 +32,26 @@ private:
 
     void onUpdateTicket();          // 票卡更新
     void cashSupplementary();       // 现金补票
+    void onCalcFare();                // 费用计算
 
     void onSupplementaryOk(bool result);    //  补票结果返回
+
+    // 现金交易文件
+    void writeTradeFile(BYTE icType, BYTE* data);
+
 
 private:
     int m_curBtn;               // 0-en  1-ex
     int m_updateType;           // 更新类型
+    int m_ticketType;           // 票卡类型
     CompensationFareWidget* m_fareWidget;       // 补差额窗口
-    double  m_difference;       // 代补差价
+    double  m_difference;       // 待补差价
+
+    QString  m_enStationCode;   // 进站站点编号
+    QString  m_exStationCode;   // 出站站点编号
+    bool m_isAllowOctPay;       // 是否支持卡内扣费
+    float m_banlance;           // 余额
+    BYTE m_payType;             // 支付方式
 
 signals:
     void selectStation();    // 选择车站

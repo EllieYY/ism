@@ -2,6 +2,8 @@
 #define LOGINDLG_H
 
 #include <QWidget>
+#include "logger.h"
+#include "propertyconfigurator.h"
 
 namespace Ui {
 class LoginDlg;
@@ -10,6 +12,7 @@ class LoginDlg;
 class LoginDlg : public QWidget
 {
     Q_OBJECT
+    LOG4QT_DECLARE_QCLASS_LOGGER
 
 public:
     explicit LoginDlg(QWidget *parent = nullptr);

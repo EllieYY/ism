@@ -65,7 +65,7 @@
         <item>
          <widget class="QLabel" name="nameLabel">
           <property name="text">
-           <string>票卡补登</string>
+           <string>票卡更新</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -343,6 +343,28 @@ border-radius: 3px;
                 </widget>
                </item>
                <item row="0" column="4">
+                <spacer name="horizontalSpacer_6">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>13</width>
+                   <height>17</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item row="0" column="6" colspan="2">
+                <widget class="QLineEdit" name="lineEdit3"/>
+               </item>
+               <item row="3" column="1">
+                <widget class="QLineEdit" name="lineEdit6"/>
+               </item>
+               <item row="2" column="1" colspan="7">
+                <widget class="QLineEdit" name="lineEdit5"/>
+               </item>
+               <item row="0" column="5">
                 <widget class="QLabel" name="text3">
                  <property name="text">
                   <string>出站时间：</string>
@@ -356,62 +378,10 @@ border-radius: 3px;
                  </property>
                 </widget>
                </item>
-               <item row="1" column="1">
-                <widget class="QLineEdit" name="lineEdit2"/>
-               </item>
-               <item row="1" column="2">
-                <widget class="QPushButton" name="selectBtn2">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string>选择车站</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="3">
-                <spacer name="horizontalSpacer_7">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>13</width>
-                   <height>17</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item row="1" column="4">
+               <item row="1" column="5">
                 <widget class="QLabel" name="text4">
                  <property name="text">
                   <string>出站车站：</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="5">
-                <widget class="QLineEdit" name="lineEdit4"/>
-               </item>
-               <item row="1" column="6">
-                <widget class="QPushButton" name="selectBtn3">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string>选择车站</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="0">
-                <widget class="QLabel" name="text5">
-                 <property name="text">
-                  <string>补票原因：</string>
                  </property>
                 </widget>
                </item>
@@ -422,34 +392,8 @@ border-radius: 3px;
                  </property>
                 </widget>
                </item>
-               <item row="3" column="1">
-                <widget class="QLineEdit" name="lineEdit6"/>
-               </item>
-               <item row="3" column="2">
-                <widget class="QLabel" name="text7">
-                 <property name="text">
-                  <string>元</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="3" column="3" colspan="2">
-                <spacer name="horizontalSpacer_8">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item row="2" column="1" colspan="6">
-                <widget class="QLineEdit" name="lineEdit5"/>
-               </item>
-               <item row="0" column="3">
-                <spacer name="horizontalSpacer_6">
+               <item row="1" column="4">
+                <spacer name="horizontalSpacer_7">
                  <property name="orientation">
                   <enum>Qt::Horizontal</enum>
                  </property>
@@ -464,8 +408,71 @@ border-radius: 3px;
                <item row="0" column="1" colspan="2">
                 <widget class="QLineEdit" name="lineEdit1"/>
                </item>
-               <item row="0" column="5" colspan="2">
-                <widget class="QLineEdit" name="lineEdit3"/>
+               <item row="1" column="7">
+                <widget class="QPushButton" name="selectBtn3">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>选择车站</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="6">
+                <widget class="QLineEdit" name="lineEdit4"/>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="text5">
+                 <property name="text">
+                  <string>补票原因：</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="2">
+                <widget class="QLabel" name="text7">
+                 <property name="text">
+                  <string>元</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="2">
+                <widget class="QPushButton" name="selectBtn2">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>选择车站</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QLineEdit" name="lineEdit2"/>
+               </item>
+               <item row="3" column="6">
+                <spacer name="horizontalSpacer_8">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item row="3" column="5">
+                <widget class="QPushButton" name="calcFareBtn">
+                 <property name="text">
+                  <string>费用计算</string>
+                 </property>
+                </widget>
                </item>
               </layout>
              </item>

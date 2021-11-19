@@ -18,7 +18,8 @@ class ReregisterInfo;
 class QRCodeInfo;
 class BasicInfo;
 class LoginInfo;
-
+class HeartTimer;
+class AFCTaskThread;
 
 // 各节点心跳ID
 typedef enum
@@ -55,13 +56,17 @@ public:
     // 钱箱状态获取 0-故障 1-硬币 2-纸币 3-硬币纸币均可
     BYTE getCashboxState();
 
-    // 站点名称
+    // 站点信息
     QString getStationName() const;
     QString getStationCode() const;
     bool    isPayZone() const;
+    QString stationCode2Name(QString code) const;
+    int getTradeSerial();   // 交易序列号
+    int getStationMode();   // 车站模式
 
     // 设备id
     QString getDeviceId() const;
+    int getAntiNo() const;
 
     // 线路列表
     QList<LineInfo *> getLineList() const;
@@ -87,7 +92,6 @@ public:
     void setReregisterInfo(ReregisterInfo *reregisterInfo);
     QList<QTableWidgetItem*> getRegisterItems(ReregisterInfo *ticketInfo);
 
-
     // 线路站点信息
     QList<LineStations *> getLineStations() const;
     void setLineStations(const QList<LineStations *> &lineStations);
@@ -102,9 +106,9 @@ public:
 
     // 定义与文字转换
     QString getTicketTypeString(int type);
-    QString getReregisterTypeString(int type);
     QString getTicketStateString(int type);
     QString getTradeTypeString(int type);
+    QString getUpdateTypeString(int type);
 
     // 签到信息记录
     LoginInfo *getLoginInfo() const;
@@ -112,6 +116,7 @@ public:
     void setLoginData(QString user, QString pwd);
     bool setLogoutData(QString user, QString pwd);
     bool localAuthentication(QString user, QString pwd);
+    QString getOperatorId();
 
     // 读写器错误提示
     QString getReaderErrorStr(BYTE errorCode);
@@ -126,9 +131,11 @@ private:
 
     void setHrtOffData(int idx);        // 掉线处理
 
+public:
     void samInfo2afc();                 // 上传SAM卡号
-    void afcHeart();
+    void afcHeart(bool onlineFlag);
     void deviceState2afc();             // 设备状态上报
+    void param2afc();                   // 参数上报
 
 private:
     int m_serviceState;                         // 服务状态 0-正常 1-异常 2-暂停
@@ -157,10 +164,15 @@ private:
     QHash<BYTE, QString>  m_readerErrCodeMap;   // 读写器错误码
 
     long m_hrtCnt[5];      // 心跳计数
+    long m_tradeSerial;    // 交易序列号
+    QHash<QString, QString> m_stationCodeMap;     // <code, name>
+
+    HeartTimer*  m_timer;    // 心跳检测异步线程
+    AFCTaskThread* m_taskThread;
+
 
 signals:
     void lineReceived();
-    void afcHeartDetect();      // AFC心跳 -- 异步
 
 };
 

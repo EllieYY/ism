@@ -9,6 +9,7 @@
 #include "AsrConfig.h"
 #include "DataCenter.h"
 #include "MyHelper.h"
+#include "ISMWaiting.h"
 
 InquiryMainWidget::InquiryMainWidget(QWidget *parent) :
     WidgetBase(parent),
@@ -143,6 +144,7 @@ void InquiryMainWidget::onAnswerShow(QString answer)
 // 语音转文字结果处理
 void InquiryMainWidget::onAsrResultShow(QString text)
 {
+    m_waiting->close();
     // 对于识别结果不好的，进行提示
     if (text.isEmpty()) {
         MyHelper::ShowMessageBoxInfo("语音识别效果不好，请您再说一遍。");
@@ -191,6 +193,10 @@ void InquiryMainWidget::onStopVoice()
     m_bufDevice.close();
     ui->voice->setChecked(false);
     m_isAudio = false;
+
+    // 开启等待窗口
+    m_waiting = new ISMWaiting();
+    m_waiting->show();
 }
 
 void InquiryMainWidget::handleStateChanged(QAudio::State newState)

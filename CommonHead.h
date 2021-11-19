@@ -57,7 +57,8 @@ typedef enum
     PRICE_DLG,                  //# 票价信息
     TRANSFER_DLG,               //# 换乘查询
     TIME_DLG,                   //# 时刻表
-    PERIPHERY_DLG               //# 地铁周边
+    PERIPHERY_DLG,              //# 地铁周边
+    TEST_DLG                    //# 测试页面
 }EN_WGT_ID;
 
 
@@ -81,17 +82,18 @@ typedef enum
 
 typedef enum
 {
-    NONE_TYPE            = 0,                    //# 无需更新
-    EN_LACK              = 1,                    //# 进站更新
-    EX_LACK              = 2,                    //# 出站更新
-    OVERTIME             = 3,                    //# 超时更新
+    NONE_TYPE            = 8,                    //# 无需更新
+    FREE_EX              = 1,                    //# 免费出站更新
+    FARE_EX              = 2,                    //# 付费出站更新
+    FARE_EN              = 3,                    //# 进站更新（付费区）
     OVER_TRIP            = 4,                    //# 超程更新
-    OVER_TIME_TRIP       = 5                     //# 超时超程更新
+    OVER_TIME            = 5,                    //# 超时更新
+    OVER_TIME_TRIP       = 6                     //# 超时超程更新
 }REREGISTER_TYPE;
 
 typedef enum
 {
-    UL_CARD              = 0x01,                    //# token票
+    UL_CARD            = 0x01,                    //# token票
     METRO_CARD         = 0x02,                    //# 地铁储值卡
     OCT_CARD           = 0x03,                    //# 洪城一卡通
     UNKONW             = 0x00                     //# 未识别

@@ -17,9 +17,13 @@
 #include "ReregisterInfo.h"
 #include "LoginInfo.h"
 #include "NCNetwork_Lib.h"
-#include "ReaderLib.h"
 #include "MyHelper.h"
 #include "BIM2020.h"
+#include "Station.h"
+#include "LineStations.h"
+#include "NC_ReaderLib.h"
+#include "HeartTimer.h"
+#include "AFCTaskThread.h"
 
 
 static int HRT_NUM = 5;
@@ -38,9 +42,14 @@ DataCenter::~DataCenter()
     SettingCenter::getThis()->saveLineInterchanes(m_lineInterchanges);
     SettingCenter::getThis()->saveLineTimeTables(m_lineTimeTables);
 
-
     // 设备关闭
     closeDevice();
+
+    if (m_taskThread->isRunning())
+    {
+        m_taskThread->quit();
+        m_taskThread->wait();
+    }
 }
 
 DataCenter *DataCenter::getThis()
@@ -50,16 +59,14 @@ DataCenter *DataCenter::getThis()
     return m_pInstance;
 }
 
-// 心跳连接可以在这里处理
+// 心跳连接处理
 void DataCenter::secEvent()
 {
-//    emit afcHeartDetect();
-
     for (int i = 0; i < HRT_NUM; i++) {
         m_hrtCnt[i] = m_hrtCnt[i] + 1;
-        if (m_hrtCnt[i] == 10) {    // 超过10秒未连接则掉线处理
-            setHrtOffData(i);
-        }
+//        if (m_hrtCnt[i] == 1000000000) {    // 超过10秒未连接则掉线处理
+//            setHrtOffData(i);
+//        }
     }
 }
 
@@ -67,7 +74,6 @@ void DataCenter::secEvent()
 void DataCenter::init()
 {
     initData();    // 默认数据
-    connect(this, &DataCenter::afcHeartDetect, this, &DataCenter::afcHeart);
 
     /* 基础信息 */
     logger()->info("基础信息读取");
@@ -97,6 +103,13 @@ void DataCenter::init()
     m_lineList.append(SettingCenter::getThis()->getLineBasicInfo());
     logger()->info("配置文件读取完毕。");
 
+    m_stationCodeMap.clear();
+    for(LineStations* line : m_lineStations) {
+        QList<Station*> stations = line->stationList();
+        for (Station* station : stations) {
+            m_stationCodeMap.insert(station->code(), station->name());
+        }
+    }
 
     // AFC通信库初始化
     QByteArray devByteArray = MyHelper::hexStrToByte(getDeviceId());
@@ -116,10 +129,20 @@ void DataCenter::init()
     getLibVersion(version);
     logger()->info("[getLibVersion]AFC通讯库初始化，获取版本号={%1}", QString(version));
 
+    // TODO:test
+    deviceState2afc();
+    param2afc();
+
+    m_timer = new HeartTimer();
+    connect(m_timer, &HeartTimer::onlineFlag, this, &DataCenter::afcHeart);
+    m_timer->startTimer(1000);
+
+    m_taskThread = new AFCTaskThread(this);
+    m_taskThread->start();
 
 //    emit lineReceived();
 
-    initDevice();
+//    initDevice();
     initReaderErrCode();
 }
 
@@ -135,6 +158,8 @@ void DataCenter::initData()
 
     m_serviceState = 1;
     m_netState = 1;
+
+    m_tradeSerial = SettingCenter::getThis()->getTradeSerial();
 
     // 心跳
     for (int i = 0; i < HRT_NUM; i++) {
@@ -215,6 +240,11 @@ QString DataCenter::getDeviceId() const
     return m_basicInfo->deviceId();
 }
 
+int DataCenter::getAntiNo() const
+{
+    return m_basicInfo->antiNo();
+}
+
 // 票卡更新信息
 ReregisterInfo *DataCenter::getReregisterInfo() const
 {
@@ -284,35 +314,6 @@ QString DataCenter::getTicketTypeString(int type)
     return typeStr;
 }
 
-QString DataCenter::getReregisterTypeString(int type)
-{
-    QString typeStr = "";
-    switch(type) {
-    case NONE_TYPE:
-        typeStr = "无需更新。";
-        break;
-    case EN_LACK:
-        typeStr = "进站站点信息缺失。";
-        break;
-    case EX_LACK:
-        typeStr = "出站站点信息缺失。";
-        break;
-    case OVERTIME:
-        typeStr = "站内停留时间超过规定时长，需补超时费。";
-        break;
-    case OVER_TRIP:
-        typeStr = "旅程费用超过token票支付范围。";
-        break;
-    case OVER_TIME_TRIP:
-        typeStr = "旅程费用超过token票支付范围，且站内停留时间超过规定时长。";
-        break;
-    default:
-        break;
-    }
-    return typeStr;
-
-}
-
 QString DataCenter::getTicketStateString(int type)
 {
     QString typeStr = "未定义卡";
@@ -345,6 +346,37 @@ QString DataCenter::getTradeTypeString(int type)
     }
     return typeStr;
 
+}
+
+QString DataCenter::getUpdateTypeString(int type)
+{
+    QString typeStr = "不可更新";
+    switch(type) {
+    case FREE_EX:   // 免费出站更新
+        typeStr = "免费出站更新";
+        break;
+    case FARE_EX:   // 收费出站更新
+        typeStr = "出站更新";
+        break;
+    case FARE_EN:   // 付费区进站站更新
+        typeStr = "进站更新";
+        break;
+    case OVER_TIME:  // 超时更新
+        typeStr = "超时更新";
+        break;
+    case OVER_TRIP:  // 超程更新
+        typeStr = "超程更新";
+        break;
+    case OVER_TIME_TRIP:   // 超时超程更新
+        typeStr = "超时超程更新";
+        break;
+    case NONE_TYPE:   // 不需要更新
+    default:
+        typeStr = "不可更新";
+        break;
+    }
+
+    return typeStr;
 }
 
 LoginInfo *DataCenter::getLoginInfo() const
@@ -384,6 +416,14 @@ bool DataCenter::localAuthentication(QString user, QString pwd)
     }
     return (user == m_loginInfo->userName()
             && pwd == m_loginInfo->password());
+}
+
+QString DataCenter::getOperatorId()
+{
+    if (m_loginInfo == NULL) {
+        return m_basicInfo->deviceId();
+    }
+    return m_loginInfo->userName();
 }
 
 QString DataCenter::getReaderErrorStr(BYTE errorCode)
@@ -452,23 +492,43 @@ void DataCenter::setHrtOffData(int idx)
     }
 }
 
-void DataCenter::afcHeart()
+void DataCenter::afcHeart(bool onlineFlag)
 {
-    // AFC 心跳
-    BYTE afcHeart = TcpLinkTest();
-    if (afcHeart == 0) {
+    if (onlineFlag) {
         m_hrtCnt[AFC_HRT] = 0;
     }
 }
 
 void DataCenter::deviceState2afc()
 {
-    // 接收储值票 | 接收单程票 | 已登录 | 双向模式 | 出站 | 测试 | 停止服务 | 开
-    BYTE status = 0x31;
+    // （1-0）
+    // 设备状态：
+    // 与SC通信正常 | 停止服务 |测试or生产 | 0(BOM) | 已登录 | 0（不可充值） | 0（） | 开
+    bool afcHear = true;
+    bool test = true;
+    bool isLogin = true;
+
+    BYTE status = 0x15;
     BYTE event = NULL;
     BYTE ret = DeviceState(status, &event);
 
     logger()->info("设备状态上报{}，status=%2, event=%3", ret, status, event);
+}
+
+void DataCenter::param2afc()
+{
+//    paramType：2字节参数类型码；
+//    versionOld：4字节生效前参数版本号，16进制；
+//    versionNew：4字节生效后参数版本号，16进制；
+//    applyTime：7字节参数生效时间，格式YYYYMMDD-hhmmss
+//    立即生效的参数，此处时间填写7字节全0
+    BYTE paramType[] = {0x06, 0x10};
+    BYTE versionOld[4] = {0};
+    BYTE versionNew[4] = {0};
+    BYTE applyTime[4] = {0};
+    BYTE ret = ParamAppliedNotify(paramType, versionOld, versionNew, applyTime);
+    logger()->info("参数应用 = {%1}", ret);
+
 }
 
 
@@ -544,6 +604,7 @@ void DataCenter::setTicketBasicInfo(TicketBasicInfo *ticketInfo)
 {
     m_ticketBasicInfo = ticketInfo;
     WidgetMng::notify(TICKET_BASIC);
+    WidgetMng::notify(TICKET_REREGISTER);
 }
 
 // 车票基本信息格式化
@@ -551,16 +612,21 @@ QList<QTableWidgetItem *> DataCenter::getTicketItems(TicketBasicInfo *info)
 {
     QList<QTableWidgetItem*> itemList;
 
+    // 种类 | 卡号 | 创建时间 | 有效期 | 卡状态 | 余额
     QTableWidgetItem* item1 = new QTableWidgetItem(info->type());
     QTableWidgetItem* item2 = new QTableWidgetItem(info->number());
     QTableWidgetItem* item3 = new QTableWidgetItem(info->createTime().toString("yyyy-MM-dd"));
     QTableWidgetItem* item4 = new QTableWidgetItem(info->validDate().toString("yyyy-MM-dd"));
 
-    // TODO:状态文字
-    QTableWidgetItem* item5 = new QTableWidgetItem(QString("%1").arg(info->cardState()));
-    QTableWidgetItem* item6 = new QTableWidgetItem(QString("%1").arg(info->tripState()));
+    // 卡状态
+    QString ticketStateStr = getTicketStateString(info->cardState());
+    QTableWidgetItem* item5 = new QTableWidgetItem(ticketStateStr);
+    QTableWidgetItem* item6 = new QTableWidgetItem(QString("%1").arg(info->balance(), 0, 'f', 1));
 
-    QTableWidgetItem* item7 = new QTableWidgetItem(QString("%1").arg(info->balance(), 0, 'f', 2));
+//    QTableWidgetItem* item5 = new QTableWidgetItem(getTicketStateString(info->cardState()));
+//    QTableWidgetItem* item6 = new QTableWidgetItem(QString("%1").arg(info->tripState()));
+
+//    QTableWidgetItem* item7 = new QTableWidgetItem(QString("%1").arg(info->balance(), 0, 'f', 2));
 
     itemList.append(item1);
     itemList.append(item2);
@@ -568,7 +634,7 @@ QList<QTableWidgetItem *> DataCenter::getTicketItems(TicketBasicInfo *info)
     itemList.append(item4);
     itemList.append(item5);
     itemList.append(item6);
-    itemList.append(item7);
+//    itemList.append(item7);
 
     return itemList;
 }
@@ -621,6 +687,26 @@ QString DataCenter::getStationCode() const
 bool DataCenter::isPayZone() const
 {
     return m_basicInfo->isPayZone();
+}
+
+QString DataCenter::stationCode2Name(QString code) const
+{
+    return m_stationCodeMap.value(code);
+}
+
+int DataCenter::getTradeSerial()
+{
+    m_tradeSerial++;
+    // 写入文件
+    SettingCenter::getThis()->saveTradeSerial(m_tradeSerial);
+
+    return m_tradeSerial;
+}
+
+int DataCenter::getStationMode()
+{
+    // TODO:默认正常模式-0
+    return 0;
 }
 
 QList<LineInfo *> DataCenter::getLineList() const

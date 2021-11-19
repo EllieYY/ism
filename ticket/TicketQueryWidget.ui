@@ -247,7 +247,7 @@ border-radius: 3px;
             <number>1</number>
            </property>
            <property name="columnCount">
-            <number>7</number>
+            <number>6</number>
            </property>
            <row/>
            <column>
@@ -273,11 +273,6 @@ border-radius: 3px;
            <column>
             <property name="text">
              <string>卡状态</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>旅程状态</string>
             </property>
            </column>
            <column>

@@ -118,11 +118,11 @@ void LogoutDlg::onLogout()
 
     // AFC 签退
     BYTE * operatorID = reinterpret_cast<byte*>(userName.toLocal8Bit().data());
-    BYTE event = 0;          // 带口令登录
+    BYTE event = 0;          // 签退
     BYTE operatorType = 2;   // 维护人员
     BYTE ret = OperatorAction(operatorID, event, operatorType);
     if (ret != 0) {
-        MyHelper::ShowMessageBoxError(QString("登录失败[%1]，请联系工作人员。").arg(ret));
+        MyHelper::ShowMessageBoxError(QString("签退失败[%1]，请联系工作人员。").arg(ret));
         return;
     }
 

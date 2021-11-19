@@ -1,13 +1,10 @@
 #include "CompensationFareWidget.h"
 #include "ui_CompensationFareWidget.h"
 #include "BIM2020.h"
-//#include "F53Board.h"
-//#include "BRCBoard.h"
-
 #include "CommonHead.h"
 #include "MyHelper.h"
+#include "AmountCheckTimer.h"
 
-static int RETRY_TIMES = 3;
 CompensationFareWidget::CompensationFareWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::CompensationFareWidget)
@@ -18,91 +15,178 @@ CompensationFareWidget::CompensationFareWidget(QWidget *parent) :
 
 CompensationFareWidget::~CompensationFareWidget()
 {
-    // 设备关闭
-//    BRC_Close();
-//    BIM_CLOSE();
-//    F53Bill_DisConnect();
-
+    if (m_timer != NULL) {
+        m_timer->stopTimer();
+        delete m_timer;
+        m_timer = NULL;
+    }
     delete ui;
 }
 
-void CompensationFareWidget::secEvent()
+
+void CompensationFareWidget::initShow(int difference, uchar devState)
 {
-    // 投币
-    if (m_startPaying && (m_amount < m_difference)) {
-        deviceCheck();
+    if (difference <= 0) {
+        logger()->info("投币金额为%1，无需投币。", difference);
+        emit supplementaryOk(true);
+        return;
     }
 
-    if (m_reSpecieAmount > 0 && m_isSpecieReturn) {
-        specieReturnCheck();
-    }
-}
+    // 数值转换
+    m_difference = difference;
+    m_isBanknotesOn = devState & 0x02;
+    m_isSpecieOn = devState & 0x01;
 
-
-void CompensationFareWidget::initShow()
-{
-    ui->infoLabel->setText("");
-    ui->listWidget->clear();
+    // 页面显示控制
     ui->endBtn->setText("结束投币");
-//    ui->endBtn->setDisabled(true);
     ui->continueBtn->setText("开始投币");
-    ui->continueBtn->setDisabled(true);
+    ui->infoLabel->setText(QString("请投币%1元。").arg(m_difference));
+    ui->listWidget->clear();
+    deviceStateShow();
+
+    // TODO:
+//    if (devState == 0x00) {
+//        MyHelper::ShowMessageBoxError("硬件设备故障，无法投币，请联系工作人员。");
+//        supplementaryOk(false);
+//        close();
+//        return;
+//    }
+
+    ui->continueBtn->setDisabled(false);
+    ui->endBtn->setDisabled(true);
     ui->returnCashBtn->setDisabled(true);
 
-    m_banknotesAmount = 0;
-    m_specieAmount = 0;
-    m_startPaying = false;
-
-    m_initSpecieAmount = 0;
-    m_reSpecieAmount = 0;
-    m_isSpecieReturn = false;
-    m_sReturnRetryCnt = 0;
-
-    m_successFlag = true;
-
-    deviceStateShow();
     show();
 }
 
 
-void CompensationFareWidget::getFare(double difference, uchar devState)
+
+// 开始投币
+void CompensationFareWidget::startPaying()
 {
-    m_difference = difference;
-    ui->infoLabel->setText(QString("请投币%1元。").arg(m_difference));
-    ui->listWidget->clear();
-
-    if ((m_isBanknotesOn && m_isBanknotesReturnOn) || m_isSpecieOn) {
-        // 打开投币口阀门
-        if (!deviceOpen()) {
-            // 弹窗提示：阀门无法打开，不可用
-            MyHelper::ShowMessageBoxInfo("投币口阀门无法打开，请联系工作人员。");
-            close();
-            return;
-        }
-
-        // 开始纸币、硬币检测
-        m_startPaying = true;
-
-        ui->endBtn->setText("结束投币");
-        ui->endBtn->setDisabled(false);
-        ui->listWidget->insertItem(0, "阀门已打开，请开始投币。");
-    } else {
-        ui->continueBtn->setDisabled(true);
-        ui->endBtn->setDisabled(true);
-        ui->endBtn->setText("结束投币");
-
-        // 弹窗提示当前不可用
-        MyHelper::ShowMessageBoxInfo("钱币接收设备无法使用，请联系工作人员。");
+    int ret = StartPutCoin(m_difference);
+    if (ret == 3) {
+        logger()->error("[StartPutCoin]开始投币={%1}", ret);
+        MyHelper::ShowMessageBoxError("投币模块故障，暂时无法使用，请联系工作人员解决。");
+        emit supplementaryOk(false);
         close();
+        return;
+    } else if (ret == 1) {
+        QString amountStr = ui->infoLabel->text();
+        ui->infoLabel->setText(amountStr + "当前只支持投入硬币");
+    } else if (ret == 2) {
+        QString amountStr = ui->infoLabel->text();
+        ui->infoLabel->setText(amountStr + "当前只支持投入纸币");
+    }
+
+    ui->listWidget->insertItem(0, "请开始投币。");
+    m_timer->startTimer(350);
+    m_payingState = 0;
+    ui->continueBtn->setDisabled(true);
+    ui->endBtn->setDisabled(false);
+}
+
+
+// 继续投币
+void CompensationFareWidget::continuePaying()
+{
+    m_timer->resumeTimer();
+}
+
+
+// 结束投币
+void CompensationFareWidget::onStopPaying()
+{
+    if (m_payingState == 0) {
+        m_payingState = 1;
+    }
+    // 暂停检测
+    m_timer->pauseTimer();
+
+    // 结束硬件投币
+    int banknotes = 0;
+    int coins = 0;
+    int ret = StopPutCoin(&banknotes, &coins);
+//    ui->listWidget->insertItem(0, "");
+
+    onAmountConfirm(banknotes, coins);
+}
+
+void CompensationFareWidget::onAmountConfirm(int banknotes, int coins)
+{
+    m_timer->stopTimer();
+    ui->listWidget->insertItem(0, "结束投币，请确认投币金额。");
+
+    // 计算已投入金额
+    int banknotesAmount = banknotes > 0 ? banknotes : 0;
+    int coinsAmount = coins > 0 ? coins : 0;
+    int amount = banknotesAmount + coinsAmount;
+
+    // 金额不足提醒继续投币or退币放弃，金额超出则找零
+    if (amount < m_difference) {
+        QString info = QString("已投币金额%1元，不足以支付票卡更新费用（%2元），请继续投币或手动退币放弃更新。")
+                .arg(amount).arg(m_difference);
+        MyHelper::ShowMessageBoxInfo(info);
+        ui->continueBtn->setText("继续投币");
+        ui->continueBtn->setDisabled(false);
+        ui->endBtn->setDisabled(true);
+        ui->returnCashBtn->setDisabled(false);
         return;
     }
 
+    m_payingState = 2;
+
+    // 无需继续投币
+    ui->continueBtn->setText(" 开始投币");
+    ui->continueBtn->setDisabled(true);
+    ui->endBtn->setDisabled(true);
+    ui->returnCashBtn->setDisabled(false);
+
+    // 金额提示及找零
+    int changeAmount = amount > m_difference ? (amount - m_difference) : 0;
+    QString info = QString("已投入纸币%1元，投入硬币%2元，无需找零，请确认！如有疑问，可手动退币或找人工客服解决。").arg(banknotes).arg(coins);
+    if (changeAmount > 0) {
+        info = QString("已投入纸币%1元，投入硬币%2元，应找零%3元，请确认！如有疑问，可手动退币或找人工客服解决。").arg(banknotes).arg(coins).arg(changeAmount);
+    }
+    int ret = MyHelper::ShowMessageBoxQuesion(info);
+    if (ret != 0) {
+        return;
+    }
+
+    // 找零
+    if (changeAmount > 0) {
+        int billMoney = 0;
+        int coinMoney = 0;
+        int changeRet = ChanceCoin(changeAmount, &billMoney, &coinMoney);
+        if (changeRet != 0) {
+            MyHelper::ShowMessageBoxError("钱箱余额不足，无法找零，请保留找零凭证，联系工作人员找零或手动退币。");
+            return;
+        }
+    }
+
+    // 钱箱收钱
+    ResultOperate(1);
+    emit supplementaryOk(true);
+    close();
 }
+
+
+// 退币
+void CompensationFareWidget::onReturnMoney()
+{
+    int ret = ResultOperate(0);
+    if (ret != 0) {
+        MyHelper::ShowMessageBoxError(QString("退币失败{%1}，请联系工作人员处理。").arg(ret));
+    }
+
+    emit supplementaryOk(false);
+    close();
+}
+
 
 void CompensationFareWidget::init()
 {
     setStyle();
-    initDevice();
 
     // 设置非互斥
     QButtonGroup* group = new QButtonGroup(this);
@@ -114,341 +198,34 @@ void CompensationFareWidget::init()
     ui->bimRadioBtn->setDisabled(true);
     ui->brcRadioBtn->setDisabled(true);
     ui->f53RadioBtn->setDisabled(true);
-    connect(ui->endBtn, &QPushButton::clicked, this, &CompensationFareWidget::onAmountConfirm);
-    connect(ui->endBtn, &QPushButton::clicked, this, &CompensationFareWidget::onReturnMoney);
 
-    m_difference = 0.0;
-    m_amount = 0.0;
-    m_startPaying = false;
+    connect(ui->continueBtn, &QPushButton::clicked, this, &CompensationFareWidget::activePaying);
+    connect(ui->endBtn, &QPushButton::clicked, this, &CompensationFareWidget::onStopPaying);
+    connect(ui->returnCashBtn, &QPushButton::clicked, this, &CompensationFareWidget::onReturnMoney);
 
-    connect(this, &CompensationFareWidget::stopPaying, this, &CompensationFareWidget::onStopPaying);
-    connect(this, &CompensationFareWidget:: change, this, &CompensationFareWidget::onChange);
+    m_payingState = 2;
+    m_timer = new AmountCheckTimer();
+    connect(m_timer, &AmountCheckTimer::receiveOk, this, &CompensationFareWidget::stopPaying);
+    connect(m_timer, &AmountCheckTimer::timeoutReceive, this, &CompensationFareWidget::stopPaying);
 }
 
-void CompensationFareWidget::initDevice()
-{
-    // 打开设备
-//    //# 硬币
-//    int retBRC = BRC_Connect(3);
-//    logger()->info("硬币模块串口：{%1}，硬币模块自检：{%2}", retBRC, Perform_Self_Check());
-
-//    //# 纸币
-//    int retBIM = BIM_Connect(3);
-//    logger()->info("纸币模块串口：{%1}，纸币模块自检：{%2}", retBIM, BIM_Initial());
-
-//    //# 纸币找零
-//    int retF53 = F53Bill_Connect(3);
-//    logger()->info("纸币找零模块串口：{%1}", retF53);
-
-//    m_isSpecieOn = (retBRC == 0);
-//    m_isBanknotesOn = (retBIM == 0);
-//    m_isBanknotesReturnOn = (retF53 == 0);
-
-//    // TODO:Test
-//    m_isSpecieOn = true;
-//    m_isBanknotesOn = true;
-//    m_isBanknotesReturnOn = true;
-}
-
-
-bool CompensationFareWidget::deviceOpen()
-{
-    int ret = ConnectMachine(2, 3, 4);
-//    // 打开投币口阀门
-//    //# 硬币
-//    int sTryTime = 0;
-//    while (sTryTime++ < RETRY_TIMES) {
-//        int retClear = Clear_Money_Counters();
-//        if (retClear == 0) {
-//            int ret = Modify_inhibit_Open();
-//            if (ret == 0) {
-//                ui->listWidget->insertItem(0, "硬币阀门已打开。");
-//                logger()->info("硬币阀门打开。");
-//                m_isSpecieOn = true;
-//                break;
-//            } else {
-//                m_isSpecieOn = false;
-//                ui->listWidget->insertItem(0, "硬币阀门打开失败。");
-//                logger()->error("[%1] - 硬币阀门打开失败，返回值{%2}", sTryTime, ret);
-//            }
-//        } else {
-//            m_isSpecieOn = false;
-//            ui->listWidget->insertItem(0, "硬币器故障，无法清零。");
-//            logger()->error("[%1] - 硬币清零失败，Clear_Money_Counters() = {%2}", sTryTime, retClear);
-//        }
-//    }
-
-
-//    //# 纸币
-//    int bTryTime = 0;
-//    while(bTryTime++ < RETRY_TIMES) {
-//        int retRest = BIM_Reset();
-//        if (retRest == 0) {
-//            int ret = BIM_OPEN();
-//            if (ret == 0) {
-//                m_isBanknotesOn = true;
-//                ui->listWidget->insertItem(0, "纸币阀门已打开。");
-//                logger()->info("纸币阀门打开。");
-//                break;
-//            } else {
-//                m_isBanknotesOn = false;
-//                ui->listWidget->insertItem(0, "纸币阀门打开失败。");
-//                logger()->error("[%1] - 纸币阀门打开失败，返回值{%2}", bTryTime, ret);
-//            }
-//        } else {
-//            m_isBanknotesOn = false;
-//            ui->listWidget->insertItem(0, "纸币器故障，复位失败。");
-//            logger()->error("[%1] - 纸币器复位失败，BIM_Reset() = {%2}", bTryTime, retRest);
-//        }
-//    }
-
-    // TODO:Test
-    m_isSpecieOn = true;
-    m_isBanknotesOn = true;
-
-    deviceStateShow();
-    return ((m_isBanknotesOn && m_isBanknotesReturnOn) || m_isSpecieOn);
-}
-
-bool CompensationFareWidget::deviceClose()
-{
-//    //# 硬币
-//    int sTryTime = 0;
-//    while (sTryTime++ < RETRY_TIMES) {
-//        int ret = Modify_inhibit_Closes();
-//        if (ret == 0) {
-//            ui->listWidget->insertItem(0, "硬币阀门关闭成功。");
-//            logger()->info("硬币阀门关闭。");
-//            m_isSpecieOn = true;
-//            break;
-//        } else {
-//            m_isSpecieOn = false;
-//            ui->listWidget->insertItem(0, "硬币阀门关闭失败。");
-//            logger()->error("[%1] - 硬币阀门关闭失败，返回值{%2}", sTryTime, ret);
-//        }
-//    }
-
-//    //# 纸币
-//    int bTryTime = 0;
-//    while(bTryTime++ < RETRY_TIMES) {
-//        int ret = BIM_CLOSE();
-//        if (ret == 0) {
-//            m_isBanknotesOn = true;
-//            ui->listWidget->insertItem(0, "纸币阀门已关闭。");
-//            logger()->info("纸币阀门关闭。");
-//            break;
-//        } else {
-//            m_isBanknotesOn = false;
-//            ui->listWidget->insertItem(0, "纸币阀门关闭失败。");
-//            logger()->error("[%1] - 纸币阀门关闭失败，返回值{%2}", bTryTime, ret);
-//        }
-//    }
-
-    deviceStateShow();
-    return (m_isBanknotesOn && m_isSpecieOn);
-}
 
 void CompensationFareWidget::deviceStateShow()
 {
     ui->bimRadioBtn->setChecked(m_isBanknotesOn);
-    ui->f53RadioBtn->setChecked(m_isBanknotesReturnOn);
     ui->brcRadioBtn->setChecked(m_isSpecieOn);
 }
 
-int CompensationFareWidget::requestBanknotesIn()
+void CompensationFareWidget::showInfo(QString info)
 {
-    return 0;
+    ui->listWidget->insertItem(0, info);
 }
-
-void CompensationFareWidget::onAmountConfirm()
-{
-    m_amount = m_banknotesAmount + m_specieAmount;
-    if (m_amount == m_difference) {    // 结束投币
-        emit stopPaying();
-    } else if (m_amount > m_difference) {    // 退币并结束投币
-        int difference = m_amount - m_difference;
-        emit change(difference);
-    }
-}
-
-
-// 退币
-void CompensationFareWidget::onReturnMoney()
-{
-    m_successFlag = false;
-
-//    // 将最后检测到的纸币及暂存器中的纸币退出
-//    int bTryTime = 0;
-//    while (bTryTime++ < RETRY_TIMES) {
-//        if(BIM_ReturnBankNote() == 0) {
-//            ui->listWidget->insertItem(0, "收到的纸币已退出。");
-//            break;
-//        }
-//    }
-
-//    // 硬币
-//    if (m_specieAmount <= 0) {
-//        return;
-//    }
-
-//    int amount = Request_Hopper_Balance();
-//    if (amount >= 0) {
-//        m_initSpecieAmount = amount;
-//    }
-//    int ret = Dispense_Hopper_Pattern(m_specieAmount);
-//    if(ret == 0) {
-//        m_isSpecieReturn = true;
-//        ui->listWidget->insertItem(0, QString("[硬币]开始退币"));
-//    } else {
-//        ui->listWidget->insertItem(0, QString("硬币退币失败，请联系工作人员"));
-//        MyHelper::ShowMessageBoxInfo(QString("硬币退币失败[%1]，请联系工作人员处理。").arg(ret));
-//    }
-
-//    emit supplementaryOk(false);
-//    close();
-}
-
-
-void CompensationFareWidget::deviceCheck()
-{
-//    int retBRC = SimplePoll();
-//    int retBIM = BIM_Poll();
-//    int retF53 = F53Poll();
-
-    // TODO:test
-    int retBRC = 0;
-    int retBIM = 0;
-    int retF53 = 0;
-
-    // 硬币
-//    if (retBRC == 0) {
-////        int inSpecie = Request_money_in();
-////        inSpecie = inSpecie > 0 ? inSpecie : 0;
-
-//        // TODO:test
-//        int inSpecie = inSpecie > 0 ? inSpecie : 1;
-//        m_specieAmount += inSpecie;
-//        ui->listWidget->insertItem(0, QString("收到硬币%1元").arg(inSpecie));
-//    }
-
-//    // 纸币
-//    if (retBIM == 0) {
-//        int inBanknotes = requestBanknotesIn();
-//        inBanknotes = inBanknotes > 0 ? inBanknotes : 1;
-
-//        m_banknotesAmount += inBanknotes;
-//        ui->listWidget->insertItem(0, QString("收到纸币%1元").arg(inBanknotes));
-//    }
-
-//    m_isSpecieOn = (retBRC == 0);
-//    m_isBanknotesOn = (retBIM == 0);
-//    m_isBanknotesReturnOn = (retF53 == 0);
-//    deviceStateShow();
-
-
-    // 金额确认
-    onAmountConfirm();
-}
-
-void CompensationFareWidget::specieReturnCheck()
-{
-//    int amount = Request_Hopper_Balance();
-//    if (amount < 0) {
-//        if (m_sReturnRetryCnt++ > 5) {
-//            m_isSpecieReturn = false;
-
-//            // TODO:多次无法读取找零器余额时，如何处理
-
-//        }
-//    }
-
-//    // 退币完成
-//    if (m_initSpecieAmount - amount >= m_reSpecieAmount) {
-//        ui->listWidget->insertItem(0, QString("退币完成，金额%1元").arg(m_reSpecieAmount));
-//        m_isSpecieReturn = false;
-//        m_initSpecieAmount = 0;
-//        m_reSpecieAmount = 0;
-//        m_sReturnRetryCnt = 0;
-
-//        // 信号
-//        emit supplementaryOk(m_successFlag);
-//        close();
-//    }
-}
-
-void CompensationFareWidget::onStopPaying()
-{
-    m_startPaying = false;
-    ui->listWidget->insertItem(0, QString("投币结束，收到%1元。").arg(m_amount));
-
-    // 设备初始化
-    deviceClose();
-
-    // 参数初始化
-    m_amount = 0;
-    m_difference = 0;
-
-    m_successFlag = true;
-
-    emit supplementaryOk(m_successFlag);
-}
-
-bool CompensationFareWidget::onChange(int amount)
-{
-//    m_startPaying = false;
-//    ui->listWidget->insertItem(0, QString("收到钱币总额%1元，需找零%2元").arg(m_amount).arg(amount));
-
-//    int reBanknotesNum = 5 * (amount / 5);
-//    int reSpecieNum = (amount % 5);
-//    if (m_isBanknotesOn && m_isBanknotesReturnOn && reBanknotesNum > 0) {
-//        if (F53Bill_BillCount(reBanknotesNum, 0) == 0) {
-//            ui->listWidget->insertItem(0, QString("纸币找零%1元。").arg(reBanknotesNum));
-//            logger()->info("纸币找零%1元", reBanknotesNum);
-//            if (reSpecieNum <= 0) {
-//                emit supplementaryOk(true);
-//                close();
-//            }
-
-//        } else {
-//            ui->listWidget->insertItem(0, QString("纸币找零失败。"));
-//            reSpecieNum += reBanknotesNum;
-//            logger()->info("纸币找零(%1元)失败", reBanknotesNum);
-//        }
-//    }
-
-//    if (m_isSpecieOn && reSpecieNum > 0 && Request_Cashbox_Counter() > reSpecieNum) {
-//        if (Dispense_Hopper_Pattern(reSpecieNum) == 0) {
-//            ui->listWidget->insertItem(0, QString("硬币找零%1元。").arg(reSpecieNum));
-//            logger()->info("硬币找零%1元", reSpecieNum);
-//            emit supplementaryOk(true);
-//            close();
-//        } else {
-//            ui->listWidget->insertItem(0, QString("硬币找零失败。"));
-//            logger()->info("硬币找零(%1元)失败", reSpecieNum);
-
-//            MyHelper::ShowMessageBoxError("找零失败，请手动退币。");
-//            ui->returnBtn->setDisabled(false);
-//            ui->continueBtn->setDisabled(true);
-//            ui->endBtn->setDisabled(true);
-
-//        }
-//    }
-
-    // 参数初始化
-    m_amount = 0;
-    m_difference = 0;
-}
-
-
-void CompensationFareWidget::setAmout(double amout)
-{
-    m_amount = amout;
-}
-
 
 
 void CompensationFareWidget::setStyle()
 {
+    // 设置窗体关闭时自动释放内存
+    this->setAttribute(Qt::WA_DeleteOnClose);
     // 透明背景设置
     this->setAttribute(Qt::WA_TranslucentBackground, true);
     this->setWindowFlags(Qt::FramelessWindowHint);
@@ -459,35 +236,15 @@ void CompensationFareWidget::setStyle()
     this->setFixedSize(screenWidth, screenHeight);
 }
 
+void CompensationFareWidget::activePaying()
+{
+    if (m_payingState == 1) {
+        continuePaying();
+    } else {
+        startPaying();
+    }
+}
 
-//    unsigned char Number;
-//    char Model,ErrStatus[16],Ainfo[16],BankNote[16];
-//    int status;
-//    memset(ErrStatus, 0, sizeof(ErrStatus));
-//    memset(Ainfo, 0, sizeof(Ainfo));
-//    memset(BankNote, 0, sizeof(BankNote));
-//    status = BIM_RequestStatus(&Model, &Number, ErrStatus, Ainfo, BankNote);
-//    if(status) {
-//        //MessageBox("操作失败",NULL,MB_OK);
-//    }
-//    else {
-//        if(Model==0x30)
-////                AddListItem("待命模式");
-//        if(Model==0x31)
-////                AddListItem("检验模式");
 
-//        if(memcmp(Ainfo, "A02", 3) == 0)	//
-//        {
-////                AddListItem("检测到钞票");
-//            if(memcmp(BankNote,"D02",3)==0)
-////                        AddListItem("检测到钞票面额5元");
 
-//            else if(memcmp(BankNote,"D06",3)==0)
-////                        AddListItem("检测到钞票面额10元");
-//            else
-////                    AddListItem(BankNote);
-//        }
 
-//        cs.Format("暂存钞票数 %d张",Number);
-//        AddListItem(cs.GetBuffer(0));
-//    }

@@ -95,6 +95,7 @@ void LoginDlg::login()
     BYTE ret = OperatorAction(operatorID, event, operatorType);
     if (ret != 0) {
         MyHelper::ShowMessageBoxError(QString("登录失败[%1]，请联系工作人员。").arg(ret));
+        logger()->error("AFC登录失败{%1}", ret);
         return;
     }
 
