@@ -24,6 +24,8 @@
 #include "NC_ReaderLib.h"
 #include "HeartTimer.h"
 #include "AFCTaskThread.h"
+#include "BomParamVersionInfo.h"
+#include "OperatorInfo.h"
 
 
 static int HRT_NUM = 5;
@@ -74,6 +76,7 @@ void DataCenter::secEvent()
 void DataCenter::init()
 {
     initData();    // 默认数据
+    initParamVersion();
 
     /* 基础信息 */
     logger()->info("基础信息读取");
@@ -125,9 +128,9 @@ void DataCenter::init()
 
     int ret = initNetworkLib(deviceId, scId, scIp, scPort, localIp, localPort);
 
-    char version[60];
-    getLibVersion(version);
-    logger()->info("[getLibVersion]AFC通讯库初始化{%2}，获取版本号={%1}", QString(version), ret);
+//    char version[60];
+//    getLibVersion(version);
+//    logger()->info("[getLibVersion]AFC通讯库初始化{%2}，获取版本号={%1}", QString(version), ret);
 
 //    // TODO:test
 //    deviceState2afc();
@@ -231,6 +234,273 @@ void DataCenter::initReaderErrCode()
         BYTE newKey = key.section(sep, 1, 1).toUShort(&ok, 16);
         m_readerErrCodeMap.insert(newKey, value);
     }
+}
+
+
+// 参数解析
+void DataCenter::initParamVersion()
+{
+    QList<BomParamVersionInfo*> list = SettingCenter::getThis()->getParamVersionInfo();
+}
+
+
+// 文件校验：只计算md5
+bool DataCenter::fileCheck(QByteArray array)
+{
+    int size = array.size();
+    // 获取16个字节的md5
+    QByteArray md5Array = array.right(16);
+    QByteArray body = array.left(size - 16);
+
+    QString bodyMD5Str = QCryptographicHash::hash(body, QCryptographicHash::Md5).toHex();
+    QString md5Str = md5Array.toHex();
+
+    if (md5Str.compare(bodyMD5Str) == 0) {
+        return true;
+    }
+
+    return false;
+}
+
+// 参数文件头解析
+int DataCenter::parseHead(QDataStream &stream)
+{
+    // 文件头
+    qint8 type;
+    QByteArray buffer(7, Qt::Uninitialized);
+    qint8 version;
+    qint32 count = 0;
+    qint16 paramType;
+
+    stream >> type;
+    stream.readRawData(buffer.data(), 7);
+    stream >> version;
+    stream >> count;
+    stream >> paramType;
+
+    QString timeStr(buffer.toHex());
+    QString head = QString("type={%1}, time={%2}, version={%3}, count={%4}, pType={%5},")
+            .arg(type, 2, 16, QLatin1Char('0'))
+            .arg(timeStr)
+            .arg(version, 2, 16, QLatin1Char('0'))
+            .arg(count, 8, 16, QLatin1Char('0'))
+            .arg(paramType, 4, 16, QLatin1Char('0'));
+    logger()->info("param head : %1", head);
+
+    return count;
+
+}
+
+/*
+ * 系统运行参数
+*/
+int DataCenter::parseParam1001(QString filePath)
+{
+    QFile file(filePath);
+    bool isOk = file.open(QFile::ReadOnly);
+    if (!isOk) {
+        logger()->error("[%1] file open failed", filePath);
+        return -1;
+    }
+
+    QDataStream stream(&file);
+    parseHead(stream);
+
+    // 文件内容
+    qint32 pVersion;
+    QByteArray startTime(7, Qt::Uninitialized);
+    BYTE tradeCountL;
+    BYTE tradeTimeH;
+    BYTE deviceInterval;
+
+    stream >> pVersion;
+    stream.readRawData(startTime.data(), 7);
+    stream.skipRawData(7);
+    stream >> tradeCountL;
+    stream >> tradeTimeH;
+    stream >> deviceInterval;
+
+    file.close();
+
+    QString sTimeStr(startTime.toHex());
+    QString body = QString("pVersion={%1}, startTime={%2}, tradeCountL={%3}, tradeTimeH={%4}, deviceInterval={%5},")
+            .arg(pVersion, 8, 16, QLatin1Char('0'))
+            .arg(sTimeStr)
+            .arg(tradeCountL, 2, 16, QLatin1Char('0'))
+            .arg(tradeTimeH, 2, 16, QLatin1Char('0'))
+            .arg(deviceInterval, 2, 16, QLatin1Char('0'));
+    logger()->info("[param1002]%1", body);
+
+    m_deviceStateIntervalSec = deviceInterval * 5;    // 设备状态上传间隔秒数
+    m_tradeDataIntervalSec = tradeTimeH * 5;      // 交易信息上传时间间隔
+    m_tradeDataCountLT = tradeCountL;
+
+    return 0;
+}
+
+
+/*
+ * 车票类型参数
+*/
+int DataCenter::parseParam1004(QString filePath)
+{
+    QFile file(filePath);
+    bool isOk = file.open(QFile::ReadOnly);
+    if (!isOk) {
+        logger()->error("[%1] file open failed", filePath);
+        return -1;
+    }
+
+    QByteArray array = file.readAll();
+    bool checkOk = fileCheck(array);
+    qDebug() << "file check: " << checkOk;
+
+    QDataStream stream(&file);
+    int count = parseHead(stream);
+
+    qint32 version;
+    QByteArray startTime(7, Qt::Uninitialized);
+
+    stream >> version;
+    stream.readRawData(startTime.data(), 7);
+    stream.skipRawData(3);
+    logger()->info("[param1004]version=%1, time=%2", version, QString(startTime.toHex()));
+
+    m_ticketCodeMap.clear();     // <code, name>
+    for (int i = 0; i < count; i++) {
+        stream.skipRawData(1);
+        BYTE code;
+        stream >> code;
+        QByteArray en(15, Qt::Uninitialized);
+        QByteArray ch(15, Qt::Uninitialized);
+        stream.readRawData(en.data(), 15);
+        stream.readRawData(ch.data(), 15);
+
+        QString info = QString("code={%1},en={%2},ch={%3}")
+                .arg(code, 2, 16, QLatin1Char('0'))
+                .arg(QString(en.toHex()))
+                .arg(QString(ch.toHex()));
+
+        QString enStr = MyHelper::getCorrectUnicode(en);
+        QString chStr = MyHelper::getCorrectUnicode(ch);
+
+        m_ticketCodeMap.insert(code, chStr);
+        logger()->info("src={%1},enStr={%2},chStr={%3}", info, enStr, chStr);
+
+        stream.skipRawData(193);
+    }
+
+    file.close();
+
+    return 0;
+}
+
+/*
+ * BOM运营参数
+*/
+int DataCenter::parseParam2002(QString filePath)
+{
+    QFile file(filePath);
+    bool isOk = file.open(QFile::ReadOnly);
+    if (!isOk) {
+        logger()->error("[%1] file open failed", filePath);
+        return -1;
+    }
+
+    QDataStream stream(&file);
+    parseHead(stream);
+
+    qint32 version;
+    QByteArray startTime(7, Qt::Uninitialized);
+    qint16 maxCount;
+
+    stream >> version;
+    stream.readRawData(startTime.data(), 7);
+    stream.skipRawData(109);
+    stream >> maxCount;
+
+    logger()->info("[param2002]version=%1, time=%2, maxCount=%3", version, QString(startTime.toHex()), maxCount);
+
+
+    file.close();
+    return 0;
+}
+
+/*
+ * 操作员信息
+*/
+int DataCenter::parseParam2004(QString filePath)
+{
+    QFile file(filePath);
+    bool isOk = file.open(QFile::ReadOnly);
+    if (!isOk) {
+        logger()->error("[%1] file open failed", filePath);
+        return -1;
+    }
+
+    // 读文件
+    QDataStream stream(&file);
+    int m = parseHead(stream);
+
+    qint32 version;    // 4 byte
+    QByteArray buffer(7, Qt::Uninitialized);
+    stream >> version;
+    stream.readRawData(buffer.data(), 7);
+
+    // 操作员信息
+    m_operatorMap.clear();
+    for (int i = 0; i < m; i++) {
+        QByteArray code(4, Qt::Uninitialized);
+        QByteArray name(32, Qt::Uninitialized);
+        QByteArray card(6, Qt::Uninitialized);
+        QByteArray pwd(8, Qt::Uninitialized);
+        BYTE type;
+        BYTE deviceAccess;
+        QByteArray validDate(7, Qt::Uninitialized);
+        qint32 n;
+        QByteArray stateCode(4, Qt::Uninitialized);
+
+        stream.readRawData(code.data(), 4);
+        stream.readRawData(name.data(), 32);
+        stream.readRawData(card.data(), 6);
+        stream.readRawData(pwd.data(), 8);
+        stream >> type;
+        stream >> deviceAccess;
+        stream.readRawData(validDate.data(), 7);
+        stream >> n;
+
+        // 可操作车站编码
+        stream.skipRawData(n * 4);
+
+        // 保留位
+        stream.skipRawData(8);
+
+        QString codeStr = QString(code.toHex());
+        QString nameStr = MyHelper::getCorrectUnicode(name);
+        OperatorInfo* info = new OperatorInfo();
+        info->setCode(code);
+        info->setName(nameStr);
+        info->setCard(QString(card.toHex()));
+        info->setPwd(QString(pwd.toHex()));
+        info->setType(type);
+        info->setAccess(deviceAccess);
+        info->setValidDate(QString(validDate.toHex()));
+
+        m_operatorMap.insert(codeStr, info);
+
+        logger()->info("[param2004]code={%1}, name={%2}, card={%3}, pwd={%4}, type={%5}, access={%6}, validDate={%7}",
+                       codeStr,
+                       nameStr,
+                       info->card(),
+                       info->pwd(),
+                       QString::number(info->type(), 16),
+                       QString::number(info->access(), 16),
+                       info->validDate().toString("yyyyMMddHHmmss"));
+    }
+
+    file.close();
+
+    return 0;
 }
 
 
@@ -535,6 +805,37 @@ void DataCenter::setStationMode(int stationMode)
 {
     m_stationMode = stationMode;
 }
+
+QString DataCenter::getReaderVersion()
+{
+    PVERSION_INFO version = {0};
+    int ret = getVersion(version);
+    if (ret != 0) {
+        return "000000A2";
+    }
+
+    QByteArray versionArray = QByteArray((char*)version->SoftVersion, 2);
+    m_readerVersion = "0000" + versionArray.toHex().toUpper();
+    logger()->info("[getVersion] = %1, version = %2", ret, m_readerVersion);
+
+    return m_readerVersion;
+}
+
+long DataCenter::getDeviceStateIntervalSec() const
+{
+    return m_deviceStateIntervalSec;
+}
+
+long DataCenter::getTradeDataIntervalSec() const
+{
+    return m_tradeDataIntervalSec;
+}
+
+long DataCenter::getTradeDataCountLT() const
+{
+    return m_tradeDataCountLT;
+}
+
 
 
 // 线路运营时间表

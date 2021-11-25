@@ -20,6 +20,7 @@
 #include "Station.h"
 #include "ASRHttpTool.h"
 #include "BasicInfo.h"
+#include "BomParamVersionInfo.h"
 
 SettingCenter* SettingCenter::m_pInstance = NULL;
 SettingCenter::SettingCenter(QObject *parent) : QObject(parent)
@@ -626,17 +627,77 @@ BasicInfo* SettingCenter::getBasicInfo()
         info->setLocalPort(item.value("localPort").toInt());
     }
 
-//    // ism后台连接
-//    info->setIsmServiceIp(rootObject.value("ip").toString());
-//    info->setIsmServicePort(rootObject.value("port").toInt());
-
-    // asr后台连接信息
-//    info->setAsrServiceIp(rootObject.value("asrIp").toString());
-//    info->setAsrServicePort(rootObject.value("asrPort").toInt());
-//    info->setAppkey(rootObject.value("appkey").toString());
-//    info->setSecret(rootObject.value("secret").toString());
-
     return info;
+}
+
+void SettingCenter::saveParamVersionInfo(QList<BomParamVersionInfo *> list)
+{
+    QJsonArray jsonArray;
+    QJsonObject rootObject;
+    QJsonObject branchObject;
+    for (BomParamVersionInfo* item : list) {
+        branchObject.insert("type", (int)item->type());
+        branchObject.insert("version", (int)item->version());
+        branchObject.insert("fileName", item->fileName());
+        jsonArray.append(branchObject);
+        clearJsonObject(branchObject);
+    }
+
+    rootObject.insert("versions", jsonArray);
+
+    QString filePath = QString("bom-param%1version.json").arg(QDir::separator());
+    saveJsonFile(rootObject, filePath);
+}
+
+QList<BomParamVersionInfo *> SettingCenter::getParamVersionInfo()
+{
+    QList<BomParamVersionInfo *> list;
+    QString filePath = QDir::currentPath() + QDir::separator() + "bom-param" + QDir::separator() + "version.json";
+    QFile file(filePath);
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        qDebug() << QString("fail to open the file: %1, %2, %3")
+                    .arg(__FILE__).arg(__LINE__).arg(__FUNCTION__);
+        return list;
+    }
+    QByteArray array = file.readAll();
+    file.close();
+
+    QJsonParseError jsonParseError;
+    QJsonDocument jsonDocument(QJsonDocument::fromJson(array, &jsonParseError));
+    if(QJsonParseError::NoError != jsonParseError.error)
+    {
+        qDebug() << QString("JsonParseError: %1").arg(jsonParseError.errorString());
+        return list;
+    }
+
+    QJsonObject rootObject = jsonDocument.object();
+    if(!rootObject.contains("versions") || !rootObject.value("versions").isArray())
+    {
+        qDebug() << "No target value";
+        qDebug() << rootObject.keys();
+        return list;
+    }
+
+    QJsonArray jsonArray = rootObject.value("versions").toArray();
+    for(auto iter = jsonArray.constBegin(); iter != jsonArray.constEnd(); ++iter)
+    {
+        QJsonObject jsonObject = (*iter).toObject();
+
+        // 类型 | 版本号 | 文件名
+        if (jsonObject.contains("type") && jsonObject.contains("version") &&
+            jsonObject.contains("fileName") && jsonObject.value("fileName").isString()) {
+
+            BomParamVersionInfo* item = new BomParamVersionInfo(
+                        jsonObject.value("type").toInt(),
+                        jsonObject.value("version").toInt(),
+                        jsonObject.value("fileName").toString());
+
+            list.append(item);
+        }
+    }
+
+    return list;
 }
 
 

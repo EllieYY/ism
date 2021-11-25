@@ -8,11 +8,6 @@ struct FtpFile {
     FILE *stream;
 };
 
-//#define LOCAL_FILE      "D:/test.txt"
-//#define UPLOAD_FILE_AS  "uploading.txt"
-//#define REMOTE_URL      "ftp://ismftp:1234Asdf@192.168.2.193:21/uploading2.txt"
-//#define RENAME_FILE_TO  "renamed.txt"
-
 LibcurlFtp::LibcurlFtp(QObject *parent) : QObject(parent)
 {
     // 设置协议
@@ -51,8 +46,15 @@ static size_t write_callback(void *buffer, size_t size, size_t nmemb, void *stre
     return fwrite(buffer, size, nmemb, out->stream);
 }
 
-int LibcurlFtp::ftpDownload(const char* localFile, const char* targetUrl)
+int LibcurlFtp::ftpDownload(QString localPath, QString targetPath)
 {
+    QByteArray localArray = localPath.toUtf8();
+    const char* localFile = localArray.constData();
+
+    QString url = m_pUrl.toString() + "/" + targetPath;
+    QByteArray serverArray = url.toUtf8();
+    const char* targetUrl = serverArray.constData();
+
     CURL *curl;
     CURLcode res;
     struct FtpFile ftpfile = {
@@ -61,7 +63,6 @@ int LibcurlFtp::ftpDownload(const char* localFile, const char* targetUrl)
     };
 
     curl_global_init(CURL_GLOBAL_DEFAULT);
-
     curl = curl_easy_init();
     if(curl) {
         /*
@@ -69,7 +70,6 @@ int LibcurlFtp::ftpDownload(const char* localFile, const char* targetUrl)
         * FTP:// URL with standard explicit FTPS. You can also do FTPS:// URLs if
         * you want to do the rarer kind of transfers: implicit.
         */
-
         curl_easy_setopt(curl, CURLOPT_URL, targetUrl);
         /* Define our callback to get called when there's data to be written */
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
@@ -92,10 +92,13 @@ int LibcurlFtp::ftpDownload(const char* localFile, const char* targetUrl)
         curl_easy_cleanup(curl);
     }
 
+    /* close the local file */
     if(ftpfile.stream)
-        fclose(ftpfile.stream); /* close the local file */
+        fclose(ftpfile.stream);
 
     curl_global_cleanup();
+
+    emit downloadOk(localPath);
 
     return 0;
 }
@@ -117,8 +120,15 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
   return retcode;
 }
 
-int LibcurlFtp::ftpUpload(const char* localFile, const char* targetUrl)
+int LibcurlFtp::ftpUpload(QString localPath, QString targetPath)
 {
+    QByteArray localArray = localPath.toUtf8();
+    const char* localFile = localArray.constData();
+
+    QString url = m_pUrl.toString() + "/" + targetPath;
+    QByteArray serverArray = url.toUtf8();
+    const char* targetUrl = serverArray.constData();
+
     CURL *curl;
     CURLcode res;
     FILE *hd_src;
@@ -179,15 +189,15 @@ int LibcurlFtp::ftpUpload(const char* localFile, const char* targetUrl)
     }
     fclose(hd_src); /* close the local file */
     curl_global_cleanup();
+
+    emit uploadOk(url);
     return 0;
 }
 
-QList<QString> LibcurlFtp::getFileNameList(const char *targetUrl)
-{
-    QList<QString> fileList;
-    // TODO:获取文件目录
 
-    return fileList;
-}
+
+
+
+
 
 

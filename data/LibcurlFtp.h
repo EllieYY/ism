@@ -18,14 +18,16 @@ public:
     void setHostPort(const QString &host, int port);
     void setUserInfo(const QString &userName, const QString &password);
 
-    int ftpDownload(const char* localFile, const char* targetUrl);
-    int ftpUpload(const char* localFile, const char* targetUrl);
-    QList<QString> getFileNameList(const char* targetUrl);
+    int ftpDownload(QString localFile, QString targetUrl);
+    int ftpUpload(QString localFile, QString targetUrl);
 
 private:
     QUrl m_pUrl;
 
 signals:
+    void downloadOk(QString fileName);
+    void uploadOk(QString fileName);
+    void error(QString error);
 
 };
 

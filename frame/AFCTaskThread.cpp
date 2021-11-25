@@ -5,6 +5,8 @@
 #include "CommonHead.h"
 #include "DataCenter.h"
 #include <time.h>
+#include "SettingCenter.h"
+#include "BomParamVersionInfo.h"
 
 AFCTaskThread::AFCTaskThread(QObject *parent) : QThread(parent)
 {
@@ -83,27 +85,22 @@ void AFCTaskThread::afcResp(int type, uchar *body, int count)
 
 void AFCTaskThread::make4001Resp()
 {
-    AFC_4001_PKG_BODY_R param1 = {0};
-    param1.paramCode[1] = 0x10; // 费率表
-    param1.paramCode[0] = 0x06;
-    param1.paramType = 0x01;    // 当前参数
-    param1.paramVer[3] = 0x20;  // 版本号
-    param1.paramVer[2] = 0x21;
-    param1.paramVer[1] = 0x11;
-    param1.paramVer[0] = 0x01;
-
-    AFC_4001_PKG_BODY_R param2 = {0};
-    param2.paramCode[1] = 0x10; // 车站名称表
-    param2.paramCode[0] = 0x03;
-    param2.paramType = 0x01;    // 当前参数
-    param2.paramVer[3] = 0x20;  // 版本号
-    param2.paramVer[2] = 0x21;
-    param2.paramVer[1] = 0x11;
-    param2.paramVer[0] = 0x01;
-
     QList<AFC_4001_PKG_BODY_R> paramList;
-    paramList.append(param1);
-    paramList.append(param2);
+    QList<BomParamVersionInfo*> list = SettingCenter::getThis()->getParamVersionInfo();
+    for (BomParamVersionInfo* item : list) {
+        AFC_4001_PKG_BODY_R param = {0};
+        param.paramType = 0x01;    // 当前参数
+
+        QByteArray typeArray = MyHelper::intToBytes(item->type(), 2);
+        BYTE* typeByte = (BYTE*)typeArray.data();
+        memcpy(param.paramCode, typeByte, 2);
+
+        QByteArray versionArray = MyHelper::intToBytes(item->version(), 4);
+        BYTE* versionByte = (BYTE*)versionArray.data();
+        memcpy(param.paramVer, versionByte, 4);
+
+        paramList.append(param);
+    }
 
     int paramNum = paramList.size();
     int paramSize = sizeof(AFC_4001_PKG_BODY_R);
@@ -121,20 +118,16 @@ void AFCTaskThread::make4001Resp()
 
 void AFCTaskThread::make9005Resp()
 {
-    AFC_9005_PKG_BODY_R param1 = {0};
-    param1.AppType = 0x09;     // BOM
-    param1.AppVer[0] = 0x00;   // 版本号
-    param1.AppVer[1] = 0x00;
-    param1.AppVer[2] = 0x00;
-    param1.AppVer[3] = 0x02;
+    QString deviceIdStr = DataCenter::getThis()->getDeviceId();
+    QString versionStr = DataCenter::getThis()->getReaderVersion();
 
-    param1.PartID[0] = 0x00;     // 部件ID
-    param1.PartID[1] = 0x00;
-    param1.PartID[2] = 0x00;
-    param1.PartID[3] = 0x03;
+    AFC_9005_PKG_BODY_R param = {0};
+    param.AppType = 0x01;         // 读卡器
+    MyHelper::hexStrToByte(deviceIdStr, 4, param.PartID);  // 部件ID
+    MyHelper::hexStrToByte(versionStr, 4, param.AppVer);   // 读写器版本号
 
     QList<AFC_9005_PKG_BODY_R> paramList;
-    paramList.append(param1);
+    paramList.append(param);
 
     int paramNum = paramList.size();
     int paramSize = sizeof(AFC_9005_PKG_BODY_R);
@@ -147,7 +140,11 @@ void AFCTaskThread::make9005Resp()
     }
 
     int ret = SoftVersionQuery(p, paramNum);
-    logger()->info("make 9005 resp, %1", ret);
+
+    QByteArray paramArray;
+    paramArray.append((char*)&param, sizeof(AFC_9005_PKG_BODY_R));
+    QString msg = paramArray.toHex().toUpper();
+    logger()->info("make 9005 resp, %1, param = [%2]", ret, msg);
 }
 
 void AFCTaskThread::parse2000(uchar *msg)
@@ -203,15 +200,11 @@ void AFCTaskThread::parse4000(uchar *msg, int count)
     QByteArray array = QByteArray((char*)msg, sizeof(AFC_4000_PKG_BODY));
     QString targetStr = array.mid(0, 4).toHex();
 
-    // TODO:缺少记录数的返回
     QStringList paramList;
     count = count > MAX_PARAM_NUM ? MAX_PARAM_NUM : count;
     for (int i = 0; i < count; i++) {
         QString paramType = array.mid(2 * i + 5, 2).toHex();
         paramList.append(paramType);
-
-        // 参数文件名称:“PRM.”+参数类型（4位）+“.”+节点编码（4位）+“.”+文件序列号（6位）
-        QString fileName = QString("PRM.%1.%2.*").arg(paramType).arg(targetStr);
 
         // TODO:获取目录 - 参数版本比对
 

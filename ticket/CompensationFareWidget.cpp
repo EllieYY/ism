@@ -26,9 +26,15 @@ CompensationFareWidget::~CompensationFareWidget()
 
 void CompensationFareWidget::initShow(int difference, uchar devState)
 {
+    //TODO: test code
+    emit supplementaryOk(true);
+    close();
+
+
     if (difference <= 0) {
         logger()->info("投币金额为%1，无需投币。", difference);
         emit supplementaryOk(true);
+        close();
         return;
     }
 
@@ -45,12 +51,12 @@ void CompensationFareWidget::initShow(int difference, uchar devState)
     deviceStateShow();
 
     // TODO:
-//    if (devState == 0x00) {
-//        MyHelper::ShowMessageBoxError("硬件设备故障，无法投币，请联系工作人员。");
-//        supplementaryOk(false);
-//        close();
-//        return;
-//    }
+    if (devState == 0x00) {
+        MyHelper::ShowMessageBoxError("硬件设备故障，无法投币，请联系工作人员。");
+        supplementaryOk(false);
+        close();
+        return;
+    }
 
     ui->continueBtn->setDisabled(false);
     ui->endBtn->setDisabled(true);

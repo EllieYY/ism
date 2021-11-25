@@ -46,6 +46,7 @@ INCLUDEPATH += 	frame \
     inquiry \
     info \
     guide \
+    qtftp \
     data \
     data/line \
     data/asr \
@@ -59,10 +60,12 @@ INCLUDEPATH += 	frame \
 
 SOURCES += \
     data/BasicInfo.cpp \
+    data/BomParamVersionInfo.cpp \
     data/DataCenter.cpp \
     data/HttpTool.cpp \
     data/LibcurlFtp.cpp \
     data/LoginInfo.cpp \
+    data/OperatorInfo.cpp \
     data/SettingCenter.cpp \
     data/TestWidget.cpp \
     data/asr/ASRHttpTool.cpp \
@@ -113,6 +116,8 @@ SOURCES += \
     qrCode/QrCodeMainWidget.cpp \
     qrCode/QrQueryWidget.cpp \
     qrCode/QrReregisterWidget.cpp \
+    qtftp/qftp.cpp \
+    qtftp/qurlinfo.cpp \
     ticket/CardReadWidget.cpp \
     ticket/CompensationFareWidget.cpp \
     ticket/PaymentWidget.cpp \
@@ -127,10 +132,12 @@ SOURCES += \
 HEADERS += \
     CommonHead.h \
     data/BasicInfo.h \
+    data/BomParamVersionInfo.h \
     data/DataCenter.h \
     data/HttpTool.h \
     data/LibcurlFtp.h \
     data/LoginInfo.h \
+    data/OperatorInfo.h \
     data/SettingCenter.h \
     data/TestWidget.h \
     data/asr/ASRHttpTool.h \
@@ -182,6 +189,8 @@ HEADERS += \
     qrCode/QrCodeMainWidget.h \
     qrCode/QrQueryWidget.h \
     qrCode/QrReregisterWidget.h \
+    qtftp/qftp.h \
+    qtftp/qurlinfo.h \
     ticket/CardReadWidget.h \
     ticket/CompensationFareWidget.h \
     ticket/PaymentWidget.h \

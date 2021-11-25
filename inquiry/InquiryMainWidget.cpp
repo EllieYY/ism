@@ -99,7 +99,7 @@ void InquiryMainWidget::initAudio()
     // 语音转文字配置信息
     m_asrConfig = new AsrConfig();
     m_asrConfig->setAudioFormat("pcm_s16le_16k");
-    m_asrConfig->setIsAddPunc(false);
+    m_asrConfig->setIsAddPunc(true);
 }
 
 

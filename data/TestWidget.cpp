@@ -21,6 +21,15 @@ TestWidget::TestWidget(QWidget *parent) :
 
 TestWidget::~TestWidget()
 {
+    if (m_curlFtp != NULL) {
+        delete m_curlFtp;
+        m_curlFtp = NULL;
+    }
+
+    if (m_ftp != NULL) {
+        delete m_ftp;
+        m_ftp = NULL;
+    }
     delete ui;
 }
 
@@ -30,17 +39,17 @@ void TestWidget::init()
     m_userName = "123445";
     m_ftp = new FtpManager(this);
     m_ftp->setHostPort("192.168.2.193", 21);
-    // ismftp:1234Asdf
     m_ftp->setUserInfo("ismftp", "1234Asdf");
-//    m_ftp->setUserInfo("root", "WYXWJMM@2021");
+
+    m_curlFtp = new LibcurlFtp(this);
+    m_curlFtp->setHostPort("192.168.2.193", 21);
+    m_curlFtp->setUserInfo("ismftp", "1234Asdf");
 }
 
 void TestWidget::secEvent()
 {
 
 }
-
-
 
 void TestWidget::on_Btn3001_clicked()
 {
@@ -125,16 +134,11 @@ void TestWidget::on_fileBtn_clicked()
     ui->lineEdit_upload->setText(fileName);
 }
 
-size_t process_data(void *buffer, size_t size, size_t nmemb, void *user_p) {
-    FILE *fp = (FILE *)user_p;
-    size_t return_size = fwrite(buffer, size, nmemb, fp);
-    qDebug()<< (char *)buffer << endl;
-    return return_size;
-}
-
 void TestWidget::on_pushButton_download_clicked()
 {
-
+    QString localPath = "ism-net";
+    QString serverPath = "folder1/";
+    m_curlFtp->ftpDownload(localPath, serverPath);
 
     qDebug() << "dowmload……";
 //    m_ftp->get("/root/set-net.sh", "D:\\set-net.sh");
@@ -144,6 +148,9 @@ void TestWidget::on_pushButton_download_clicked()
 
 void TestWidget::on_pushButton_upload_clicked()
 {
+    QString localPath = "D:\\test.txt";
+    QString serverPath = "folder1/test.txt";
+    m_curlFtp->ftpDownload(localPath, serverPath);
 
 //    qDebug() << "==== upload test ====";
 //    FtpUpload("ftp://192.168.2.193:21/ftpdata/ismftp/set1.sh", "D:\\set-net.sh", "ismftp", "1234Asdf", 100000);
@@ -155,20 +162,6 @@ void TestWidget::on_pushButton_upload_clicked()
 //    m_ftp->put("D:/test.txt", "/test.txt");
 //    connect(m_ftp, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(error(QNetworkReply::NetworkError)));
 //    connect(m_ftp, SIGNAL(uploadProgress(qint64, qint64)), this, SLOT(uploadProgress(qint64, qint64)));
-}
-
-// 更新上传进度
-void TestWidget::uploadProgress(qint64 bytesSent, qint64 bytesTotal)
-{
-//    ui->progressBar_upload->setMaximum(bytesTotal);
-//    ui->progressBar_upload->setValue(bytesSent);
-}
-
-// 更新下载进度
-void TestWidget::downloadProgress(qint64 bytesReceived, qint64 bytesTotal)
-{
-//    ui->progressBar_download->setMaximum(bytesTotal);
-//    ui->progressBar_download->setValue(bytesReceived);
 }
 
 
@@ -189,6 +182,55 @@ void TestWidget::error(QNetworkReply::NetworkError error)
 void TestWidget::on_pathBtn_clicked()
 {
 
+}
+
+
+void TestWidget::on_pushButton_fileList_clicked()
+{
+//    QByteArray ba = m_fileName.toLocal8Bit();
+//    const char *c_str = ba.constData();
+
+    QString url  = ui->lineEdit_url->text();
+    QString localPath = "ism-net";
+    QString serverPath = "folder1/";
+    m_curlFtp->ftpDownload(localPath, serverPath);
+    connect(m_curlFtp, &LibcurlFtp::downloadOk, this, &TestWidget::showFileList);
+}
+
+void TestWidget::showFileList(QString fileName)
+{
+    QFile file(fileName);
+    bool isOk = file.open(QFile::ReadOnly);
+    if (!isOk) {
+        QMessageBox::critical(this,"ERROR","file open failed");
+        return;
+    }
+
+    while (!file.atEnd())
+    {
+        QByteArray line = file.readLine();
+        QDataStream out(line);
+
+        QString access;
+        int num;
+        int owner;
+        int group;
+        QString datetime;
+        QString filename;
+        out << access;
+        out << num;
+        out << owner;
+        out << group;
+        out << datetime;
+        out << fileName;
+
+        logger()->info("%1 %2 %3 %4 %5 %6", access, num, owner, group, datetime, fileName);
+
+//        qDebug() << str;
+    }
+
+
+    file.close();
 }
 
 
@@ -353,42 +395,51 @@ void TestWidget::on_p2004btn_clicked()
         return;
     }
 
-    // 读文件
-//    QByteArray array = file.readAll();
-
     QDataStream stream(&file);
+    int m = parseHead(stream);
 
     qint32 version;    // 4 byte
-    stream >> version;
-
     QByteArray buffer(7, Qt::Uninitialized);
+    stream >> version;
     stream.readRawData(buffer.data(), 7);
-    QString timeStr(buffer);
 
     // 操作员信息
-    while(!stream.atEnd()) {
-        qint32 code;
-        stream >> code;
+    for (int i = 0; i < m; i++) {
+        QByteArray code(4, Qt::Uninitialized);
+        QByteArray name(32, Qt::Uninitialized);
+        QByteArray card(6, Qt::Uninitialized);
+        QByteArray pwd(8, Qt::Uninitialized);
+        BYTE type;
+        BYTE deviceAccess;
+        QByteArray validDate(7, Qt::Uninitialized);
+        qint32 n;
+        QByteArray stateCode(4, Qt::Uninitialized);
 
-        qint64 pwd;
-        stream >> pwd;
-
-        qint8 type;
+        stream.readRawData(code.data(), 4);
+        stream.readRawData(name.data(), 32);
+        stream.readRawData(card.data(), 6);
+        stream.readRawData(pwd.data(), 8);
         stream >> type;
+        stream >> deviceAccess;
+        stream.readRawData(validDate.data(), 7);
+        stream >> n;
 
-        qint8 access;
-        stream >> access;
+        // 可操作车站编码
+        stream.skipRawData(n * 4);
 
-        QByteArray buffer1(7, Qt::Uninitialized);
-        stream.readRawData(buffer1.data(), 7);
-        QString validDateStr(buffer1);
+        // 保留位
+        stream.skipRawData(8);
 
-        stream.skipRawData(8);   // 保留位
-
-        logger()->info("code={%1}, pwd={%2}, type={%3}, access={%4}, validDate={%5}",
-                       code, pwd, type, access, validDateStr);
+        QString nameStr = MyHelper::getCorrectUnicode(name);
+        logger()->info("[param2004]code={%1}, name={%2}, card={%3}, pwd={%4}, type={%5}, access={%6}, validDate={%7}",
+                       QString(code.toHex()),
+                       nameStr,
+                       QString(card.toHex()),
+                       QString(pwd.toHex()),
+                       QString::number(type, 16),
+                       QString::number(deviceAccess, 16),
+                       QString(validDate.toHex()));
     }
-
 
     file.close();
 }
@@ -408,7 +459,16 @@ void TestWidget::on_p2002btn_clicked()
     QDataStream stream(&file);
     parseHead(stream);
 
+    qint32 version;
+    QByteArray startTime(7, Qt::Uninitialized);
+    qint16 maxCount;
 
+    stream >> version;
+    stream.readRawData(startTime.data(), 7);
+    stream.skipRawData(109);
+    stream >> maxCount;
+
+    logger()->info("[param2002]version=%1, time=%2, maxCount=%3", version, QString(startTime.toHex()), maxCount);
 
 
     file.close();
@@ -424,3 +484,5 @@ void TestWidget::on_pushButton_pfile_clicked()
 
     ui->lineEdit_param->setText(fileName);
 }
+
+

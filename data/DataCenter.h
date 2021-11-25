@@ -20,6 +20,7 @@ class BasicInfo;
 class LoginInfo;
 class HeartTimer;
 class AFCTaskThread;
+class OperatorInfo;
 
 // 各节点心跳ID
 typedef enum
@@ -127,6 +128,15 @@ private:
     void initDevice();
     void closeDevice();
     void initReaderErrCode();
+    void initParamVersion();            // 参数版本号解析
+
+    // 参数文件解析，返回版本号
+    int parseHead(QDataStream &stream);
+    bool fileCheck(QByteArray array);   // 文件校验
+    int parseParam1001(QString filePath);
+    int parseParam1004(QString filePath);
+    int parseParam2002(QString filePath);
+    int parseParam2004(QString filePath);
 
     void setHrtOffData(int idx);        // 掉线处理
 
@@ -137,6 +147,13 @@ public:
     void param2afc();                   // 参数上报
 
     void setStationMode(int stationMode);
+
+    QString getReaderVersion();
+
+    // 系统运行参数
+    long getDeviceStateIntervalSec() const;
+    long getTradeDataIntervalSec() const;
+    long getTradeDataCountLT() const;
 
 private:
     int m_serviceState;                         // 服务状态 0-正常 1-异常 2-暂停
@@ -171,8 +188,23 @@ private:
     HeartTimer*  m_timer;    // 心跳检测异步线程
     AFCTaskThread* m_taskThread;
 
-    int m_stationMode;    // AFC系统运行模式
+    int m_stationMode;               // AFC系统运行模式
+    QString m_readerVersion;         // 读写器版本信息 -- 软件、部件版本
+    QList<QString> m_paramVersion;   // 参数版本号信息
 
+    // 1001：设备状态和交易信息上传参数
+    long m_deviceStateIntervalSec;    // 设备状态上传间隔，单位秒
+    long m_tradeDataIntervalSec;      // 交易信息上传时间间隔
+    long m_tradeDataCountLT;          // 交易数量上传下限，超过下限即可上传
+
+    // 1004：票卡类型对应关系
+    QHash<int, QString> m_ticketCodeMap;     // <code, chName>
+
+    // 2002：连续登录失败最大次数
+    int m_maxCountForLoginFail;    // 连续登录失败最大次数
+
+    // 2004：操作员登录信息
+    QHash<QString, OperatorInfo*> m_operatorMap;
 
 signals:
     void lineReceived();

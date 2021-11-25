@@ -10,6 +10,7 @@ class LineStations;
 class LineInterchangeInfo;
 class InterchangeInfo;
 class BasicInfo;
+class BomParamVersionInfo;
 class SettingCenter : public QObject
 {
     Q_OBJECT
@@ -43,7 +44,12 @@ public:
     QList<LineInterchangeInfo*> getLineInterchanes();
     QList<LineInterchangeInfo*> parseLineInterchanes(QJsonObject obj);
 
+    // 程序基本配置信息
     BasicInfo* getBasicInfo();
+
+    // 参数文件版本信息
+    void saveParamVersionInfo(QList<BomParamVersionInfo*> list);
+    QList<BomParamVersionInfo*> getParamVersionInfo();
 
 private:
     QList<InterchangeInfo*> matchInterchangeStations(QList<InterchangeInfo*> stations, QString lineCode);

@@ -12,6 +12,7 @@ class TestWidget;
 }
 
 class FtpManager;
+class LibcurlFtp;
 class TestWidget : public WidgetBase
 {
     Q_OBJECT
@@ -38,8 +39,6 @@ private slots:
     void on_pushButton_download_clicked();
     void on_pushButton_upload_clicked();
 
-    void uploadProgress(qint64 bytesSent, qint64 bytesTotal);
-    void downloadProgress(qint64 bytesReceived, qint64 bytesTotal);
     void error(QNetworkReply::NetworkError error);
 
     // 参数文件解析
@@ -50,6 +49,9 @@ private slots:
 
     void on_pushButton_pfile_clicked();
 
+    void on_pushButton_fileList_clicked();
+    void showFileList(QString fileName);
+
 private:
     void init();
     void secEvent();
@@ -59,6 +61,7 @@ private:
 private:
     QString m_userName;
     FtpManager* m_ftp;
+    LibcurlFtp* m_curlFtp;
     QString m_filePath;
 
 private:
