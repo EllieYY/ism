@@ -99,7 +99,7 @@ void InquiryMainWidget::initAudio()
     // 语音转文字配置信息
     m_asrConfig = new AsrConfig();
     m_asrConfig->setAudioFormat("pcm_s16le_16k");
-    m_asrConfig->setIsAddPunc(true);
+    m_asrConfig->setIsAddPunc(false);
 }
 
 
@@ -113,6 +113,9 @@ void InquiryMainWidget::onMsgSend()
 {
     // 获取文字
     QString msg = ui->lineEdit->text();
+    if (msg.isEmpty()) {
+        return;
+    }
     ui->lineEdit->setText("");
 
     showMsg(msg, QNChatMessage::User_Me);
@@ -144,7 +147,7 @@ void InquiryMainWidget::onAnswerShow(QString answer)
 // 语音转文字结果处理
 void InquiryMainWidget::onAsrResultShow(QString text)
 {
-    m_waiting->close();
+//    m_waiting->close();
     // 对于识别结果不好的，进行提示
     if (text.isEmpty()) {
         MyHelper::ShowMessageBoxInfo("语音识别效果不好，请您再说一遍。");
@@ -195,8 +198,8 @@ void InquiryMainWidget::onStopVoice()
     m_isAudio = false;
 
     // 开启等待窗口
-    m_waiting = new ISMWaiting();
-    m_waiting->show();
+//    m_waiting = new ISMWaiting();
+//    m_waiting->show();
 }
 
 void InquiryMainWidget::handleStateChanged(QAudio::State newState)

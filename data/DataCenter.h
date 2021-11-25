@@ -122,7 +122,6 @@ public:
     QString getReaderErrorStr(BYTE errorCode);
 
 private:
-
     void init();
     void initData();
     void initDevice();
@@ -136,6 +135,8 @@ public:
     void afcHeart(bool onlineFlag);
     void deviceState2afc();             // 设备状态上报
     void param2afc();                   // 参数上报
+
+    void setStationMode(int stationMode);
 
 private:
     int m_serviceState;                         // 服务状态 0-正常 1-异常 2-暂停
@@ -169,6 +170,8 @@ private:
 
     HeartTimer*  m_timer;    // 心跳检测异步线程
     AFCTaskThread* m_taskThread;
+
+    int m_stationMode;    // AFC系统运行模式
 
 
 signals:

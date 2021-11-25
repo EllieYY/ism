@@ -4,6 +4,7 @@
 #include <QtCore>
 #include <QtGui>
 #include <QDesktopWidget>
+#include <QTextCodec>
 #include "ISMMessageBox.h"
 
 class MyHelper: public QObject
@@ -130,7 +131,7 @@ public:
         memcpy(des, desByte, len);
     }
 
-    // int转字节数字（网络序：高位在前）
+    // int转字节数组（网络序：高位在前）
     static void intToBigEndianByte(int src, int len, BYTE* des)
     {
         for(int i = 0; i < len; i++)
@@ -138,6 +139,46 @@ public:
             des[i] = (src >> (8 * (len - i - 1))) & 0xFF;
         }
     }
+
+    // int转字节数组
+    static QByteArray intToBytes(int src, int len)
+    {
+        QByteArray bytes;
+        for(int i = 0; i < len; i++)
+        {
+            BYTE tmp = (src >> (8 * (len - i - 1))) & 0xFF;
+            bytes.append(tmp);
+        }
+        return bytes;
+    }
+
+    // QByteArray字符解析
+    static QString getCorrectUnicode(const QByteArray &ba)
+    {
+        int size = qstrnlen(ba.constData(), ba.size());
+        QTextCodec::ConverterState state;
+        QTextCodec *codec = QTextCodec::codecForName("UTF-8");
+        QString text = codec->toUnicode(ba.constData(), ba.size(), &state);
+        if (state.invalidChars > 0)
+        {
+            text = QTextCodec::codecForName("GBK")->toUnicode(ba, size);
+        }
+        else
+        {
+            text = ba;
+        }
+        return text;
+    }
+
+    static int byte2int(BYTE* src, int len) {
+        int des = 0;
+        for (int i = 0; i < len; i++) {
+            des += src[i] << (i * 8);
+        }
+        return des;
+    }
+
+
 
 };
 

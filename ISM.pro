@@ -31,6 +31,7 @@ contains(TARGET_ARCH, x86_64){
         message("64-bit")
         LIBS += -L$$PWD/sdk/lib/log4qt/x64/release -llog4qt
         LIBS += -L$$PWD/sdk/lib/ticket/x64/release -lNC_ReaderLib -lNCNetwork_Lib -lBIM2020A
+        LIBS += -L$$PWD/sdk/lib/curl -llibcurl
 }else{
         message("32-bit")
         LIBS += -L$$PWD/sdk/lib/log4qt/x86 -llog4qt
@@ -50,6 +51,7 @@ INCLUDEPATH += 	frame \
     data/asr \
     data/ticket \
     sdk/include/ticket \
+    sdk/include/curl \
     $$LOG4QT_ROOT_PATH/src \
     $$LOG4QT_ROOT_PATH/src/log4qt \
     $$LOG4QT_ROOT_PATH/include \
@@ -59,6 +61,7 @@ SOURCES += \
     data/BasicInfo.cpp \
     data/DataCenter.cpp \
     data/HttpTool.cpp \
+    data/LibcurlFtp.cpp \
     data/LoginInfo.cpp \
     data/SettingCenter.cpp \
     data/TestWidget.cpp \
@@ -83,6 +86,7 @@ SOURCES += \
     frame/AmountCheckTimer.cpp \
     frame/AsyncTimer.cpp \
     frame/CustomTabWidget.cpp \
+    frame/FtpManager.cpp \
     frame/HeartTimer.cpp \
     frame/ISMFrame.cpp \
     frame/ISMMessageBox.cpp \
@@ -125,6 +129,7 @@ HEADERS += \
     data/BasicInfo.h \
     data/DataCenter.h \
     data/HttpTool.h \
+    data/LibcurlFtp.h \
     data/LoginInfo.h \
     data/SettingCenter.h \
     data/TestWidget.h \
@@ -149,6 +154,7 @@ HEADERS += \
     frame/AmountCheckTimer.h \
     frame/AsyncTimer.h \
     frame/CustomTabWidget.h \
+    frame/FtpManager.h \
     frame/HeartTimer.h \
     frame/ISMFrame.h \
     frame/ISMMessageBox.h \

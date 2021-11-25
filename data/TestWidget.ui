@@ -16,110 +16,278 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QWidget" name="widget" native="true">
-     <widget class="QPushButton" name="Btn9003_logout">
-      <property name="geometry">
-       <rect>
-        <x>380</x>
-        <y>360</y>
-        <width>91</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>9003-签退</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="Btn3001">
-      <property name="geometry">
-       <rect>
-        <x>430</x>
-        <y>220</y>
-        <width>92</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>3001</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="Btn9003_login">
-      <property name="geometry">
-       <rect>
-        <x>220</x>
-        <y>360</y>
-        <width>92</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>9003-签到</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="Btn7000">
-      <property name="geometry">
-       <rect>
-        <x>240</x>
-        <y>90</y>
-        <width>91</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>7000</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="Btn4002">
-      <property name="geometry">
-       <rect>
-        <x>250</x>
-        <y>220</y>
-        <width>92</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>4002</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="Btn7001">
-      <property name="geometry">
-       <rect>
-        <x>450</x>
-        <y>80</y>
-        <width>92</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>7001</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="Btn9002_2">
-      <property name="geometry">
-       <rect>
-        <x>390</x>
-        <y>440</y>
-        <width>91</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>9006</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="Btn9002">
-      <property name="geometry">
-       <rect>
-        <x>230</x>
-        <y>440</y>
-        <width>92</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>9002</string>
-      </property>
-     </widget>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="1">
+       <widget class="QGroupBox" name="groupBox_2">
+        <property name="title">
+         <string>钱箱接口</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QGroupBox" name="groupBox">
+        <property name="title">
+         <string>AFC主动上报接口</string>
+        </property>
+        <widget class="QPushButton" name="Btn7000">
+         <property name="geometry">
+          <rect>
+           <x>160</x>
+           <y>30</y>
+           <width>91</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>7000</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="Btn4002">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>80</y>
+           <width>92</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>4002</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="Btn9003_login">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>140</y>
+           <width>92</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>9003-签到</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="Btn9003_logout">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>180</y>
+           <width>91</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>9003-签退</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="Btn9002">
+         <property name="geometry">
+          <rect>
+           <x>160</x>
+           <y>140</y>
+           <width>92</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>9002</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="Btn3001">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>40</y>
+           <width>92</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>3001</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="Btn7001">
+         <property name="geometry">
+          <rect>
+           <x>160</x>
+           <y>80</y>
+           <width>92</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>7001</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="Btn9002_2">
+         <property name="geometry">
+          <rect>
+           <x>160</x>
+           <y>180</y>
+           <width>91</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>9006</string>
+         </property>
+        </widget>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QGroupBox" name="groupBox_3">
+        <property name="title">
+         <string>FTP文件接口</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="1" column="2">
+          <widget class="QPushButton" name="fileBtn">
+           <property name="text">
+            <string>选择文件</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="lineEdit_upload"/>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="lineEdit_download"/>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="pathBtn">
+           <property name="text">
+            <string>选择文件</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QPushButton" name="pushButton_download">
+           <property name="text">
+            <string>下载</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="3">
+          <widget class="QPushButton" name="pushButton_upload">
+           <property name="text">
+            <string>上传</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>下载路径：</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>上传文件：</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QGroupBox" name="groupBox_4">
+        <property name="title">
+         <string>参数文件解析</string>
+        </property>
+        <widget class="QLineEdit" name="lineEdit_param">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>40</y>
+           <width>201</width>
+           <height>21</height>
+          </rect>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_pfile">
+         <property name="geometry">
+          <rect>
+           <x>250</x>
+           <y>30</y>
+           <width>93</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>选择文件</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="p1001btn">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>80</y>
+           <width>93</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>1001</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="p1004btn">
+         <property name="geometry">
+          <rect>
+           <x>140</x>
+           <y>80</y>
+           <width>93</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>1004</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="p2004btn">
+         <property name="geometry">
+          <rect>
+           <x>250</x>
+           <y>80</y>
+           <width>93</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>2004</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="p2002btn">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>120</y>
+           <width>93</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>2002</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="pushButton_6">
+         <property name="geometry">
+          <rect>
+           <x>140</x>
+           <y>120</y>
+           <width>93</width>
+           <height>28</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>PushButton</string>
+         </property>
+        </widget>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>

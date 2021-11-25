@@ -119,22 +119,173 @@ typedef enum  {
     PAY = 0x01          // 付费区
 }ZONE;
 
-//操作员事件：
-//0–签退
-//1–[保留]
-//2–用口令登录
-//3–自动签退
-//4~6-[保留]
 
-/*
-操作员类型：
-00 - 票款员
-01 - 售票员
-02 - 维护人员
-03 - 车站站长
-04 - 设备技术人员
-05 - 编码员
-*/
+typedef struct
+{
+    BYTE currentTime[7];
+    BYTE modeCode[2];
+    BYTE operatorID[4];
+} AFC_2000_PKG_BODY, *pAFC_2000_PKG_BODY;
+
+/// 6.2.2.2   2001-降级模式通知
+typedef struct
+{
+    BYTE currentTime[7];
+    BYTE deviceID[4];
+    BYTE modeCode[2];
+    BYTE modeApplyTime[7];
+} AFC_2001_PKG_BODY, *pAFC_2001_PKG_BODY;
+
+typedef struct
+{
+    BYTE deviceID[4];
+    BYTE modeCode[2];
+    BYTE modeApplyTime[7];
+} AFC_2002_PKG_BODY, *pAFC_2002_PKG_BODY;
+
+/// 6.3.2.1   3000-设备控制命令
+typedef struct
+{
+    BYTE sendID[4];
+    BYTE receiveID[4];
+    BYTE cmdCode;
+    BYTE operatorID[4];
+} AFC_3000_PKG_BODY, *pAFC_3000_PKG_BODY;
+
+/// 3001 设备状态 包体固定部分  6.3.2.2.2
+typedef struct
+{
+    BYTE deviceID[4];
+    BYTE currentTime[7];
+    BYTE deviceType;
+    /// 机器状态 0、1
+    BYTE status1;
+    BYTE status2;
+} AFC_3001_PKG_BODY, *pAFC_3001_PKG_BODY;
+
+#define MAX_PARAM_NUM 40
+/// 6.4.2.1  4000-参数同步  固定部分
+typedef struct
+{
+    /// 节点标识码
+    BYTE deviceID[4];
+    BYTE syncType;
+    BYTE paramCode[MAX_PARAM_NUM][2];
+} AFC_4000_PKG_BODY, *pAFC_4000_PKG_BODY;
+
+typedef struct
+{
+    BYTE deviceID[4];
+    BYTE syncType;
+} AFC_4001_PKG_BODY, *pAFC_4001_PKG_BODY;
+
+// typedef struct
+// {
+//     BYTE paramCode[2];
+//     BYTE paramType;
+//     BYTE paramVer[4];
+// }AFC_4001_PKG_BODY_R, *pAFC_4001_PKG_BODY_R;
+
+/// 6.4.2.3  4002-参数应用上报
+typedef struct
+{
+    BYTE deviceID[4];
+    BYTE ParamType[2];
+    BYTE versionOld[4];
+    BYTE versionNew[4];
+    BYTE applyTime[7];
+} AFC_4002_PKG_BODY, *pAFC_4002_PKG_BODY;
+
+/// 6.8.2.1  7000-文件传输通知
+typedef struct
+{
+    BYTE currentTime[7];
+    BYTE deviceID[4];
+    BYTE fileType;
+    BYTE fileName[50];
+    BYTE fileMd5[16];
+} AFC_7000_PKG_BODY, *pAFC_7000_PKG_BODY;
+
+/// 6.8.2.2  7001-文件传输确认
+typedef struct
+{
+    BYTE fileType;
+    BYTE fileName[50];
+    BYTE result;
+} AFC_7001_PKG_BODY, *pAFC_7001_PKG_BODY;
+
+typedef struct
+{
+    BYTE cur_time[7];      // 当前时间
+    BYTE operation_day[4]; // 运营日
+    BYTE file_type;        // 文件类型
+    BYTE node_num[4];      // 节点编号
+    BYTE up_method;        // 上传方式 0：上传所有当日未上传的文件 1：上传指定文件
+    BYTE file_seq[4];      // 文件序列号
+} AFC_7002_PKG_BODY, *pAFC_7002_PKG_BODY;
+
+typedef struct
+{
+    BYTE cur_time[7];      // 当前时间
+    BYTE operation_day[4]; // 运营日
+    BYTE file_type;        // 文件类型
+    BYTE node_num[4];      // 节点编号
+    BYTE start_session[4]; // 开始交易流水号
+    BYTE end_session[4];   // 结束交易流水号
+} AFC_7003_PKG_BODY, *pAFC_7003_PKG_BODY;
+
+/// 6.10.2  9001-强制时间同步
+typedef struct
+{
+    BYTE deviceID[4];
+    BYTE currentTime[7];
+} AFC_9001_PKG_BODY, *pAFC_9001_PKG_BODY;
+
+/// 6.10.3   9002-设备与SAM卡对应关系 循环部分 ----  另外加 设备节点标识码
+typedef struct
+{
+    BYTE samType;
+    BYTE readerType;
+    BYTE samID[6];
+} AFC_9002_PKG_BODY, *pAFC_9002_PKG_BODY;
+
+/// 6.10.4   9003-操作员登录/注销
+typedef struct
+{
+    /// 操作员编号
+    BYTE operatorID[4];
+    BYTE deviceID[4];
+    BYTE event;
+    BYTE operatorType;
+} AFC_9003_PKG_BODY, *pAFC_9003_PKG_BODY;
+
+/// 6.10.5   9004-软件/部件版本更新
+typedef struct
+{
+    BYTE TargetID[4];
+    BYTE AppType;
+    char AppName[50];
+} AFC_9004_PKG_BODY, *pAFC_9004_PKG_BODY;
+
+/// 6.10.6   9005-软件/部件版本查询
+// typedef struct
+// {
+//     BYTE PartID[4];
+//     BYTE AppType;
+//     BYTE AppVer[4];
+//     BYTE reserve1[4];
+//     BYTE reserve2[4];
+// }AFC_9005_PKG_BODY_R, *pAFC_9005_PKG_BODY_R;
+
+/// 6.10.7   9006-软件更新上报
+typedef struct
+{
+    BYTE deviceID[4];
+    BYTE applicationType;
+    BYTE version[4];
+    BYTE currentTime[7];
+} AFC_9006_PKG_BODY, *pAFC_9006_PKG_BODY;
+
 
 
 #endif // COMMONHEAD_H

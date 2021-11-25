@@ -269,7 +269,7 @@ void SettingCenter::saveLineTimeTables(QList<LineTimeTables *> lines)
         clearJsonObject(branchObject);
     }
 
-    rootObject.insert("lineTime", jsonArray);
+    rootObject.insert("lineTimeTables", jsonArray);
     saveJsonFile(rootObject, "lineTime.json");
 }
 
@@ -288,14 +288,14 @@ QList<LineTimeTables *> SettingCenter::getLineTimeTables()
 QList<LineTimeTables *> SettingCenter::parseLineTimeTables(QJsonObject rootObject)
 {
     QList<LineTimeTables *> lines;
-    if(!rootObject.contains("lineTime") || !rootObject.value("lineTime").isArray())
+    if(!rootObject.contains("lineTimeTables") || !rootObject.value("lineTimeTables").isArray())
     {
         qDebug() << "No target value";
         qDebug() << rootObject.keys();
         return lines;
     }
 
-    QJsonArray jsonArray = rootObject.value("lineTime").toArray();
+    QJsonArray jsonArray = rootObject.value("lineTimeTables").toArray();
     for(auto iter = jsonArray.constBegin(); iter != jsonArray.constEnd(); ++iter)
     {
         QJsonObject jsonObject = (*iter).toObject();

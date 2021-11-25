@@ -17,13 +17,21 @@ protected:
     void run() override;
 
 private:
-    void afcResp(uchar* type, uchar* body);
+    void dealCheck();     // 检测要处理的报文 2000 | 3000 | 4000 | 7003 | 9001 | 9004
+    void respCheck();     // 检测要回复的报文：4001 | 9005
+    void afcResp(int type, uchar* body, int count);    // count是包体可变部分的个数
     void make4001Resp();          // 参数查询回复
     void make9005Resp();          // 软件版本查询
 
+    void parse2000(uchar* msg);   // 模式命令
+    void parse3000(uchar* msg);   // 设备控制命令
+    void parse4000(uchar* msg, int count);   // 参数同步
+    void parse9001(uchar* msg);   // 强制时间同步
+    void parse9004(uchar* msg);   // 软件、部件版本更新
+
 private:
-    int m_seq;          // 消息序号
-    int m_respSeq;      // 消息序号
+    int m_dealSeq;      // 待处理消息序号
+    int m_respSeq;      // 待响应消息序号
 
 signals:
 

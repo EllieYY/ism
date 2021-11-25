@@ -246,7 +246,7 @@ QByteArray HttpTool::stationParam()
 // ism后台返回结果解析
 void HttpTool::parse(QJsonObject data)
 {
-    logger()->info("data: " + QJsonDocument(data).toJson(QJsonDocument::Compact));
+//    logger()->info("data: " + QJsonDocument(data).toJson(QJsonDocument::Compact));
 
     if(data.isEmpty()) {
         return;

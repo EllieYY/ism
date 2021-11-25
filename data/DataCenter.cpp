@@ -123,26 +123,26 @@ void DataCenter::init()
     char* localIp = localIpArray.data();
     uint localPort = m_basicInfo->localPort();
 
-    initNetworkLib(deviceId, scId, scIp, scPort, localIp, localPort);
+    int ret = initNetworkLib(deviceId, scId, scIp, scPort, localIp, localPort);
 
     char version[60];
     getLibVersion(version);
-    logger()->info("[getLibVersion]AFC通讯库初始化，获取版本号={%1}", QString(version));
+    logger()->info("[getLibVersion]AFC通讯库初始化{%2}，获取版本号={%1}", QString(version), ret);
 
-    // TODO:test
-    deviceState2afc();
-    param2afc();
+//    // TODO:test
+//    deviceState2afc();
+//    param2afc();
 
-    m_timer = new HeartTimer();
-    connect(m_timer, &HeartTimer::onlineFlag, this, &DataCenter::afcHeart);
-    m_timer->startTimer(1000);
+//    m_timer = new HeartTimer();
+//    connect(m_timer, &HeartTimer::onlineFlag, this, &DataCenter::afcHeart);
+//    m_timer->startTimer(30000);
 
     m_taskThread = new AFCTaskThread(this);
     m_taskThread->start();
 
 //    emit lineReceived();
 
-//    initDevice();
+    initDevice();
     initReaderErrCode();
 }
 
@@ -529,6 +529,11 @@ void DataCenter::param2afc()
     BYTE ret = ParamAppliedNotify(paramType, versionOld, versionNew, applyTime);
     logger()->info("参数应用 = {%1}", ret);
 
+}
+
+void DataCenter::setStationMode(int stationMode)
+{
+    m_stationMode = stationMode;
 }
 
 

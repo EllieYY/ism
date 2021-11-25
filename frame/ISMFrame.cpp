@@ -130,9 +130,10 @@ void ISMFrame::initWgt()
     layoutWnd->setSpacing(0);
     layoutWnd->setMargin(0);
 
-//    registerWidget(layoutWnd, new TestWidget(this), TEST_DLG, true);
+    // 测试页面：
+    registerWidget(layoutWnd, new TestWidget(this), TEST_DLG, true);
 
-    registerWidget(layoutWnd, new MainWidget(this), MAIN_DLG, true);
+//    registerWidget(layoutWnd, new MainWidget(this), MAIN_DLG, true);
     registerWidget(layoutWnd, new TicketMainWidget(this), CARD_DLG, false);
     registerWidget(layoutWnd, new InquiryMainWidget(this), INQUIRY_DLG, false);      // 2021-10-20
     registerWidget(layoutWnd, new InfoMainWidget(this), INFO_DLG, false);
@@ -169,10 +170,7 @@ void ISMFrame::initWgt()
 
     //# 初始显示状态
     titleBar->show();
-    WidgetMng::getThis()->showWidget(MAIN_DLG);
-
-    // test
-//    WidgetMng::getThis()->showWidget(TEST_DLG);
+//    WidgetMng::getThis()->showWidget(MAIN_DLG);
 
     statusBar->show();
 

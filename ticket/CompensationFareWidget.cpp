@@ -204,7 +204,8 @@ void CompensationFareWidget::init()
     connect(ui->returnCashBtn, &QPushButton::clicked, this, &CompensationFareWidget::onReturnMoney);
 
     m_payingState = 2;
-    m_timer = new AmountCheckTimer();
+    m_timer = NULL;
+//    m_timer = new AmountCheckTimer();
     connect(m_timer, &AmountCheckTimer::receiveOk, this, &CompensationFareWidget::stopPaying);
     connect(m_timer, &AmountCheckTimer::timeoutReceive, this, &CompensationFareWidget::stopPaying);
 }

@@ -15,6 +15,7 @@ class TicketReregisterWidget : public WidgetBase
 {
     Q_OBJECT
     LOG4QT_DECLARE_QCLASS_LOGGER
+
 public:
     explicit TicketReregisterWidget(QWidget *parent = nullptr);
     ~TicketReregisterWidget();
@@ -38,7 +39,9 @@ private:
 
     // 现金交易文件
     void writeTradeFile(BYTE icType, BYTE* data);
-
+    QString getFileTypeStr(int icType);
+    int getTradeDataLength(int icType);
+    int getTradeFileSerial();
 
 private:
     int m_curBtn;               // 0-en  1-ex
@@ -52,6 +55,8 @@ private:
     bool m_isAllowOctPay;       // 是否支持卡内扣费
     float m_banlance;           // 余额
     BYTE m_payType;             // 支付方式
+
+    int m_tradeFileSerial;      // 交易文件流水号 0~999999
 
 signals:
     void selectStation();    // 选择车站

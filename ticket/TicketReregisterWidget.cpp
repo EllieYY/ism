@@ -138,6 +138,7 @@ void TicketReregisterWidget::init()
     connect(ui->calcFareBtn, &QPushButton::clicked, this, &TicketReregisterWidget::onCalcFare);
 
     m_difference = 0;
+    m_tradeFileSerial = 1;
 }
 
 void TicketReregisterWidget::onStationSelected(QString lineName, QString stationName, QString stationCode)
@@ -190,14 +191,21 @@ void TicketReregisterWidget::onUpdateTicket()
         return;
     }
 
+    // 票卡更新参数打印
+    QByteArray array1;
+    array1.append((char*)&updateTradeData, sizeof(UPDATE_RESP));
+    QString str1 = array1.toHex().toUpper();
+    logger()->info("票卡更新返回：%1", str1);
+
     // 交易记录写文件
-//    this->writeTradeFile(updateTradeData);
+    this->writeTradeFile(updateTradeData.ICType, updateTradeData.TraderRespData);
 
     // TODO:票卡更新返回同步到ISM后台
 
     // 更新成功提示。
     MyHelper::ShowMessageBoxInfo("票卡更新成功。");
-    close();
+    ui->tUpdateBtn->setDisabled(true);
+//    close();
 }
 
 
@@ -259,13 +267,106 @@ void TicketReregisterWidget::onSupplementaryOk(bool result)
         ui->tUpdateBtn->setDisabled(true);
         MyHelper::ShowMessageBoxError("现金支付失败，请联系工作人员处理。");
     }
-
 }
 
 void TicketReregisterWidget::writeTradeFile(BYTE icType, BYTE *data)
 {
+    QString fileType = getFileTypeStr(icType);
+    QString deviceId = DataCenter::getThis()->getDeviceId();
+    QDateTime curTime = QDateTime::currentDateTime();
+    QString curTimeStr = curTime.toString("yyyyMMddHHmmss");
+    int serial = getTradeFileSerial();
 
+    //命名规则：交易文件类别（1个字符）+“.”+节点编码（8位）+“.”+YYYYMMDDHHMMSS +“.”+文件序列号（6位）
+    QString fileName = QString("%1.%2.%3.%4")
+            .arg(fileType).arg(deviceId).arg(curTimeStr)
+            .arg(serial, 6, 10, QLatin1Char('0'));
+    qDebug() << "trade file name: " << fileName;
 
+    QFile file(fileName);
+    file.open(QIODevice::WriteOnly);
+
+    // 文件头
+    QByteArray array;
+    array.clear();
+
+    array.append(icType); // 文件类型
+    array.append(MyHelper::hexStrToByte(curTimeStr));
+    array.append(0x01);
+    array.append(MyHelper::hexStrToByte(deviceId));
+    array.append(MyHelper::intToBytes(serial, 4));
+    int num = 1;
+    array.append(MyHelper::intToBytes(num, 4));
+
+    qDebug() << "文件头 size = " << array.size();
+    QString headStr = array.toHex().toUpper();
+    qDebug() << "文件头内容：" << headStr;
+
+    // 文件内容
+    int length = num * getTradeDataLength(icType);
+    qDebug() << "num = " << num << "; length = " << length;
+    array.append((char*)(data + 8), length);
+
+    qDebug() << "文件内容 size = " << array.size();
+    QString bodyStr = array.toHex().toUpper();
+    qDebug() << "文件头内容：" << bodyStr;
+
+   // MD5校验值
+    QString md5Str = QCryptographicHash::hash(array, QCryptographicHash::Md5).toHex();
+    qDebug() << "md5: " << md5Str;
+    array.append(MyHelper::hexStrToByte(md5Str));
+    qDebug() << "内容大小：" << array.size();
+
+    file.write(array);   //这种方式也不会有多余字节
+    file.close();
+}
+
+QString TicketReregisterWidget::getFileTypeStr(int icType)
+{
+    QString str = "Y";
+    switch(icType) {
+    case UL_CARD:
+        str = "S";
+        break;
+    case METRO_CARD:
+        str = "V";
+        break;
+    case OCT_CARD:
+        str = "Y";
+        break;
+    default:
+        break;
+    }
+    return str;
+
+}
+
+int TicketReregisterWidget::getTradeDataLength(int icType)
+{
+    int length = sizeof(MTRCARD_TRADE_INFO);
+    switch(icType) {
+    case UL_CARD:
+        length = sizeof(MTRCARD_TRADE_INFO);
+        break;
+    case METRO_CARD:
+        length = sizeof(MTRCARD_TRADE_INFO);
+        break;
+    case OCT_CARD:
+        length = sizeof(OCTCARD_TRADE_INFO);
+        break;
+    default:
+        break;
+    }
+    return length;
+
+}
+
+int TicketReregisterWidget::getTradeFileSerial()
+{
+    if(m_tradeFileSerial > 9999) {
+        m_tradeFileSerial = 0;
+    }
+    return m_tradeFileSerial++;
 }
 
 
