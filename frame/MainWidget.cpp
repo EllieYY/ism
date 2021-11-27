@@ -33,7 +33,8 @@ void MainWidget::onBtn(int btnId)
 //        QRCODE_DLG,                 //# 二维码
         INQUIRY_DLG,                //# 智能问询
         INFO_DLG,                   //# 信息查询
-        GUID_DLG                    //# 服务指南
+//        GUID_DLG                    //# 服务指南
+        TEST_DLG
     };
 
     if  (btnId >= 0 && btnId < MAIN_WIDGET_NUM)

@@ -49,7 +49,7 @@ public:
 
     // 参数文件版本信息
     void saveParamVersionInfo(QList<BomParamVersionInfo*> list);
-    QList<BomParamVersionInfo*> getParamVersionInfo();
+    QList<BomParamVersionInfo*> getParamVersionInfo(QString filePath);
 
 private:
     QList<InterchangeInfo*> matchInterchangeStations(QList<InterchangeInfo*> stations, QString lineCode);

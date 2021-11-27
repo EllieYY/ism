@@ -29,6 +29,7 @@ void CompensationFareWidget::initShow(int difference, uchar devState)
     //TODO: test code
     emit supplementaryOk(true);
     close();
+    return;
 
 
     if (difference <= 0) {

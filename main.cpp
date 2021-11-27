@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 //    a.setPalette(QPalette(QColor("#F0F0F0")));
 
     ISMFrame w;
-//    w.login();
+    w.login();
     w.show();
 
     int ret = a.exec();

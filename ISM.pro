@@ -51,6 +51,7 @@ INCLUDEPATH += 	frame \
     data/line \
     data/asr \
     data/ticket \
+    data/thread \
     sdk/include/ticket \
     sdk/include/curl \
     $$LOG4QT_ROOT_PATH/src \
@@ -81,6 +82,10 @@ SOURCES += \
     data/line/LineStations.cpp \
     data/line/LineTimeTables.cpp \
     data/line/Station.cpp \
+    data/thread/FtpDownloadTask.cpp \
+    data/thread/FtpUploadTask.cpp \
+    data/thread/Task.cpp \
+    data/thread/TaskThread.cpp \
     data/ticket/QRCodeInfo.cpp \
     data/ticket/ReregisterInfo.cpp \
     data/ticket/TicketBasicInfo.cpp \
@@ -117,7 +122,6 @@ SOURCES += \
     qrCode/QrQueryWidget.cpp \
     qrCode/QrReregisterWidget.cpp \
     qtftp/qftp.cpp \
-    qtftp/qurlinfo.cpp \
     ticket/CardReadWidget.cpp \
     ticket/CompensationFareWidget.cpp \
     ticket/PaymentWidget.cpp \
@@ -153,6 +157,10 @@ HEADERS += \
     data/line/LineStations.h \
     data/line/LineTimeTables.h \
     data/line/Station.h \
+    data/thread/FtpDownloadTask.h \
+    data/thread/FtpUploadTask.h \
+    data/thread/Task.h \
+    data/thread/TaskThread.h \
     data/ticket/QRCodeInfo.h \
     data/ticket/ReregisterInfo.h \
     data/ticket/TicketBasicInfo.h \
@@ -190,7 +198,6 @@ HEADERS += \
     qrCode/QrQueryWidget.h \
     qrCode/QrReregisterWidget.h \
     qtftp/qftp.h \
-    qtftp/qurlinfo.h \
     ticket/CardReadWidget.h \
     ticket/CompensationFareWidget.h \
     ticket/PaymentWidget.h \

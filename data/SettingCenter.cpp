@@ -7,6 +7,7 @@
 #include <QJsonObject>
 #include <QFile>
 #include <QDir>
+#include <QUrl>
 
 #include "LineInfo.h"
 #include "LineStations.h"
@@ -627,6 +628,22 @@ BasicInfo* SettingCenter::getBasicInfo()
         info->setLocalPort(item.value("localPort").toInt());
     }
 
+    // FTP信息
+    if(rootObject.contains("ftpInfo"))
+    {
+        QJsonObject item = rootObject.value("ftpInfo").toObject();
+
+        QUrl url;
+        url.setScheme("ftp");
+        url.setHost(item.value("ip").toString());
+        url.setPort(item.value("port").toInt());
+        url.setUserName(item.value("user").toString());
+        url.setPassword(item.value("pwd").toString());
+        url.setPath(item.value("path").toString());
+
+        info->setFtpUrl(url);
+    }
+
     return info;
 }
 
@@ -649,10 +666,9 @@ void SettingCenter::saveParamVersionInfo(QList<BomParamVersionInfo *> list)
     saveJsonFile(rootObject, filePath);
 }
 
-QList<BomParamVersionInfo *> SettingCenter::getParamVersionInfo()
+QList<BomParamVersionInfo *> SettingCenter::getParamVersionInfo(QString filePath)
 {
     QList<BomParamVersionInfo *> list;
-    QString filePath = QDir::currentPath() + QDir::separator() + "bom-param" + QDir::separator() + "version.json";
     QFile file(filePath);
     if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {

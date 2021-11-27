@@ -131,9 +131,9 @@ void ISMFrame::initWgt()
     layoutWnd->setMargin(0);
 
     // 测试页面：
-    registerWidget(layoutWnd, new TestWidget(this), TEST_DLG, true);
+    registerWidget(layoutWnd, new TestWidget(this), TEST_DLG, false);
 
-//    registerWidget(layoutWnd, new MainWidget(this), MAIN_DLG, true);
+    registerWidget(layoutWnd, new MainWidget(this), MAIN_DLG, true);
     registerWidget(layoutWnd, new TicketMainWidget(this), CARD_DLG, false);
     registerWidget(layoutWnd, new InquiryMainWidget(this), INQUIRY_DLG, false);      // 2021-10-20
     registerWidget(layoutWnd, new InfoMainWidget(this), INFO_DLG, false);

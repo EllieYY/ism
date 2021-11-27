@@ -5,6 +5,7 @@
 #include "CommonHead.h"
 #include "logger.h"
 #include "propertyconfigurator.h"
+#include <QUrl>
 
 class LineInfo;
 class ISMTimeTable;
@@ -21,6 +22,7 @@ class LoginInfo;
 class HeartTimer;
 class AFCTaskThread;
 class OperatorInfo;
+class TaskThread;
 
 // 各节点心跳ID
 typedef enum
@@ -122,6 +124,16 @@ public:
     // 读写器错误提示
     QString getReaderErrorStr(BYTE errorCode);
 
+    // 读写器程序下载
+    void onSoftwareUpdate(QString fileName);
+
+    // 参数更新
+    void onParamUpdate(QList<int> typeList);
+    QList<QString> getServerFileList(QList<int> typeList);
+
+    // 交易文件上传:本地文件路径、文件名称、md5
+    void uploadTradeFile(QString filePath, QString fileName, QByteArray md5Arr, int type);
+
 private:
     void init();
     void initData();
@@ -130,6 +142,7 @@ private:
     void initReaderErrCode();
     void initParamVersion();            // 参数版本号解析
 
+public:
     // 参数文件解析，返回版本号
     int parseHead(QDataStream &stream);
     bool fileCheck(QByteArray array);   // 文件校验
@@ -137,6 +150,10 @@ private:
     int parseParam1004(QString filePath);
     int parseParam2002(QString filePath);
     int parseParam2004(QString filePath);
+
+    bool isValidUser(QString userName, QString pwd);
+
+    void ftpTaskFinished();   // 文件上传任务完成
 
     void setHrtOffData(int idx);        // 掉线处理
 
@@ -154,6 +171,8 @@ public:
     long getDeviceStateIntervalSec() const;
     long getTradeDataIntervalSec() const;
     long getTradeDataCountLT() const;
+
+    QUrl getFtpUrl();
 
 private:
     int m_serviceState;                         // 服务状态 0-正常 1-异常 2-暂停
@@ -205,6 +224,11 @@ private:
 
     // 2004：操作员登录信息
     QHash<QString, OperatorInfo*> m_operatorMap;
+
+    QUrl m_ftpUrl;     // 文件服务器连接信息
+
+    TaskThread* m_ftpTaskThread;
+    int taskId;
 
 signals:
     void lineReceived();

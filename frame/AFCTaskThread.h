@@ -29,11 +29,15 @@ private:
     void parse9001(uchar* msg);   // 强制时间同步
     void parse9004(uchar* msg);   // 软件、部件版本更新
 
+    QList<QString> getServerFileList(QList<int> typeList);
+
 private:
     int m_dealSeq;      // 待处理消息序号
     int m_respSeq;      // 待响应消息序号
 
 signals:
+    void paramTypeUpdate(QList<int> typeList);     // 要更新的参数
+    void softwareUpdate(QString fileName);         // 软件更新
 
 };
 

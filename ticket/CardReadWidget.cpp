@@ -141,7 +141,7 @@ void CardReadWidget::readReregisterInfo()
     // 票卡信息获取
     int ret = readTicketInfo(anti);
 
-//    // TODO: 使用测试数据
+////    // TODO: 使用测试数据
 //    ret = 0;
 //    setTestData();
 
@@ -173,6 +173,11 @@ BYTE CardReadWidget::readTicketInfo(BYTE anti)
     if (ret != 0) {
         return ret;
     }
+
+    // 结果打印
+    QByteArray resArr = QByteArray((char*)&analyseInfo, sizeof(ANALYSECARD_RESP));
+    QString resStr = resArr.toHex();
+    logger()->info("[cardAnalyse] %1", resStr);
 
     /* 字段解析 ------------*/
     // 卡类型 | 逻辑卡号 | 发卡时间 | 有效期 | 卡状态 | 旅程状态 | 余额
@@ -222,6 +227,11 @@ BYTE CardReadWidget::readHistoryTrade(BYTE anti)
     if (hisRet != 0x00) {
         return hisRet;
     }
+
+    // 结果打印
+    QByteArray resArr = QByteArray((char*)&cardHistory, sizeof(HISTORY_RESP));
+    QString resStr = resArr.toHex();
+    logger()->info("[readCardHistory] %1", resStr);
 
     // 交易条数
     QList<TransactionInfo*> transList;

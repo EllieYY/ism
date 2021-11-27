@@ -620,7 +620,7 @@ bool QFtpDTP::parseDir(const QByteArray &buffer, const QString &userName, QUrlIn
     if (buffer.isEmpty())
         return false;
 
-    QString bufferStr = QString::fromLatin1(buffer).trimmed();
+    QString bufferStr = QString::fromUtf8(buffer).trimmed();
 
     // Unix style FTP servers
     QRegExp unixPattern(QLatin1String("^([\\-dl])([a-zA-Z\\-]{9,9})\\s+\\d+\\s+(\\S*)\\s+"
@@ -685,7 +685,7 @@ void QFtpDTP::socketReadyRead()
                 // does not exist, but rather write a text to the data socket
                 // -- try to catch these cases
                 if (line.endsWith("No such file or directory\r\n"))
-                    err = QString::fromLatin1(line);
+                    err = QString::fromUtf8(line);
             }
         }
     } else {
@@ -925,7 +925,7 @@ void QFtpPI::readyRead()
 
     while (commandSocket.canReadLine()) {
         // read line with respect to line continuation
-        QString line = QString::fromLatin1(commandSocket.readLine());
+        QString line = QString::fromUtf8(commandSocket.readLine());
         if (replyText.isEmpty()) {
             if (line.length() < 3) {
                 // protocol error
@@ -942,6 +942,7 @@ void QFtpPI::readyRead()
             }
         }
         QString endOfMultiLine;
+        endOfMultiLine.resize(4);
         endOfMultiLine[0] = '0' + replyCode[0];
         endOfMultiLine[1] = '0' + replyCode[1];
         endOfMultiLine[2] = '0' + replyCode[2];
@@ -957,7 +958,7 @@ void QFtpPI::readyRead()
                 replyText += line;
             if (!commandSocket.canReadLine())
                 return;
-            line = QString::fromLatin1(commandSocket.readLine());
+            line = QString::fromUtf8(commandSocket.readLine());
             lineLeft4 = line.left(4);
         }
         replyText += line.mid(4); // strip reply code 'xyz '
@@ -980,7 +981,7 @@ bool QFtpPI::processReply()
 #if defined(QFTPPI_DEBUG)
 //    qDebug("QFtpPI state: %d [processReply() begin]", state);
     if (replyText.length() < 400)
-        qDebug("QFtpPI recv: %d %s", 100*replyCode[0]+10*replyCode[1]+replyCode[2], replyText.toLatin1().constData());
+        qDebug("QFtpPI recv: %d %s", 100*replyCode[0]+10*replyCode[1]+replyCode[2], replyText.toUtf8().constData());
     else
         qDebug("QFtpPI recv: %d (text skipped)", 100*replyCode[0]+10*replyCode[1]+replyCode[2]);
 #endif
@@ -1209,10 +1210,10 @@ bool QFtpPI::startNextCmd()
 
     pendingCommands.pop_front();
 #if defined(QFTPPI_DEBUG)
-    qDebug("QFtpPI send: %s", currentCmd.left(currentCmd.length()-2).toLatin1().constData());
+    qDebug("QFtpPI send: %s", currentCmd.left(currentCmd.length()-2).toUtf8().constData());
 #endif
     state = Waiting;
-    commandSocket.write(currentCmd.toLatin1());
+    commandSocket.write(currentCmd.toUtf8());
     return true;
 }
 
@@ -2311,39 +2312,39 @@ void QFtpPrivate::_q_piError(int errorCode, const QString &text)
     error = QFtp::Error(errorCode);
     switch (q->currentCommand()) {
         case QFtp::ConnectToHost:
-            errorString = QString::fromLatin1(QT_TRANSLATE_NOOP("QFtp", "Connecting to host failed:\n%1"))
+            errorString = QString::fromUtf8(QT_TRANSLATE_NOOP("QFtp", "Connecting to host failed:\n%1"))
                           .arg(text);
             break;
         case QFtp::Login:
-            errorString = QString::fromLatin1(QT_TRANSLATE_NOOP("QFtp", "Login failed:\n%1"))
+            errorString = QString::fromUtf8(QT_TRANSLATE_NOOP("QFtp", "Login failed:\n%1"))
                           .arg(text);
             break;
         case QFtp::List:
-            errorString = QString::fromLatin1(QT_TRANSLATE_NOOP("QFtp", "Listing directory failed:\n%1"))
+            errorString = QString::fromUtf8(QT_TRANSLATE_NOOP("QFtp", "Listing directory failed:\n%1"))
                           .arg(text);
             break;
         case QFtp::Cd:
-            errorString = QString::fromLatin1(QT_TRANSLATE_NOOP("QFtp", "Changing directory failed:\n%1"))
+            errorString = QString::fromUtf8(QT_TRANSLATE_NOOP("QFtp", "Changing directory failed:\n%1"))
                           .arg(text);
             break;
         case QFtp::Get:
-            errorString = QString::fromLatin1(QT_TRANSLATE_NOOP("QFtp", "Downloading file failed:\n%1"))
+            errorString = QString::fromUtf8(QT_TRANSLATE_NOOP("QFtp", "Downloading file failed:\n%1"))
                           .arg(text);
             break;
         case QFtp::Put:
-            errorString = QString::fromLatin1(QT_TRANSLATE_NOOP("QFtp", "Uploading file failed:\n%1"))
+            errorString = QString::fromUtf8(QT_TRANSLATE_NOOP("QFtp", "Uploading file failed:\n%1"))
                           .arg(text);
             break;
         case QFtp::Remove:
-            errorString = QString::fromLatin1(QT_TRANSLATE_NOOP("QFtp", "Removing file failed:\n%1"))
+            errorString = QString::fromUtf8(QT_TRANSLATE_NOOP("QFtp", "Removing file failed:\n%1"))
                           .arg(text);
             break;
         case QFtp::Mkdir:
-            errorString = QString::fromLatin1(QT_TRANSLATE_NOOP("QFtp", "Creating directory failed:\n%1"))
+            errorString = QString::fromUtf8(QT_TRANSLATE_NOOP("QFtp", "Creating directory failed:\n%1"))
                           .arg(text);
             break;
         case QFtp::Rmdir:
-            errorString = QString::fromLatin1(QT_TRANSLATE_NOOP("QFtp", "Removing directory failed:\n%1"))
+            errorString = QString::fromUtf8(QT_TRANSLATE_NOOP("QFtp", "Removing directory failed:\n%1"))
                           .arg(text);
             break;
         default:

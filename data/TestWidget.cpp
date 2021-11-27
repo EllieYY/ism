@@ -136,8 +136,10 @@ void TestWidget::on_fileBtn_clicked()
 
 void TestWidget::on_pushButton_download_clicked()
 {
-    QString localPath = "ism-net";
-    QString serverPath = "folder1/";
+    QString localPath = ui->lineEdit_upload->text();
+    QString serverPath = ui->lineEdit_download->text();
+//    QString localPath = "ism-net";
+//    QString serverPath = "folder1/";
     m_curlFtp->ftpDownload(localPath, serverPath);
 
     qDebug() << "dowmload……";
@@ -148,13 +150,14 @@ void TestWidget::on_pushButton_download_clicked()
 
 void TestWidget::on_pushButton_upload_clicked()
 {
-    QString localPath = "D:\\test.txt";
-    QString serverPath = "folder1/test.txt";
-    m_curlFtp->ftpDownload(localPath, serverPath);
+    QString localPath = ui->lineEdit_upload->text();
+    QString serverPath = ui->lineEdit_download->text();
+//    QString localPath = "D:\\test.txt";
+//    QString serverPath = "folder1/test.txt";
+    m_curlFtp->ftpUpload(localPath, serverPath);
 
 //    qDebug() << "==== upload test ====";
 //    FtpUpload("ftp://192.168.2.193:21/ftpdata/ismftp/set1.sh", "D:\\set-net.sh", "ismftp", "1234Asdf", 100000);
-
 
     // Qt5 方法，只能上传和下载
 //    qDebug() << "upload……";
@@ -190,11 +193,17 @@ void TestWidget::on_pushButton_fileList_clicked()
 //    QByteArray ba = m_fileName.toLocal8Bit();
 //    const char *c_str = ba.constData();
 
-    QString url  = ui->lineEdit_url->text();
-    QString localPath = "ism-net";
-    QString serverPath = "folder1/";
-    m_curlFtp->ftpDownload(localPath, serverPath);
-    connect(m_curlFtp, &LibcurlFtp::downloadOk, this, &TestWidget::showFileList);
+//    QString url  = ui->lineEdit_url->text();
+//    QString localPath = "ism-net";
+//    QString serverPath = "folder1/";
+//    m_curlFtp->ftpDownload(localPath, serverPath);
+//    connect(m_curlFtp, &LibcurlFtp::downloadOk, this, &TestWidget::showFileList);
+
+
+    QString fileName = ui->lineEdit_url->text();
+
+//    showFileList(QString fileName);
+
 }
 
 void TestWidget::showFileList(QString fileName)
@@ -388,60 +397,50 @@ void TestWidget::on_p2004btn_clicked()
     QString fileName = ui->lineEdit_param->text();
     qDebug() << "param file name: " << fileName;
 
-    QFile file(fileName);
-    bool isOk = file.open(QFile::ReadOnly);
-    if (!isOk) {
-        QMessageBox::critical(this,"ERROR","file open failed");
-        return;
-    }
+    DataCenter::getThis()->parseParam2004(fileName);
 
-    QDataStream stream(&file);
-    int m = parseHead(stream);
+//    QFile file(fileName);
+//    bool isOk = file.open(QFile::ReadOnly);
+//    if (!isOk) {
+//        QMessageBox::critical(this,"ERROR","file open failed");
+//        return;
+//    }
 
-    qint32 version;    // 4 byte
-    QByteArray buffer(7, Qt::Uninitialized);
-    stream >> version;
-    stream.readRawData(buffer.data(), 7);
+//    QDataStream stream(&file);
+//    int m = parseHead(stream);
 
-    // 操作员信息
-    for (int i = 0; i < m; i++) {
-        QByteArray code(4, Qt::Uninitialized);
-        QByteArray name(32, Qt::Uninitialized);
-        QByteArray card(6, Qt::Uninitialized);
-        QByteArray pwd(8, Qt::Uninitialized);
-        BYTE type;
-        BYTE deviceAccess;
-        QByteArray validDate(7, Qt::Uninitialized);
-        qint32 n;
-        QByteArray stateCode(4, Qt::Uninitialized);
+//    qint32 version;    // 4 byte
+//    QByteArray buffer(7, Qt::Uninitialized);
+//    stream >> version;
+//    stream.readRawData(buffer.data(), 7);
 
-        stream.readRawData(code.data(), 4);
-        stream.readRawData(name.data(), 32);
-        stream.readRawData(card.data(), 6);
-        stream.readRawData(pwd.data(), 8);
-        stream >> type;
-        stream >> deviceAccess;
-        stream.readRawData(validDate.data(), 7);
-        stream >> n;
+//    // 操作员信息
+//    for (int i = 0; i < m; i++) {
+//        QByteArray code(4, Qt::Uninitialized);
+//        QByteArray pwd(8, Qt::Uninitialized);
+//        BYTE type;
+//        BYTE deviceAccess;
+//        QByteArray validDate(7, Qt::Uninitialized);
 
-        // 可操作车站编码
-        stream.skipRawData(n * 4);
+//        stream.readRawData(code.data(), 4);
+//        stream.readRawData(pwd.data(), 8);
+//        stream >> type;
+//        stream >> deviceAccess;
+//        stream.readRawData(validDate.data(), 7);
 
-        // 保留位
-        stream.skipRawData(8);
+//        // 保留位
+//        stream.skipRawData(8);
 
-        QString nameStr = MyHelper::getCorrectUnicode(name);
-        logger()->info("[param2004]code={%1}, name={%2}, card={%3}, pwd={%4}, type={%5}, access={%6}, validDate={%7}",
-                       QString(code.toHex()),
-                       nameStr,
-                       QString(card.toHex()),
-                       QString(pwd.toHex()),
-                       QString::number(type, 16),
-                       QString::number(deviceAccess, 16),
-                       QString(validDate.toHex()));
-    }
+////        QString nameStr = MyHelper::getCorrectUnicode(name);
+//        logger()->info("[param2004]code={%1}, pwd={%2}, type={%3}, access={%4}, validDate={%5}",
+//                       QString(code.toHex()),
+//                       QString(pwd.toHex()),
+//                       QString::number(type, 16),
+//                       QString::number(deviceAccess, 16),
+//                       QString(validDate.toHex()));
+//    }
 
-    file.close();
+//    file.close();
 }
 
 void TestWidget::on_p2002btn_clicked()
@@ -469,7 +468,6 @@ void TestWidget::on_p2002btn_clicked()
     stream >> maxCount;
 
     logger()->info("[param2002]version=%1, time=%2, maxCount=%3", version, QString(startTime.toHex()), maxCount);
-
 
     file.close();
 }

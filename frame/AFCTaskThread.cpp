@@ -77,16 +77,14 @@ void AFCTaskThread::afcResp(int type, uchar *body, int count)
     } else if (type == 0x9004) {    // 软件、部件版本更新
         parse9004(body);
     }
-
-    // TODO：文件传输命令待整理
-
-
 }
 
 void AFCTaskThread::make4001Resp()
 {
+    QString pathLocal = QDir::currentPath() + QDir::separator() + "bom-param" + QDir::separator() + "version.json";
+
     QList<AFC_4001_PKG_BODY_R> paramList;
-    QList<BomParamVersionInfo*> list = SettingCenter::getThis()->getParamVersionInfo();
+    QList<BomParamVersionInfo*> list = SettingCenter::getThis()->getParamVersionInfo(pathLocal);
     for (BomParamVersionInfo* item : list) {
         AFC_4001_PKG_BODY_R param = {0};
         param.paramType = 0x01;    // 当前参数
@@ -200,16 +198,21 @@ void AFCTaskThread::parse4000(uchar *msg, int count)
     QByteArray array = QByteArray((char*)msg, sizeof(AFC_4000_PKG_BODY));
     QString targetStr = array.mid(0, 4).toHex();
 
+    QList<int> typeList;
     QStringList paramList;
     count = count > MAX_PARAM_NUM ? MAX_PARAM_NUM : count;
     for (int i = 0; i < count; i++) {
         QString paramType = array.mid(2 * i + 5, 2).toHex();
         paramList.append(paramType);
 
-        // TODO:获取目录 - 参数版本比对
+        bool ok;
+        int type = paramType.toInt(&ok, 16);
 
-        // TODO: FTP下载 - 解析 - 更新
+        typeList.append(type);
+    }
 
+    if (typeList.size() > 0) {
+        emit paramTypeUpdate(typeList);
     }
 
     // 日志记录
@@ -218,6 +221,8 @@ void AFCTaskThread::parse4000(uchar *msg, int count)
     logger()->info("[4000h]msg=%1, target=%2, type=%3, paramList=[%4]",
                    msgStr, targetStr, typeStr, paramList.join(","));
 }
+
+
 
 // 系统时间同步
 void AFCTaskThread::parse9001(uchar *msg)
@@ -265,10 +270,11 @@ void AFCTaskThread::parse9004(uchar *msg)
     if (type == 0x01) {
 
         // TODO:下载程序文件，并更新读写器程序，重新初始化读写器
-
+        emit softwareUpdate(fileName);
     }
 
     // 日志记录
     QString msgStr = array.toHex().toUpper();
     logger()->info("[9004h]msg=%1, type=%2, filename=%3", msgStr, type, fileName);
 }
+

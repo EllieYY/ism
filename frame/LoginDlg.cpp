@@ -80,8 +80,8 @@ void LoginDlg::login()
         return;
     }
 
-    // TODO:密码校验
-    bool isValidUser = true;
+    // 密码校验
+    bool isValidUser = DataCenter::getThis()->isValidUser(userName, pwd);
     // 第三册 7.3.3.2.4操作员表
     if (!isValidUser) {
         MyHelper::ShowMessageBoxError(QString("用户名或密码错误，请核对后重新输入。"));

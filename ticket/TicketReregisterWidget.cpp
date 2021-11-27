@@ -155,6 +155,12 @@ void TicketReregisterWidget::onStationSelected(QString lineName, QString station
 
 void TicketReregisterWidget::onUpdateTicket()
 {
+    // TODO:test code
+//    DataCenter::getThis()->uploadTradeFile("Y.04200403.20211119230228.000001",
+//                                           "Y.04200403.20211119230228.000001",
+//                                           QString("b15e9f2bb97712604d12fca506c7548c").toUtf8(),
+//                                           0x01);
+
     BYTE anti = DataCenter::getThis()->getAntiNo();
     UPDATE_CARD_IN updateIn = {0};
     UPDATE_RESP updateTradeData = {0};
@@ -260,6 +266,9 @@ void TicketReregisterWidget::onCalcFare()
 
 void TicketReregisterWidget::onSupplementaryOk(bool result)
 {
+    // TODO:test code.
+    ui->tUpdateBtn->setDisabled(false);
+
     if (result) {
         ui->textTips->setText("现金支付成功，请点击更新按钮进行更新。");
         ui->tUpdateBtn->setDisabled(false);
@@ -312,13 +321,17 @@ void TicketReregisterWidget::writeTradeFile(BYTE icType, BYTE *data)
     qDebug() << "文件头内容：" << bodyStr;
 
    // MD5校验值
-    QString md5Str = QCryptographicHash::hash(array, QCryptographicHash::Md5).toHex();
+    QByteArray md5Arr =  QCryptographicHash::hash(array, QCryptographicHash::Md5);
+    QString md5Str = md5Arr.toHex();
     qDebug() << "md5: " << md5Str;
     array.append(MyHelper::hexStrToByte(md5Str));
     qDebug() << "内容大小：" << array.size();
 
     file.write(array);   //这种方式也不会有多余字节
     file.close();
+
+    // 文件上传
+    DataCenter::getThis()->uploadTradeFile(fileName, fileName, md5Arr, icType);
 }
 
 QString TicketReregisterWidget::getFileTypeStr(int icType)

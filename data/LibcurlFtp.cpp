@@ -51,7 +51,8 @@ int LibcurlFtp::ftpDownload(QString localPath, QString targetPath)
     QByteArray localArray = localPath.toUtf8();
     const char* localFile = localArray.constData();
 
-    QString url = m_pUrl.toString() + "/" + targetPath;
+//    QString url = m_pUrl.toString() + "/" + targetPath;
+    QString url = targetPath;
     QByteArray serverArray = url.toUtf8();
     const char* targetUrl = serverArray.constData();
 
@@ -125,7 +126,8 @@ int LibcurlFtp::ftpUpload(QString localPath, QString targetPath)
     QByteArray localArray = localPath.toUtf8();
     const char* localFile = localArray.constData();
 
-    QString url = m_pUrl.toString() + "/" + targetPath;
+//    QString url = m_pUrl.toString() + "/" + targetPath;
+    QString url = targetPath;
     QByteArray serverArray = url.toUtf8();
     const char* targetUrl = serverArray.constData();
 

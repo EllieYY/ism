@@ -204,3 +204,13 @@ void BasicInfo::setBrcPort(int brcPort)
 {
     m_brcPort = brcPort;
 }
+
+QUrl BasicInfo::ftpUrl() const
+{
+    return m_ftpUrl;
+}
+
+void BasicInfo::setFtpUrl(const QUrl &ftpUrl)
+{
+    m_ftpUrl = ftpUrl;
+}

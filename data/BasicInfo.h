@@ -2,6 +2,7 @@
 #define BASICINFO_H
 
 #include <QObject>
+#include <QUrl>
 
 class BasicInfo : public QObject
 {
@@ -69,6 +70,9 @@ public:
     int brcPort() const;
     void setBrcPort(int brcPort);
 
+    QUrl ftpUrl() const;
+    void setFtpUrl(const QUrl &ftpUrl);
+
 private:
     QString     m_stationName;      // 站点名称
     QString     m_stationCode;      // 站点编号
@@ -98,6 +102,8 @@ private:
     int         m_bimPort;          // 纸币模块
     int         m_f53Port;          // 找零模块
     int         m_brcPort;          // 硬币模块
+
+    QUrl        m_ftpUrl;      // FTP连接信息
 
 signals:
 
