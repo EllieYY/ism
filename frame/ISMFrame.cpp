@@ -79,6 +79,7 @@ void ISMFrame::init()
 {
     initWgt();
     initTimer();
+    DataCenter::getThis()->init();
 }
 
 void ISMFrame::initTimer()

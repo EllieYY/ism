@@ -36,6 +36,9 @@ TestWidget::~TestWidget()
 
 void TestWidget::init()
 {
+    ui->lineEdit_upload->setText("D:/");
+    ui->lineEdit_download->setText("ftp://ismftp:1234Asdf@192.168.2.193:21/");
+
     m_userName = "123445";
     m_ftp = new FtpManager(this);
     m_ftp->setHostPort("192.168.2.193", 21);
@@ -51,9 +54,19 @@ void TestWidget::secEvent()
 
 }
 
+
+//DEV_OK = 0,       // 正常
+//DEV_HARDWARE_ERR = 8,           // 硬件故障
+//DEV_CLOSE = 9,    // 设备故障
+//DEV_LOGIN = 13,    // 登录
+//DEV_SERVICE_END = 19,   // 营运结束
+//DEV_SERVICE_OFF = 34,   // 停止服务
+//DEV_SERVICE_ON = 20,    // 开始服务
+//DEV_RW_ERR = 44    // 读写器故障
+
 void TestWidget::on_Btn3001_clicked()
 {
-    DataCenter::getThis()->deviceState2afc();
+    DataCenter::getThis()->deviceState2afc(DEV_SERVICE_ON);
 }
 
 void TestWidget::on_Btn4002_clicked()
@@ -74,15 +87,15 @@ void TestWidget::on_Btn7000_clicked()
     logger()->info("文件传输通知7000 = {%1}", ret);
 }
 
-void TestWidget::on_Btn7001_clicked()
-{
-//    FileDownloadConfirm(0x03, BYTE *fileName, 0x00);
-}
+//void TestWidget::on_Btn7001_clicked()
+//{
+//////    FileDownloadConfirm(0x03, BYTE *fileName, 0x00);
+//}
 
 void TestWidget::on_Btn9003_login_clicked()
 {
     // 登录
-    QString userName = m_userName;
+    QString userName = "00002114";
     BYTE * operatorID = reinterpret_cast<byte*>(userName.toLocal8Bit().data());
     BYTE event = 2;          // 带口令登录
     BYTE operatorType = 2;   // 维护人员
@@ -97,7 +110,7 @@ void TestWidget::on_Btn9003_login_clicked()
 void TestWidget::on_Btn9003_logout_clicked()
 {
     // AFC 签退
-    QString userName = m_userName;
+    QString userName = "00002114";
     BYTE * operatorID = reinterpret_cast<byte*>(userName.toLocal8Bit().data());
     BYTE event = 0;          // 签退
     BYTE operatorType = 2;   // 维护人员
@@ -114,10 +127,10 @@ void TestWidget::on_Btn9002_clicked()
     DataCenter::getThis()->samInfo2afc();
 }
 
-void TestWidget::on_Btn9002_2_clicked()
-{
-
-}
+//void TestWidget::on_Btn9002_2_clicked()
+//{
+////    DataCenter::getThis()->samInfo2afc();
+//}
 
 
 // FTP接口测试
@@ -134,13 +147,22 @@ void TestWidget::on_fileBtn_clicked()
     ui->lineEdit_upload->setText(fileName);
 }
 
+//std::function void fileDownloadedCallBack(QString &localpath, QString &filename)>  {
+
+//}
+
+
 void TestWidget::on_pushButton_download_clicked()
 {
     QString localPath = ui->lineEdit_upload->text();
     QString serverPath = ui->lineEdit_download->text();
 //    QString localPath = "ism-net";
 //    QString serverPath = "folder1/";
-    m_curlFtp->ftpDownload(localPath, serverPath);
+
+    fileDownloadedCallBack callBack;
+    QHash<int, int> filter;
+    QString fileListFile = "fileList.txt";
+    m_curlFtp->Download(callBack, serverPath, fileListFile, localPath, filter);
 
     qDebug() << "dowmload……";
 //    m_ftp->get("/root/set-net.sh", "D:\\set-net.sh");
@@ -154,7 +176,7 @@ void TestWidget::on_pushButton_upload_clicked()
     QString serverPath = ui->lineEdit_download->text();
 //    QString localPath = "D:\\test.txt";
 //    QString serverPath = "folder1/test.txt";
-    m_curlFtp->ftpUpload(localPath, serverPath);
+//    m_curlFtp->ftpUpload(localPath, serverPath);
 
 //    qDebug() << "==== upload test ====";
 //    FtpUpload("ftp://192.168.2.193:21/ftpdata/ismftp/set1.sh", "D:\\set-net.sh", "ismftp", "1234Asdf", 100000);
@@ -182,10 +204,6 @@ void TestWidget::error(QNetworkReply::NetworkError error)
     }
 }
 
-void TestWidget::on_pathBtn_clicked()
-{
-
-}
 
 
 void TestWidget::on_pushButton_fileList_clicked()
@@ -244,7 +262,6 @@ void TestWidget::showFileList(QString fileName)
 
 
 // 参数文件解析
-
 int TestWidget::parseHead(QDataStream &stream)
 {
     // 文件头
@@ -347,9 +364,9 @@ void TestWidget::on_p1004btn_clicked()
         return;
     }
 
-    QByteArray array = file.readAll();
-    bool checkOk = fileCheck(array);
-    qDebug() << "file check: " << checkOk;
+//    QByteArray array = file.readAll();
+//    bool checkOk = fileCheck(array);
+//    qDebug() << "file check: " << checkOk;
 
     QDataStream stream(&file);
     int count = parseHead(stream);

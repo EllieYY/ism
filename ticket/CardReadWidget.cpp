@@ -107,7 +107,7 @@ void CardReadWidget::readTransactionInfo()
         initReadState();
         ui->readerInfoLabel->setText("票卡读取完成……");
 
-        delayMSec(500);
+//        delayMSec(500);
         emit readOk(m_ticketWidgetId);
 
         close();
@@ -206,6 +206,8 @@ BYTE CardReadWidget::readTicketInfo(BYTE anti)
 
     TicketBasicInfo* ticket = new TicketBasicInfo(
                 typeNum, type, number, startDate, validDate, state, tripState, balance);
+    ticket->setIcType(analyseInfo.ICType);
+    ticket->setErrorCode(analyseInfo.errCode);
     ticket->setIsAllowOctPay(isAllowOctPay);
     ticket->setIsAllowUpdate(isAllowUpdate);
     ticket->setUpdateType(updateType);
@@ -249,15 +251,18 @@ BYTE CardReadWidget::readHistoryTrade(BYTE anti)
     }
 
     DataCenter::getThis()->setTransInfoList(transList);
+    return hisRet;
 }
 
 void CardReadWidget::setTestData()
 {
+    int typeNum = 0x80;
+    QString type = DataCenter::getThis()->getTicketTypeString(typeNum);
     TicketBasicInfo* ticket = new TicketBasicInfo(
-                UL_CARD, "临时卡", "30010088562007", "20200901", "20231001", 1, 1, 500);
+                0x85, type, "30010088562007", "20200901", "20231001", 1, 1, 500);
     ticket->setIsAllowOctPay(false);
     ticket->setIsAllowUpdate(true);
-    ticket->setUpdateType(FARE_EN);
+    ticket->setUpdateType(FARE_EX);
     ticket->setEnStationCode("0203");
     ticket->setEnTime("20211115212305");
     ticket->setExStationCode("0306");

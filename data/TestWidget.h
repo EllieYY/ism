@@ -27,14 +27,14 @@ private slots:
     void on_Btn3001_clicked();
     void on_Btn4002_clicked();
     void on_Btn7000_clicked();
-    void on_Btn7001_clicked();
+//    void on_Btn7001_clicked();
     void on_Btn9003_login_clicked();
     void on_Btn9003_logout_clicked();
     void on_Btn9002_clicked();
-    void on_Btn9002_2_clicked();
+//    void on_Btn9002_2_clicked();
 
     // FTP文件上传下载
-    void on_pathBtn_clicked();
+//    void on_pathBtn_clicked();
     void on_fileBtn_clicked();
     void on_pushButton_download_clicked();
     void on_pushButton_upload_clicked();

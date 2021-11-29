@@ -7,6 +7,7 @@
 #include <time.h>
 #include "SettingCenter.h"
 #include "BomParamVersionInfo.h"
+#include "BasicInfo.h"
 
 AFCTaskThread::AFCTaskThread(QObject *parent) : QThread(parent)
 {
@@ -16,6 +17,30 @@ AFCTaskThread::AFCTaskThread(QObject *parent) : QThread(parent)
 
 void AFCTaskThread::run()
 {
+    // AFC通信库初始化
+    QByteArray devByteArray = MyHelper::hexStrToByte(DataCenter::getThis()->getDeviceId());
+    BYTE* deviceId = (BYTE*)devByteArray.data();
+
+    BasicInfo* basicInfo = DataCenter::getThis()->getBasicInfo();
+    QByteArray scIdByteArray = MyHelper::hexStrToByte(basicInfo->scId());
+    BYTE* scId = (BYTE*)devByteArray.data();
+    QByteArray scIpArray = basicInfo->scIP().toLatin1();
+    char* scIp = scIpArray.data();
+    uint scPort = basicInfo->scPort();
+    QByteArray localIpArray = basicInfo->localIP().toLatin1();
+    char* localIp = localIpArray.data();
+    uint localPort = basicInfo->localPort();
+
+    int ret = initNetworkLib(deviceId, scId, scIp, scPort, localIp, localPort);
+
+    char version[60];
+    getLibVersion(version);
+    logger()->info("[getLibVersion]AFC通讯库初始化{%2}，获取版本号={%1}", QString(version), ret);
+
+    // 开始服务
+    DataCenter::getThis()->deviceState2afc(DEV_SERVICE_ON);
+    DataCenter::getThis()->param2afc();
+
     while(1) {
         respCheck();
         dealCheck();
@@ -31,12 +56,12 @@ void AFCTaskThread::dealCheck()
 
         // 获取消息
         messageBuff buff = {0};
-        getSpecNeedDeal(m_dealSeq, &buff);
+//        getSpecNeedDeal(m_dealSeq, &buff);
 
-        // 消息回复
-        bool ok;
-        int type = QByteArray((char*)buff.messageType, 2).toHex().toInt(&ok, 16);
-        afcResp(type, buff.messageBody, buff.recordCount);
+//        // 消息回复
+//        bool ok;
+//        int type = QByteArray((char*)buff.messageType, 2).toHex().toInt(&ok, 16);
+//        afcResp(type, buff.messageBody, buff.recordCount);
     }
 }
 
@@ -49,12 +74,12 @@ void AFCTaskThread::respCheck()
 
         // 获取消息
         messageBuff buff = {0};
-        getSpecNeedResponse(m_respSeq, &buff);
+//        getSpecNeedResponse(m_respSeq, &buff);
 
-        // 消息回复
-        bool ok;
-        int type = QByteArray((char*)buff.messageType, 2).toHex().toInt(&ok, 16);
-        afcResp(type, buff.messageBody, buff.recordCount);
+//        // 消息回复
+//        bool ok;
+//        int type = QByteArray((char*)buff.messageType, 2).toHex().toInt(&ok, 16);
+//        afcResp(type, buff.messageBody, buff.recordCount);
     }
 }
 
@@ -175,7 +200,7 @@ void AFCTaskThread::parse3000(uchar *msg)
     // 设备状态上报
     int cmd = info->cmdCode;
     if (cmd == 0x02) {
-        DataCenter::getThis()->deviceState2afc();
+        DataCenter::getThis()->deviceState2afc(DEV_OK);
     }
 
     // 日志记录

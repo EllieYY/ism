@@ -356,7 +356,7 @@ void HttpTool::parseLineMaps(QJsonObject data)
             }
 
             QString lineCode = jsonObject.value("lineCode").toString();
-            QString picName = "line" + lineCode + ".png";
+            QString picName = "line" + lineCode + ".jpg";
             DataCenter::getThis()->setLineMap(lineCode, picName);
 
             // save file

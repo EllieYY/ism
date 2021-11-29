@@ -24,6 +24,9 @@ private:
     void setTestData();
 
 private:
+    bool m_initOk;
+
+private:
     Ui::TimeTableWidget *ui;
 };
 

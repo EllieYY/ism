@@ -48,6 +48,8 @@ public:
 public:
     void secEvent();
 
+    void init();
+
     // 服务连接状态
     int getServiceState() const;
     void setServiceState(int serviceState);
@@ -109,7 +111,10 @@ public:
 
     // 定义与文字转换
     QString getTicketTypeString(int type);
-    QString getTicketStateString(int type);
+    QString getTicketStateString(int icType, int state);
+    QString getULStateStr(int state);
+    QString getCPUStateStr(int state);
+    QString getOCTStateStr(int state);
     QString getTradeTypeString(int type);
     QString getUpdateTypeString(int type);
 
@@ -135,7 +140,7 @@ public:
     void uploadTradeFile(QString filePath, QString fileName, QByteArray md5Arr, int type);
 
 private:
-    void init();
+//    void init();
     void initData();
     void initDevice();
     void closeDevice();
@@ -160,7 +165,7 @@ public:
 public:
     void samInfo2afc();                 // 上传SAM卡号
     void afcHeart(bool onlineFlag);
-    void deviceState2afc();             // 设备状态上报
+    void deviceState2afc(BYTE event);   // 设备状态上报
     void param2afc();                   // 参数上报
 
     void setStationMode(int stationMode);
@@ -173,6 +178,14 @@ public:
     long getTradeDataCountLT() const;
 
     QUrl getFtpUrl();
+
+    // 设备状态变化
+    void setIsTest(bool isTest);
+    void setServiceOff(bool serviceOff);
+    void setIsLogin(bool isLogin);
+    BYTE getDeviceState();
+
+    BasicInfo *getBasicInfo() const;
 
 private:
     int m_serviceState;                         // 服务状态 0-正常 1-异常 2-暂停
@@ -227,8 +240,23 @@ private:
 
     QUrl m_ftpUrl;     // 文件服务器连接信息
 
+    // FTP任务线程
     TaskThread* m_ftpTaskThread;
     int taskId;
+
+    // 设备状态
+//    0	开(1)/关(0)
+//    1	停止服务(1)/无故障(0)
+//    2	测试(1)/生产(0)
+//    3	EFO(1)/BOM(0)
+//    4	已登录(1)/签退(0)
+//    5	可以充值(1)/不可充值(0)
+//    6	自动发售机构可用(1)/不可用(0)
+//    7	[未定义]
+    bool m_isTest;      // 测试状态
+    bool m_serviceOff;  // 服务状态
+    bool m_isLogin;     // 是否登录
+
 
 signals:
     void lineReceived();

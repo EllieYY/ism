@@ -25,9 +25,13 @@ MetroInterchangeWidget::~MetroInterchangeWidget()
 
 bool MetroInterchangeWidget::showData()
 {
+    if (m_initOk) {
+        return true;
+    }
+    m_initOk = true;
+
     // 获取数据
     QList<LineInterchangeInfo*> lineList = DataCenter::getThis()->getLineInterchanges();
-
 
     int count = DataCenter::getThis()->getLinesInterchangeCloums(lineList);
     if(count <= 0) return true;
@@ -37,10 +41,6 @@ bool MetroInterchangeWidget::showData()
     // 显示数据
     int row = 0;
     for (LineInterchangeInfo* line : lineList) {
-
-        qDebug() << line;
-
-
         int spanSize = line->interchangeList().size();
         if (spanSize > 1) {
             ui->tableWidget->setSpan(row, 0, spanSize, 1);
@@ -64,8 +64,8 @@ bool MetroInterchangeWidget::showData()
             QHBoxLayout *layout = new QHBoxLayout(frame);
             layout->setMargin(0);
             layout->setSpacing(50);
-            QSpacerItem* spaceLR = new QSpacerItem(10, 5, QSizePolicy::Expanding, QSizePolicy::Minimum);
-            layout->addSpacerItem(spaceLR);
+            QSpacerItem* spaceL = new QSpacerItem(10, 5, QSizePolicy::Expanding, QSizePolicy::Minimum);
+            layout->addSpacerItem(spaceL);
 
             QList<LineInfo*> transLines = info->lineList();
             for (LineInfo* transLine:transLines) {
@@ -74,15 +74,9 @@ bool MetroInterchangeWidget::showData()
                 lineBtn->setStyleSheet("background-color: " + transLine->getColor() + ";");
                 layout->addWidget(lineBtn);
             }
-//            QPushButton* curBtn = new QPushButton(curLineName, frame);
-//            curBtn->setProperty("type", "lineBtn");
-//            curBtn->setStyleSheet("background-color: " + line->getColor() + ";");
-//            QPushButton* otherBtn = new QPushButton(info->lineName(), frame);
-//            otherBtn->setProperty("type", "lineBtn");
-//            otherBtn->setStyleSheet("background-color: " + info->lineColor() + ";");
 
-
-            layout->addSpacerItem(spaceLR);
+            QSpacerItem* spaceR = new QSpacerItem(10, 5, QSizePolicy::Expanding, QSizePolicy::Minimum);
+            layout->addSpacerItem(spaceR);
 
             ui->tableWidget->setCellWidget(row, 2, frame);
 
@@ -118,6 +112,7 @@ void MetroInterchangeWidget::setStyle()
 void MetroInterchangeWidget::init()
 {
     setStyle();
+    m_initOk = false;
 }
 
 void MetroInterchangeWidget::setTestData()

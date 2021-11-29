@@ -2,6 +2,8 @@
 #define LOGOUTDLG_H
 
 #include <QWidget>
+#include "logger.h"
+#include "propertyconfigurator.h"
 
 namespace Ui {
 class LogoutDlg;
@@ -10,6 +12,7 @@ class LogoutDlg;
 class LogoutDlg : public QWidget
 {
     Q_OBJECT
+    LOG4QT_DECLARE_QCLASS_LOGGER
 
 public:
     explicit LogoutDlg(QWidget *parent = nullptr);

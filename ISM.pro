@@ -121,7 +121,6 @@ SOURCES += \
     qrCode/QrCodeMainWidget.cpp \
     qrCode/QrQueryWidget.cpp \
     qrCode/QrReregisterWidget.cpp \
-    qtftp/qftp.cpp \
     ticket/CardReadWidget.cpp \
     ticket/CompensationFareWidget.cpp \
     ticket/PaymentWidget.cpp \
@@ -197,7 +196,6 @@ HEADERS += \
     qrCode/QrCodeMainWidget.h \
     qrCode/QrQueryWidget.h \
     qrCode/QrReregisterWidget.h \
-    qtftp/qftp.h \
     ticket/CardReadWidget.h \
     ticket/CompensationFareWidget.h \
     ticket/PaymentWidget.h \

@@ -62,6 +62,12 @@ public:
     uint updateAmount() const;
     void setUpdateAmount(const uint &updateAmount);
 
+    int icType() const;
+    void setIcType(int icType);
+
+    int errorCode() const;
+    void setErrorCode(int errorCode);
+
 private:
     QString     m_type;         // 卡类型
     QString     m_number;       // 卡号
@@ -70,7 +76,8 @@ private:
     int         m_cardState;    // 卡状态
     int         m_tripState;    // 旅程状态
     float       m_balance;      // 余额
-    int         m_typeNum;
+    int         m_typeNum;      // ticketType
+    int         m_icType;
 
     bool        m_isAllowUpdate;  // 是否允许更新
     bool        m_isAllowOctPay;  // 是否允许卡扣更新
@@ -80,6 +87,8 @@ private:
     QDateTime   m_enTime;         // 进站时间
     QDateTime   m_exTime;         // 出站时间
     uint        m_updateAmount;   // 票卡更新应收罚金
+
+    int   m_errorCode;    // 票卡分析错误码
 
 signals:
 

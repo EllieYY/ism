@@ -173,3 +173,23 @@ void TicketBasicInfo::setUpdateAmount(const uint &updateAmount)
 {
     m_updateAmount = updateAmount;
 }
+
+int TicketBasicInfo::icType() const
+{
+    return m_icType;
+}
+
+void TicketBasicInfo::setIcType(int icType)
+{
+    m_icType = icType;
+}
+
+int TicketBasicInfo::errorCode() const
+{
+    return m_errorCode;
+}
+
+void TicketBasicInfo::setErrorCode(int errorCode)
+{
+    m_errorCode = errorCode;
+}

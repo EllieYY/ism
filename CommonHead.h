@@ -115,9 +115,20 @@ typedef enum
 //}CardMidia;
 
 typedef enum  {
-    FREE = 0X00,       // 非付费区
+    FREE = 0x00,       // 非付费区
     PAY = 0x01          // 付费区
 }ZONE;
+
+typedef enum  {
+    DEV_OK = 0,       // 正常
+    DEV_HARDWARE_ERR = 8,           // 硬件故障
+    DEV_CLOSE = 9,    // 设备故障
+    DEV_LOGIN = 13,    // 登录
+    DEV_SERVICE_END = 19,   // 营运结束
+    DEV_SERVICE_OFF = 34,   // 停止服务
+    DEV_SERVICE_ON = 20,    // 开始服务
+    DEV_RW_ERR = 44    // 读写器故障
+}DEVICE_EVENT;
 
 
 typedef struct

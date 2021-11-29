@@ -1,7 +1,13 @@
 #include "LibcurlFtp.h"
 #include <iostream>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <fstream>
 #include <QDebug>
+#include <QFile>
+using namespace std;
+
+
 
 struct FtpFile {
     const char *filename;
@@ -14,19 +20,130 @@ LibcurlFtp::LibcurlFtp(QObject *parent) : QObject(parent)
     m_pUrl.setScheme("ftp");
 }
 
-// 设置地址和端口
-void LibcurlFtp::setHostPort(const QString &host, int port)
+
+// QHash<int, int> fileFilterInfo : 文件类型，文件版本
+bool LibcurlFtp::Getlist(QString &remotePath, QString &listFileName, QString &localPath, QHash<int, int> fileFilterInfo)
 {
-    m_pUrl.setHost(host);
-    m_pUrl.setPort(port);
+    // 格式转换
+    QByteArray remoteArray = remotePath.toUtf8();
+    const char* remotePathStr = remoteArray.constData();
+
+    QByteArray pathFileArray = (localPath + listFileName).toUtf8();
+    const char* pathFile = pathFileArray.constData();
+
+    QByteArray localArray = localPath.toUtf8();
+    const char* localPathStr = localArray.constData();
+
+    // curl 初始化 + 参数设置
+    CURL *curl;
+    CURLcode res;
+    FILE *ftpfile;
+
+    /* local file name to store the file as */
+    ftpfile = fopen(pathFile, "wb"); /* b is binary, needed on win32 */
+    curl = curl_easy_init();
+
+    if(curl) {
+        /* Get a file listing from sunet */
+        // 路径包含用户名和密码
+        curl_easy_setopt(curl, CURLOPT_URL, remotePathStr);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, ftpfile);
+        res = curl_easy_perform(curl);
+        /* Check for errors */
+
+        if(res != CURLE_OK)
+          fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                  curl_easy_strerror(res));
+
+        /* always cleanup */
+        curl_easy_cleanup(curl);
+    }
+    fclose(ftpfile);
+
+    // 文件列表解析
+    QString listFilePath = localPath + listFileName;
+    QFile file(listFilePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "[getFileList] cannot open file : " << listFilePath;
+        return false;
+    }
+
+    QList<QString> fileList;  fileList.clear();
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+
+        QString fileName;
+        QChar type;
+        processLine(line, fileName, type);
+
+        if (type == 'd') {
+            continue;
+        }
+        fileList.append(fileName);
+    }
+    file.close();
+
+
+    // 文件筛选 | 文件下载
+    for (QString name : fileList) {
+        if (!paramFileFilter(name, fileFilterInfo)) {
+            continue;
+        }
+
+        // 文件下载
+        if(ftpDownload(remotePath, name, localPath)) {
+           if (m_callBack != NULL)
+           m_callBack(localPath, name);
+        } else {
+           qDebug() << name << "download error.";
+//           return false;
+        }
+    }
+
+    return true;
 }
 
-// 设置登录 FTP 服务器的用户名和密码
-void LibcurlFtp::setUserInfo(const QString &userName, const QString &password)
+// 文件目录行处理
+void LibcurlFtp::processLine(QString line, QString& fileName, QChar& type)
 {
-    m_pUrl.setUserName(userName);
-    m_pUrl.setPassword(password);
+    type = line[0];
+
+    int index = line.lastIndexOf(" ");
+    fileName = line.mid(index + 1);
+
+    QString info = QString("[%1] %2").arg(type).arg(fileName);
+    qDebug() << info;
 }
+
+// 文件筛选
+// QHash<int, int> fileFilterInfo : 文件类型，文件版本
+bool LibcurlFtp::paramFileFilter(QString fileName, QHash<int, int> fileFilterInfo)
+{
+    // TODO:文件过滤
+    // 文件名：“PRM.”+参数类型（4位）+“.”+节点编码（4位）+“.”+文件序列号（6位）
+    bool ok;
+    int type = fileName.mid(4, 4).toInt(&ok, 16);
+    int code = fileName.mid(9, 4).toInt(&ok, 16);
+
+
+
+
+    return true;
+}
+
+
+bool LibcurlFtp::Download(fileDownloadedCallBack callBack, QString &remotpath, QString &myfloderlist, QString &localpath,
+                          QHash<int, int> fileFilterInfo)
+{
+    m_callBack = callBack;
+    if(Getlist(remotpath, myfloderlist, localpath, fileFilterInfo))
+    {
+        return false;
+    }
+    return true;
+}
+
 
 
 /* 文件下载 */
@@ -46,14 +163,12 @@ static size_t write_callback(void *buffer, size_t size, size_t nmemb, void *stre
     return fwrite(buffer, size, nmemb, out->stream);
 }
 
-int LibcurlFtp::ftpDownload(QString localPath, QString targetPath)
+int LibcurlFtp::ftpDownload(QString remotePath, QString fileName, QString localPath)
 {
-    QByteArray localArray = localPath.toUtf8();
+    QByteArray localArray = (localPath + fileName).toUtf8();
     const char* localFile = localArray.constData();
 
-//    QString url = m_pUrl.toString() + "/" + targetPath;
-    QString url = targetPath;
-    QByteArray serverArray = url.toUtf8();
+    QByteArray serverArray = (remotePath + fileName).toUtf8();
     const char* targetUrl = serverArray.constData();
 
     CURL *curl;
@@ -99,7 +214,7 @@ int LibcurlFtp::ftpDownload(QString localPath, QString targetPath)
 
     curl_global_cleanup();
 
-    emit downloadOk(localPath);
+//    emit downloadOk(localPath);
 
     return 0;
 }
@@ -121,14 +236,12 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
   return retcode;
 }
 
-int LibcurlFtp::ftpUpload(QString localPath, QString targetPath)
-{
-    QByteArray localArray = localPath.toUtf8();
+int LibcurlFtp::ftpUpload(QString remotePath, QString fileName, QString localPath)
+{    
+    QByteArray localArray = (localPath + fileName).toUtf8();
     const char* localFile = localArray.constData();
 
-//    QString url = m_pUrl.toString() + "/" + targetPath;
-    QString url = targetPath;
-    QByteArray serverArray = url.toUtf8();
+    QByteArray serverArray = (remotePath + fileName).toUtf8();
     const char* targetUrl = serverArray.constData();
 
     CURL *curl;
@@ -192,9 +305,41 @@ int LibcurlFtp::ftpUpload(QString localPath, QString targetPath)
     fclose(hd_src); /* close the local file */
     curl_global_cleanup();
 
-    emit uploadOk(url);
+//    emit uploadOk(url);
     return 0;
 }
+
+
+// 设置地址和端口
+void LibcurlFtp::setHostPort(const QString &host, int port)
+{
+    m_pUrl.setHost(host);
+    m_pUrl.setPort(port);
+}
+
+// 设置登录 FTP 服务器的用户名和密码
+void LibcurlFtp::setUserInfo(const QString &userName, const QString &password)
+{
+    m_pUrl.setUserName(userName);
+    m_pUrl.setPassword(password);
+}
+
+
+
+//#include "download.h"
+//#include <iostream>
+//using namespace std;
+//int main()
+//{
+//    FileDownloadedCallBack callBack;
+//    FtpDownloadder *dl=new FtpDownloadder("192.168.1.1","21","zheng","yun");
+//    if(dl->Download(callBack))
+//    {
+//        cout<<"download over";
+//    }
+//    delete dl;
+//    return 0;
+//}
 
 
 

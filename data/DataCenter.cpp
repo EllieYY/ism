@@ -36,8 +36,7 @@ static int HRT_NUM = 5;
 DataCenter* DataCenter::m_pInstance = NULL;
 DataCenter::DataCenter(QObject *parent) : QObject(parent)
 {
-    init();
-    getLastMsgSeq();
+//    init();
 }
 
 DataCenter::~DataCenter()
@@ -101,22 +100,22 @@ void DataCenter::init()
     ASRHttpTool::getThis()->setIp(m_basicInfo->asrServiceIp());
     ASRHttpTool::getThis()->setPort(m_basicInfo->asrServicePort());
 
-    logger()->info("基础数据更新");
-    // 获取基础数据并更新数据 #7
-//    HttpTool::getThis()->requestLineBaseInfo();
-//    HttpTool::getThis()->requestLineStations();
-//    HttpTool::getThis()->requestInterchanges();
-//    HttpTool::getThis()->requestTimeTables();
-//    HttpTool::getThis()->requestStationMap();
-//    HttpTool::getThis()->requestStationPreMap();
-//    HttpTool::getThis()->requestLineMap();
-
     logger()->info("配置文件读取。");
     m_lineStations.append(SettingCenter::getThis()->getLineStations());
     m_lineTimeTables.append(SettingCenter::getThis()->getLineTimeTables());
     m_lineInterchanges.append(SettingCenter::getThis()->getLineInterchanes());
     m_lineList.append(SettingCenter::getThis()->getLineBasicInfo());
     logger()->info("配置文件读取完毕。");
+
+    logger()->info("基础数据更新");
+    // 获取基础数据并更新数据 #7
+    HttpTool::getThis()->requestLineBaseInfo();
+    HttpTool::getThis()->requestLineStations();
+    HttpTool::getThis()->requestInterchanges();
+    HttpTool::getThis()->requestTimeTables();
+    HttpTool::getThis()->requestStationMap();
+    HttpTool::getThis()->requestStationPreMap();
+//    HttpTool::getThis()->requestLineMap();
 
     m_stationCodeMap.clear();
     for(LineStations* line : m_lineStations) {
@@ -126,36 +125,37 @@ void DataCenter::init()
         }
     }
 
-    // AFC通信库初始化
-    QByteArray devByteArray = MyHelper::hexStrToByte(getDeviceId());
-    BYTE* deviceId = (BYTE*)devByteArray.data();
-    QByteArray scIdByteArray = MyHelper::hexStrToByte(m_basicInfo->scId());
-    BYTE* scId = (BYTE*)devByteArray.data();
-    QByteArray scIpArray = m_basicInfo->scIP().toLatin1();
-    char* scIp = scIpArray.data();
-    uint scPort = m_basicInfo->scPort();
-    QByteArray localIpArray = m_basicInfo->localIP().toLatin1();
-    char* localIp = localIpArray.data();
-    uint localPort = m_basicInfo->localPort();
+//    // AFC通信库初始化
+//    QByteArray devByteArray = MyHelper::hexStrToByte(getDeviceId());
+//    BYTE* deviceId = (BYTE*)devByteArray.data();
+//    QByteArray scIdByteArray = MyHelper::hexStrToByte(m_basicInfo->scId());
+//    BYTE* scId = (BYTE*)devByteArray.data();
+//    QByteArray scIpArray = m_basicInfo->scIP().toLatin1();
+//    char* scIp = scIpArray.data();
+//    uint scPort = m_basicInfo->scPort();
+//    QByteArray localIpArray = m_basicInfo->localIP().toLatin1();
+//    char* localIp = localIpArray.data();
+//    uint localPort = m_basicInfo->localPort();
 
-    int ret = initNetworkLib(deviceId, scId, scIp, scPort, localIp, localPort);
+//    int ret = initNetworkLib(deviceId, scId, scIp, scPort, localIp, localPort);
 
-    char version[60];
-    getLibVersion(version);
-    logger()->info("[getLibVersion]AFC通讯库初始化{%2}，获取版本号={%1}", QString(version), ret);
+//    char version[60];
+//    getLibVersion(version);
+//    logger()->info("[getLibVersion]AFC通讯库初始化{%2}，获取版本号={%1}", QString(version), ret);
 
-    // TODO:test
-    deviceState2afc();
-    param2afc();
+//    // 开始服务
+//    deviceState2afc(DEV_SERVICE_ON);
+//    param2afc();
 
-    m_timer = new HeartTimer();
-    connect(m_timer, &HeartTimer::onlineFlag, this, &DataCenter::afcHeart);
-    m_timer->startTimer(30000);
 
     m_taskThread = new AFCTaskThread(this);
     connect(m_taskThread, &AFCTaskThread::paramTypeUpdate, this, &DataCenter::onParamUpdate, Qt::DirectConnection);
     connect(m_taskThread, &AFCTaskThread::softwareUpdate, this, &DataCenter::onSoftwareUpdate, Qt::DirectConnection);
     m_taskThread->start();
+
+    m_timer = new HeartTimer();
+    connect(m_timer, &HeartTimer::onlineFlag, this, &DataCenter::afcHeart);
+    m_timer->startTimer(60000);
 
     int id = 0;
     m_ftpTaskThread = new TaskThread(this);
@@ -170,6 +170,10 @@ void DataCenter::init()
 
 void DataCenter::initData()
 {
+    // TODO:测试状态，硬配
+    m_isTest = true;
+    m_serviceOff = false;    // 默认服务状态
+
     m_basicInfo = NULL;               // 站点基础信息
     m_loginInfo = NULL;               // 登录信息
     m_ticketBasicInfo = NULL;         // 车票基本信息
@@ -178,8 +182,8 @@ void DataCenter::initData()
     m_isSpecieUsable = false;         // 硬币模块可用状态
     m_isBanknotesUsable = false;      // 纸币模块可用状态
 
-    m_serviceState = 1;
-    m_netState = 1;
+    m_serviceState = 0;
+    m_netState = 0;
 
     taskId = 0;
 
@@ -388,9 +392,9 @@ int DataCenter::parseParam1004(QString filePath)
         return -1;
     }
 
-    QByteArray array = file.readAll();
-    bool checkOk = fileCheck(array);
-    qDebug() << "file check: " << checkOk;
+//    QByteArray array = file.readAll();
+//    bool checkOk = fileCheck(array);
+//    qDebug() << "file check: " << checkOk;
 
     QDataStream stream(&file);
     int count = parseHead(stream);
@@ -600,7 +604,7 @@ QList<QTableWidgetItem *> DataCenter::getRegisterItems(ReregisterInfo *info)
     QTableWidgetItem* item2 = new QTableWidgetItem(info->number());
     QTableWidgetItem* item3 = new QTableWidgetItem(info->createTime().toString("yyyy-MM-dd"));
     QTableWidgetItem* item4 = new QTableWidgetItem(info->validDate().toString("yyyy-MM-dd"));
-    QString ticketStateStr = getTicketStateString(info->state());
+    QString ticketStateStr = getTicketStateString(0, info->state());
     QTableWidgetItem* item5 = new QTableWidgetItem(ticketStateStr);
     QTableWidgetItem* item6 = new QTableWidgetItem(QString("%1").arg(info->balance(), 0, 'f', 1));
 
@@ -648,19 +652,81 @@ QString DataCenter::getTicketTypeString(int type)
 //    return typeStr;
 }
 
-QString DataCenter::getTicketStateString(int type)
+QString DataCenter::getTicketStateString(int icType, int state)
 {
     QString typeStr = "未定义卡";
-    switch(type) {
-    case VALID:
-        typeStr = "有效卡";
-        break;
-    case INVALID:
-        typeStr = "已过期";
-        break;
-    default:
-        break;
+    if (icType == UL_CARD) {
+        typeStr = getULStateStr(state);
+    } else if (icType == METRO_CARD) {
+        typeStr = getCPUStateStr(state);
+    } else if (icType == OCT_CARD) {
+        typeStr = getOCTStateStr(state);
     }
+
+    return typeStr;
+}
+
+QString DataCenter::getULStateStr(int state) {
+    QString typeStr = "未定义卡";
+    //00初始化，01售票，02进站，03出站，05注销，12超程更新，
+    //22超时更新，32超时超程更新，42出站票
+    if (state == 0) {
+        typeStr = "初始化";
+    } else if (state == 1) {
+        typeStr = "售票";
+    } else if (state == 2) {
+        typeStr = "进站";
+    } else if (state == 3) {
+        typeStr = "出站";
+    } else if (state == 5) {
+        typeStr = "注销";
+    } else if (state == 12) {
+        typeStr = "超程更新";
+    } else if (state == 22) {
+        typeStr = "超时更新";
+    } else if (state == 32) {
+        typeStr = "超时超程更新";
+    } else if (state == 42) {
+        typeStr = "出站票";
+    }
+
+    return typeStr;
+}
+QString DataCenter::getCPUStateStr(int state) {
+    QString typeStr = "未定义卡";
+    // 太长不看版：00初始化，02售票，04进站，06出站，08锁卡，0A注销
+    if (state == 0x00) {
+        typeStr = "初始化";
+    } else if (state == 0x02) {
+        typeStr = "售票";
+    } else if (state == 0x04) {
+        typeStr = "进站";
+    }else if (state == 0x06) {
+        typeStr = "出站";
+    } else if (state == 0x08) {
+        typeStr = "锁卡";
+    } else if (state == 0x0A) {
+        typeStr = "注销";
+    }
+
+    return typeStr;
+}
+QString DataCenter::getOCTStateStr(int state) {
+    QString typeStr = "未定义卡";
+
+    // 太长不看版：00出站，01进站，03超程更新，05超时更新，07超程超时更新
+    if (state == 00) {
+        typeStr = "出站";
+    } else if (state == 1) {
+        typeStr = "进站";
+    } else if (state == 3) {
+        typeStr = "超程更新";
+    }else if (state == 5) {
+        typeStr = "超时更新";
+    } else if (state == 7) {
+        typeStr = "超程超时更新";
+    }
+
     return typeStr;
 }
 
@@ -729,15 +795,19 @@ void DataCenter::setLoginData(QString user, QString pwd)
     m_loginInfo->setUserName(user);
     m_loginInfo->setPassword(pwd);
     m_loginInfo->setLoginTime(QDateTime::currentDateTime());
+
+    setIsLogin(true);
 }
 
 bool DataCenter::setLogoutData(QString user, QString pwd)
 {
     if (m_loginInfo == NULL) {
+        setIsLogin(false);
         return true;
     }
     if (user == m_loginInfo->userName() && pwd == m_loginInfo->password()) {
         m_loginInfo->setLoginTime(QDateTime::currentDateTime());
+        setIsLogin(false);
         return true;
     }
     return false;
@@ -769,12 +839,13 @@ QString DataCenter::getReaderErrorStr(BYTE errorCode)
 // 文件下载
 void DataCenter::onSoftwareUpdate(QString fileName)
 {
-    QString urlStr = m_basicInfo->ftpUrl().toString() + "Soft/" + fileName;
+    QString urlStr = m_basicInfo->ftpUrl().toString() + "Soft/";
     QString localPath = QDir::currentPath() + QDir::separator() +
-            "bom-param" + QDir::separator() + fileName;
+            "bom-param" + QDir::separator();
 
-    LibcurlFtp* ftp = new LibcurlFtp(this);
-    ftp->ftpDownload(localPath, urlStr);
+    // TODO:
+//    LibcurlFtp* ftp = new LibcurlFtp(this);
+//    ftp->ftpDownload(urlStr, fileName, localPath);
 
 //    delete ftp;
 //    ftp = nullptr;
@@ -791,11 +862,8 @@ void DataCenter::onParamUpdate(QList<int> typeList)
 
     // TODO:文件下载
     for (QString file:fileList) {
-        QString serverFilePath = urlStr + file;
-        QString localFilePath = localPath + file;
-
         FtpDownloadTask* task = new FtpDownloadTask(taskId++);
-        task->setFileInfo(QUrl(serverFilePath), localFilePath);
+        task->setFileInfo(urlStr, file, localPath);
         m_ftpTaskThread->addTask(task);
     }
 }
@@ -843,8 +911,8 @@ void DataCenter::uploadTradeFile(QString filePath, QString fileName, QByteArray 
 {
     if (m_ftpTaskThread->isRunning()) {
         FtpUploadTask* task = new FtpUploadTask(taskId++);
-        QString serverFilePath = m_basicInfo->ftpUrl().toString() + "/Transaction/" + fileName;
-        task->setFileInfo(QUrl(serverFilePath), filePath);
+        QString serverFilePath = m_basicInfo->ftpUrl().toString() + "/Transaction/";
+        task->setFileInfo(serverFilePath, fileName, filePath);
         m_ftpTaskThread->addTask(task);
     }
 
@@ -917,24 +985,24 @@ void DataCenter::setHrtOffData(int idx)
 void DataCenter::afcHeart(bool onlineFlag)
 {
     if (onlineFlag) {
+        m_netState = 0;
+        m_serviceState = 0;
         m_hrtCnt[AFC_HRT] = 0;
     }
 }
 
-void DataCenter::deviceState2afc()
+void DataCenter::deviceState2afc(BYTE event)
 {
-    // （1-0）
-    // 设备状态：
-    // 与SC通信正常 | 停止服务 |测试or生产 | 0(BOM) | 已登录 | 0（不可充值） | 0（） | 开
-    bool afcHear = true;
-    bool test = true;
-    bool isLogin = true;
+    BYTE state = getDeviceState();
 
-    BYTE status = 0x15;
-    BYTE event = NULL;
-    BYTE ret = DeviceState(status, &event);
+    // 事件要传2个字节
+    BYTE eventArr[2];
+    eventArr[0] = event;
+    eventArr[1] = 0x00;
 
-    logger()->info("设备状态上报{}，status=%2, event=%3", ret, status, event);
+    BYTE ret = DeviceState(state, &event);
+
+    logger()->info("设备状态上报{}，status=%2, event=%3", ret, state, event);
 }
 
 void DataCenter::param2afc()
@@ -997,6 +1065,65 @@ QUrl DataCenter::getFtpUrl()
     m_ftpUrl.setPassword("1234Asdf");
 
     return m_ftpUrl;
+}
+
+
+
+//DEV_OK = 0,       // 正常
+//DEV_HARDWARE_ERR = 8,           // 硬件故障
+//DEV_CLOSE = 9,    // 设备故障
+//DEV_LOGIN = 13,    // 登录
+//DEV_SERVICE_END = 19,   // 营运结束
+//DEV_SERVICE_OFF = 34,   // 停止服务
+//DEV_SERVICE_ON = 20,    // 开始服务
+//DEV_RW_ERR = 44    // 读写器故障
+
+void DataCenter::setServiceOff(bool serviceOff)
+{
+    m_serviceOff = serviceOff;
+
+    // 设备状态上报
+    this->deviceState2afc(DEV_SERVICE_OFF);
+}
+
+void DataCenter::setIsLogin(bool isLogin)
+{
+    m_isLogin = isLogin;
+
+    // 设备状态上报
+    this->deviceState2afc(DEV_LOGIN);
+}
+
+BYTE DataCenter::getDeviceState()
+{
+    // 1   0	开(1)/关(0)
+    //     1	停止服务(1)/无故障(0)
+    //     2	测试(1)/生产(0)
+    // 0   3	EFO(1)/BOM(0)
+
+
+    //     4	已登录(1)/签退(0)
+    // 0   5	可以充值(1)/不可充值(0)
+    // 0   6	自动发售机构可用(1)/不可用(0)
+    // 0   7	[未定义]
+
+    BYTE deviceState = 0x01;
+    if (m_serviceOff) {
+        deviceState += 0x02;
+    }
+    if (m_isTest) {
+        deviceState += 0x04;
+    }
+    if (m_isLogin) {
+        deviceState += 0x10;
+    }
+
+    return deviceState;
+}
+
+BasicInfo *DataCenter::getBasicInfo() const
+{
+    return m_basicInfo;
 }
 
 
@@ -1088,7 +1215,7 @@ QList<QTableWidgetItem *> DataCenter::getTicketItems(TicketBasicInfo *info)
     QTableWidgetItem* item4 = new QTableWidgetItem(info->validDate().toString("yyyy-MM-dd"));
 
     // 卡状态
-    QString ticketStateStr = getTicketStateString(info->cardState());
+    QString ticketStateStr = getTicketStateString(info->icType(), info->cardState());
     QTableWidgetItem* item5 = new QTableWidgetItem(ticketStateStr);
     QTableWidgetItem* item6 = new QTableWidgetItem(QString("%1").arg(info->balance(), 0, 'f', 1));
 

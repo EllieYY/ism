@@ -26,6 +26,11 @@ TimeTableWidget::~TimeTableWidget()
 
 bool TimeTableWidget::showData()
 {
+    if (m_initOk) {
+        return true;
+    }
+    m_initOk = true;
+
     // 获取数据
     QList<LineTimeTables*> lineList = DataCenter::getThis()->getLineTimeTables();
     int count = DataCenter::getThis()->getLinesTimerCloums(lineList);
@@ -76,6 +81,7 @@ bool TimeTableWidget::showData()
 
 void TimeTableWidget::init()
 {
+    m_initOk = false;
     setStyle();
 }
 

@@ -14,9 +14,10 @@ FtpDownloadTask::~FtpDownloadTask()
     }
 }
 
-void FtpDownloadTask::setFileInfo(QUrl server, QString localPath)
+void FtpDownloadTask::setFileInfo(QUrl server, QString fileName, QString localPath)
 {
     m_ftpUrl = server;
+    m_fileName = fileName;
     m_localPath = localPath;
 }
 
@@ -25,7 +26,7 @@ int FtpDownloadTask::doWork()
     m_ftp->setHostPort(m_ftpUrl.host(), m_ftpUrl.port());
     m_ftp->setUserInfo(m_ftpUrl.userName(), m_ftpUrl.password());
 
-    m_ftp->ftpDownload(m_localPath, m_ftpUrl.toString());
+    m_ftp->ftpDownload(m_ftpUrl.toString(), m_fileName, m_localPath);
 
     return 0;
 }

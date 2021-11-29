@@ -122,8 +122,9 @@ void LogoutDlg::onLogout()
     BYTE operatorType = 2;   // 维护人员
     BYTE ret = OperatorAction(operatorID, event, operatorType);
     if (ret != 0) {
-        MyHelper::ShowMessageBoxError(QString("签退失败[%1]，请联系工作人员。").arg(ret));
-        return;
+//        MyHelper::ShowMessageBoxError(QString("签退失败[%1]，请联系工作人员。").arg(ret));
+        logger()->error("[OperatorAction] 签退失败：%1", ret);
+//        return;
     }
 
 

@@ -94,12 +94,14 @@ void LoginDlg::login()
     BYTE operatorType = 2;   // 维护人员
     BYTE ret = OperatorAction(operatorID, event, operatorType);
     if (ret != 0) {
-        MyHelper::ShowMessageBoxError(QString("登录失败[%1]，请联系工作人员。").arg(ret));
+//        MyHelper::ShowMessageBoxError(QString("登录失败[%1]，请联系工作人员。").arg(ret));
         logger()->error("AFC登录失败{%1}", ret);
-        return;
+//        return;
     }
 
     DataCenter::getThis()->setLoginData(userName, pwd);
+
+
     this->close();
     emit loginOk();
 }
