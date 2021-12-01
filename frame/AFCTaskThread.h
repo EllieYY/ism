@@ -20,8 +20,8 @@ private:
     void dealCheck();     // 检测要处理的报文 2000 | 3000 | 4000 | 7003 | 9001 | 9004
     void respCheck();     // 检测要回复的报文：4001 | 9005
     void afcResp(int type, uchar* body, int count);    // count是包体可变部分的个数
-    void make4001Resp();          // 参数查询回复
-    void make9005Resp();          // 软件版本查询
+    void make4001Resp(uchar *msg);          // 参数查询回复
+    void make9005Resp(uchar *msg);          // 软件版本查询
 
     void parse2000(uchar* msg);   // 模式命令
     void parse3000(uchar* msg);   // 设备控制命令
@@ -36,7 +36,7 @@ private:
     int m_respSeq;      // 待响应消息序号
 
 signals:
-    void paramTypeUpdate(QList<int> typeList);     // 要更新的参数
+    void paramTypeUpdate(QList<int> typeList, int type);     // 要更新的参数
     void softwareUpdate(QString fileName);         // 软件更新
 
 };

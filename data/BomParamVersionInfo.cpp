@@ -1,10 +1,8 @@
 #include "BomParamVersionInfo.h"
 
-BomParamVersionInfo::BomParamVersionInfo(long type, long version, QString fileName, QObject *parent) : QObject(parent)
+BomParamVersionInfo::BomParamVersionInfo(QObject *parent) : QObject(parent)
 {
-    m_type = type;
-    m_version = version;
-    m_fileName = fileName;
+
 }
 
 long BomParamVersionInfo::type() const

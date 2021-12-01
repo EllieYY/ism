@@ -25,7 +25,7 @@ LineWidget::~LineWidget()
 void LineWidget::init()
 {
     m_layout = NULL;
-    connect(DataCenter::getThis(), &DataCenter::lineReceived, this, &LineWidget::onReadLines);
+//    connect(DataCenter::getThis(), &DataCenter::lineReceived, this, &LineWidget::onReadLines);
 }
 
 void LineWidget::onReadLines()

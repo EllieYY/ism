@@ -647,8 +647,12 @@ BasicInfo* SettingCenter::getBasicInfo()
     return info;
 }
 
-void SettingCenter::saveParamVersionInfo(QList<BomParamVersionInfo *> list)
+void SettingCenter::saveParamVersionInfo(QList<BomParamVersionInfo *> list, QString fileName)
 {
+    if (list.size() <= 0) {
+        return;
+    }
+
     QJsonArray jsonArray;
     QJsonObject rootObject;
     QJsonObject branchObject;
@@ -662,7 +666,7 @@ void SettingCenter::saveParamVersionInfo(QList<BomParamVersionInfo *> list)
 
     rootObject.insert("versions", jsonArray);
 
-    QString filePath = QString("bom-param%1version.json").arg(QDir::separator());
+    QString filePath = QString("bom-param/%1").arg(fileName);
     saveJsonFile(rootObject, filePath);
 }
 
@@ -704,13 +708,72 @@ QList<BomParamVersionInfo *> SettingCenter::getParamVersionInfo(QString filePath
         if (jsonObject.contains("type") && jsonObject.contains("version") &&
             jsonObject.contains("fileName") && jsonObject.value("fileName").isString()) {
 
-            BomParamVersionInfo* item = new BomParamVersionInfo(
-                        jsonObject.value("type").toInt(),
-                        jsonObject.value("version").toInt(),
-                        jsonObject.value("fileName").toString());
+            BomParamVersionInfo* item = new BomParamVersionInfo();
+            item->setType(jsonObject.value("type").toInt());
+            item->setVersion(jsonObject.value("version").toInt());
+            item->setFileName(jsonObject.value("fileName").toString());
 
             list.append(item);
         }
+    }
+
+    return list;
+}
+
+
+// 下载失败的文件
+void SettingCenter::saveDownloadFailedFiles(QList<QString> list)
+{
+    if (list.size() <= 0) {
+        return;
+    }
+    QJsonObject rootObject;
+    QJsonArray jsonArray;
+    for (QString item : list) {
+        jsonArray.append(item);
+    }
+
+    rootObject.insert("files", jsonArray);
+
+    QString filePath = QString("bom-param/failedParams.json");
+    saveJsonFile(rootObject, filePath);
+}
+
+QList<QString> SettingCenter::getDownloadFailedFiles()
+{
+    QString filePath = QDir::currentPath() + QDir::separator() + "bom-param/failedParams.json";
+    QList<QString> list;
+    QFile file(filePath);
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        qDebug() << QString("fail to open the file: %1, %2, %3")
+                    .arg(__FILE__).arg(__LINE__).arg(__FUNCTION__);
+        return list;
+    }
+    QByteArray array = file.readAll();
+    file.close();
+
+    QJsonParseError jsonParseError;
+    QJsonDocument jsonDocument(QJsonDocument::fromJson(array, &jsonParseError));
+    if(QJsonParseError::NoError != jsonParseError.error)
+    {
+        qDebug() << QString("JsonParseError: %1").arg(jsonParseError.errorString());
+        return list;
+    }
+
+    QJsonObject rootObject = jsonDocument.object();
+    if(!rootObject.contains("files") || !rootObject.value("files").isArray())
+    {
+        qDebug() << "No target value";
+        qDebug() << rootObject.keys();
+        return list;
+    }
+
+    QJsonArray jsonArray = rootObject.value("files").toArray();
+    for(auto iter = jsonArray.constBegin(); iter != jsonArray.constEnd(); ++iter)
+    {
+        QString name = (*iter).toString();
+        list.append(name);
     }
 
     return list;

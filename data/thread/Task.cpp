@@ -14,3 +14,8 @@ QString CEndTask::message()
 {
     return QString("CEndTask");
 }
+
+int CEndTask::taskId()
+{
+    return -1;
+}

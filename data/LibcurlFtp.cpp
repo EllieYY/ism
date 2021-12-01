@@ -5,8 +5,9 @@
 #include <fstream>
 #include <QDebug>
 #include <QFile>
+#include "SettingCenter.h"
+#include "BomParamVersionInfo.h"
 using namespace std;
-
 
 
 struct FtpFile {
@@ -17,22 +18,21 @@ struct FtpFile {
 LibcurlFtp::LibcurlFtp(QObject *parent) : QObject(parent)
 {
     // 设置协议
-    m_pUrl.setScheme("ftp");
+//    m_pUrl.setScheme("ftp");
 }
 
 
 // QHash<int, int> fileFilterInfo : 文件类型，文件版本
-bool LibcurlFtp::Getlist(QString &remotePath, QString &listFileName, QString &localPath, QHash<int, int> fileFilterInfo)
+bool LibcurlFtp::ftpList(QString &remotePath, QString &listFileName, QString &localPath,
+                         QHash<int, long> fileFilterInfo, bool isForceUpdate)
 {
+    int ret = true;
     // 格式转换
     QByteArray remoteArray = remotePath.toUtf8();
     const char* remotePathStr = remoteArray.constData();
 
     QByteArray pathFileArray = (localPath + listFileName).toUtf8();
     const char* pathFile = pathFileArray.constData();
-
-    QByteArray localArray = localPath.toUtf8();
-    const char* localPathStr = localArray.constData();
 
     // curl 初始化 + 参数设置
     CURL *curl;
@@ -51,9 +51,10 @@ bool LibcurlFtp::Getlist(QString &remotePath, QString &listFileName, QString &lo
         res = curl_easy_perform(curl);
         /* Check for errors */
 
-        if(res != CURLE_OK)
-          fprintf(stderr, "curl_easy_perform() failed: %s\n",
-                  curl_easy_strerror(res));
+        if(res != CURLE_OK) {
+            ret = false;
+            logger()->error("curl_easy_perform() failed: %1, %2", res, curl_easy_strerror(res));
+        }
 
         /* always cleanup */
         curl_easy_cleanup(curl);
@@ -64,7 +65,7 @@ bool LibcurlFtp::Getlist(QString &remotePath, QString &listFileName, QString &lo
     QString listFilePath = localPath + listFileName;
     QFile file(listFilePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qDebug() << "[getFileList] cannot open file : " << listFilePath;
+        logger()->info("[getFileList] cannot open file %: " , listFilePath);
         return false;
     }
 
@@ -85,23 +86,34 @@ bool LibcurlFtp::Getlist(QString &remotePath, QString &listFileName, QString &lo
     file.close();
 
 
-    // 文件筛选 | 文件下载
+    // 文件筛选 | 文件下载 | 记录要更新的文件
+    QList<BomParamVersionInfo*> updateFileList;
+    updateFileList.clear();
+    QList<QString> failedFile;   // 记录下载失败的文件名
     for (QString name : fileList) {
-        if (!paramFileFilter(name, fileFilterInfo)) {
+        BomParamVersionInfo* info = new BomParamVersionInfo(this);
+        if (!paramFileFilter(name, fileFilterInfo, isForceUpdate, info)) {
+            delete info;
+            info = nullptr;
             continue;
         }
 
         // 文件下载
-        if(ftpDownload(remotePath, name, localPath)) {
-           if (m_callBack != NULL)
-           m_callBack(localPath, name);
+        if (ftpDownload(remotePath, name, localPath) == 0)  {
+            updateFileList.append(info);
+            logger()->info("[getFileList] download %1", name);
         } else {
-           qDebug() << name << "download error.";
-//           return false;
+            failedFile.append(name);
         }
     }
 
-    return true;
+    // 将需要更新的文件名称写入文件
+    SettingCenter::getThis()->saveParamVersionInfo(updateFileList, "updateVersion.json");
+
+    // 将下载失败的文件名写入文件
+    SettingCenter::getThis()->saveDownloadFailedFiles(failedFile);
+
+    return ret;
 }
 
 // 文件目录行处理
@@ -118,30 +130,35 @@ void LibcurlFtp::processLine(QString line, QString& fileName, QChar& type)
 
 // 文件筛选
 // QHash<int, int> fileFilterInfo : 文件类型，文件版本
-bool LibcurlFtp::paramFileFilter(QString fileName, QHash<int, int> fileFilterInfo)
+bool LibcurlFtp::paramFileFilter(QString fileName, QHash<int, long> fileFilterInfo, bool isForceUpdate, BomParamVersionInfo* info)
 {
-    // TODO:文件过滤
     // 文件名：“PRM.”+参数类型（4位）+“.”+节点编码（4位）+“.”+文件序列号（6位）
     bool ok;
     int type = fileName.mid(4, 4).toInt(&ok, 16);
     int code = fileName.mid(9, 4).toInt(&ok, 16);
+    long serial = fileName.mid(14, 6).toLong();
 
+    QString debugInfo = QString("paramFile[%1]: type = %2, code = %3, serial = %4.")
+            .arg(fileName).arg(type, 4, 16).arg(code, 4, 16, QLatin1Char('0')).arg(serial);
+    qDebug() << debugInfo;
 
-
-
-    return true;
-}
-
-
-bool LibcurlFtp::Download(fileDownloadedCallBack callBack, QString &remotpath, QString &myfloderlist, QString &localpath,
-                          QHash<int, int> fileFilterInfo)
-{
-    m_callBack = callBack;
-    if(Getlist(remotpath, myfloderlist, localpath, fileFilterInfo))
-    {
+    if (!fileFilterInfo.contains(type)) {
         return false;
     }
-    return true;
+
+    if (code > 0 && code != 0x0400) {
+        return false;
+    }
+
+    int curSerial = fileFilterInfo.contains(type);
+    if (isForceUpdate || curSerial < serial) {
+        info->setType(type);
+        info->setVersion(serial);
+        info->setFileName(fileName);
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -165,6 +182,7 @@ static size_t write_callback(void *buffer, size_t size, size_t nmemb, void *stre
 
 int LibcurlFtp::ftpDownload(QString remotePath, QString fileName, QString localPath)
 {
+    int ret = 0;
     QByteArray localArray = (localPath + fileName).toUtf8();
     const char* localFile = localArray.constData();
 
@@ -201,6 +219,7 @@ int LibcurlFtp::ftpDownload(QString remotePath, QString fileName, QString localP
         res = curl_easy_perform(curl);
         if(CURLE_OK != res) {
              /* failed */
+            ret = -1;
              logger()->error("curl_easy_perform() failed: %1, %2", res, curl_easy_strerror(res));
         }
 
@@ -214,9 +233,7 @@ int LibcurlFtp::ftpDownload(QString remotePath, QString fileName, QString localP
 
     curl_global_cleanup();
 
-//    emit downloadOk(localPath);
-
-    return 0;
+    return ret;
 }
 
 
@@ -238,6 +255,7 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 
 int LibcurlFtp::ftpUpload(QString remotePath, QString fileName, QString localPath)
 {    
+    int ret = 0;
     QByteArray localArray = (localPath + fileName).toUtf8();
     const char* localFile = localArray.constData();
 
@@ -296,6 +314,7 @@ int LibcurlFtp::ftpUpload(QString remotePath, QString fileName, QString localPat
         res = curl_easy_perform(curl);
         /* Check for errors */
         if(res != CURLE_OK) {
+            ret = -1;
             logger()->error("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
         }
 
@@ -305,41 +324,24 @@ int LibcurlFtp::ftpUpload(QString remotePath, QString fileName, QString localPat
     fclose(hd_src); /* close the local file */
     curl_global_cleanup();
 
-//    emit uploadOk(url);
-    return 0;
+    return ret;
 }
 
 
-// 设置地址和端口
-void LibcurlFtp::setHostPort(const QString &host, int port)
-{
-    m_pUrl.setHost(host);
-    m_pUrl.setPort(port);
-}
-
-// 设置登录 FTP 服务器的用户名和密码
-void LibcurlFtp::setUserInfo(const QString &userName, const QString &password)
-{
-    m_pUrl.setUserName(userName);
-    m_pUrl.setPassword(password);
-}
-
-
-
-//#include "download.h"
-//#include <iostream>
-//using namespace std;
-//int main()
+//// 设置地址和端口
+//void LibcurlFtp::setHostPort(const QString &host, int port)
 //{
-//    FileDownloadedCallBack callBack;
-//    FtpDownloadder *dl=new FtpDownloadder("192.168.1.1","21","zheng","yun");
-//    if(dl->Download(callBack))
-//    {
-//        cout<<"download over";
-//    }
-//    delete dl;
-//    return 0;
+//    m_pUrl.setHost(host);
+//    m_pUrl.setPort(port);
 //}
+
+//// 设置登录 FTP 服务器的用户名和密码
+//void LibcurlFtp::setUserInfo(const QString &userName, const QString &password)
+//{
+//    m_pUrl.setUserName(userName);
+//    m_pUrl.setPassword(password);
+//}
+
 
 
 

@@ -47,6 +47,7 @@ INCLUDEPATH += 	frame \
     info \
     guide \
     qtftp \
+    device \
     data \
     data/line \
     data/asr \
@@ -90,6 +91,7 @@ SOURCES += \
     data/ticket/ReregisterInfo.cpp \
     data/ticket/TicketBasicInfo.cpp \
     data/ticket/TransactionInfo.cpp \
+    device/DeviceManager.cpp \
     frame/AFCTaskThread.cpp \
     frame/AmountCheckTimer.cpp \
     frame/AsyncTimer.cpp \
@@ -164,6 +166,7 @@ HEADERS += \
     data/ticket/ReregisterInfo.h \
     data/ticket/TicketBasicInfo.h \
     data/ticket/TransactionInfo.h \
+    device/DeviceManager.h \
     frame/AFCTaskThread.h \
     frame/AmountCheckTimer.h \
     frame/AsyncTimer.h \

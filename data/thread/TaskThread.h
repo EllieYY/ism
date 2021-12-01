@@ -25,6 +25,7 @@ protected:
 // 定义一些与主线程通信的信号
 signals:
     void taskStart(const QString &message);
+    void taskDone(int taskId);
     void allTaskDone();
 
 private:

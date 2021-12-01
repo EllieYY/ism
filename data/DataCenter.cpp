@@ -86,9 +86,6 @@ void DataCenter::init()
 {
     initData();    // 默认数据
 
-    // 参数文件解析
-    initParamVersion();
-
     /* 基础信息 */
     logger()->info("基础信息读取");
     m_basicInfo = SettingCenter::getThis()->getBasicInfo();
@@ -125,30 +122,7 @@ void DataCenter::init()
         }
     }
 
-//    // AFC通信库初始化
-//    QByteArray devByteArray = MyHelper::hexStrToByte(getDeviceId());
-//    BYTE* deviceId = (BYTE*)devByteArray.data();
-//    QByteArray scIdByteArray = MyHelper::hexStrToByte(m_basicInfo->scId());
-//    BYTE* scId = (BYTE*)devByteArray.data();
-//    QByteArray scIpArray = m_basicInfo->scIP().toLatin1();
-//    char* scIp = scIpArray.data();
-//    uint scPort = m_basicInfo->scPort();
-//    QByteArray localIpArray = m_basicInfo->localIP().toLatin1();
-//    char* localIp = localIpArray.data();
-//    uint localPort = m_basicInfo->localPort();
-
-//    int ret = initNetworkLib(deviceId, scId, scIp, scPort, localIp, localPort);
-
-//    char version[60];
-//    getLibVersion(version);
-//    logger()->info("[getLibVersion]AFC通讯库初始化{%2}，获取版本号={%1}", QString(version), ret);
-
-//    // 开始服务
-//    deviceState2afc(DEV_SERVICE_ON);
-//    param2afc();
-
-
-    m_taskThread = new AFCTaskThread(this);
+    m_taskThread = new AFCTaskThread();
     connect(m_taskThread, &AFCTaskThread::paramTypeUpdate, this, &DataCenter::onParamUpdate, Qt::DirectConnection);
     connect(m_taskThread, &AFCTaskThread::softwareUpdate, this, &DataCenter::onSoftwareUpdate, Qt::DirectConnection);
     m_taskThread->start();
@@ -158,11 +132,9 @@ void DataCenter::init()
     m_timer->startTimer(60000);
 
     int id = 0;
-    m_ftpTaskThread = new TaskThread(this);
-    connect(m_ftpTaskThread, &TaskThread::allTaskDone, this, &DataCenter::ftpTaskFinished);
-
-
-//    emit lineReceived();
+    m_ftpTaskThread = new TaskThread();
+//    connect(m_ftpTaskThread, &TaskThread::allTaskDone, this, &DataCenter::ftpAllTaskFinished);
+    connect(m_ftpTaskThread, &TaskThread::taskDone, this, &DataCenter::ftpTaskFinished);
 
     initDevice();
     initReaderErrCode();
@@ -172,7 +144,7 @@ void DataCenter::initData()
 {
     // TODO:测试状态，硬配
     m_isTest = true;
-    m_serviceOff = false;    // 默认服务状态
+    m_serviceOff = false;            // 默认服务状态， 响应报文3000来设置
 
     m_basicInfo = NULL;               // 站点基础信息
     m_loginInfo = NULL;               // 登录信息
@@ -182,12 +154,21 @@ void DataCenter::initData()
     m_isSpecieUsable = false;         // 硬币模块可用状态
     m_isBanknotesUsable = false;      // 纸币模块可用状态
 
+    // 服务状态&网络状态
     m_serviceState = 0;
     m_netState = 0;
 
+    // FTP 任务Id
     taskId = 0;
+    m_curParamTaskId = -1;
+    m_curSoftwareTaskId = -1;
 
+    //定时任务相关
+    m_timeCount = 0;
     m_tradeSerial = SettingCenter::getThis()->getTradeSerial();
+
+    // 参数版本信息获取
+    initParamVersion();
 
     // 心跳
     for (int i = 0; i < HRT_NUM; i++) {
@@ -241,8 +222,11 @@ void DataCenter::initDevice()
 
 void DataCenter::closeDevice()
 {
-    readerComClose();
-    CloseAllCom();
+    int ret1 = readerComClose();
+    logger()->info("[readerComClose] = %1", ret1);
+
+    int ret2 = CloseAllCom();
+    logger()->info("[CloseAllCom] = %1", ret2);
 }
 
 void DataCenter::initReaderErrCode()
@@ -263,15 +247,46 @@ void DataCenter::initReaderErrCode()
 }
 
 
-// 参数解析
+// 参数解析：记录参数版本信息，解析并使用参数文件
 void DataCenter::initParamVersion()
 {
+    m_paramVersionMap.clear();
     QString path = QDir::currentPath() + QDir::separator() + "bom-param" + QDir::separator();
     QList<BomParamVersionInfo*> list = SettingCenter::getThis()->getParamVersionInfo(path + "version.json");
     for (BomParamVersionInfo* info: list) {
         long type = info->type();
+
         QString fileName = info->fileName();
         QString filePath = path + fileName;
+        int ret = -1;
+        if (type == 0x1001) {
+            ret = parseParam1001(filePath);
+        } else if (type == 0x1004) {
+            ret = parseParam1004(filePath);
+        } else if (type == 0x2002) {
+            ret = parseParam2002(filePath);
+        } else if (type == 0x2004) {
+            ret = parseParam2004(filePath);
+        }
+
+        if (ret == 0) {
+            m_paramVersionMap.insert(type, info);
+        }
+    }
+}
+
+// 使用待更新的参数文件:更新失败的参数重新写入待更新文件记录
+void DataCenter::updateParamVersion()
+{
+    QString path = QDir::currentPath() + QDir::separator() + "bom-param" + QDir::separator();
+    QList<BomParamVersionInfo*> list = SettingCenter::getThis()->getParamVersionInfo(path + "updateVersion.json");
+    QList<BomParamVersionInfo*> updateList;
+    for (BomParamVersionInfo* info: list) {
+        long type = info->type();
+
+        QString fileName = info->fileName();
+        QString filePath = path + fileName;
+        int ret = -1;
         if (type == 0x1001) {
             parseParam1001(filePath);
         } else if (type == 0x1004) {
@@ -281,9 +296,28 @@ void DataCenter::initParamVersion()
         } else if (type == 0x2004) {
             parseParam2004(filePath);
         }
-    }
-}
 
+        // 避免界面被阻塞
+        QCoreApplication::processEvents();
+
+        // 覆盖之前的旧版本
+        if (ret == 0) {
+            // 参数更新上报
+            long oldVersion = m_paramVersionMap.value(type)->version();
+            long newVersion = info->version();
+            param2afc(type, oldVersion, newVersion);
+
+            m_paramVersionMap.insert(type, info);
+        } else {
+            updateList.append(info);
+        }
+    }
+
+    // 版本信息存储
+    SettingCenter::getThis()->saveParamVersionInfo(m_paramVersionMap.values(), "version.json");
+    // 更新失败的参数文件存储
+    SettingCenter::getThis()->saveParamVersionInfo(updateList, "updateFailedVersion.json");
+}
 
 // 文件校验：只计算md5
 bool DataCenter::fileCheck(QByteArray array)
@@ -340,7 +374,7 @@ int DataCenter::parseParam1001(QString filePath)
     QFile file(filePath);
     bool isOk = file.open(QFile::ReadOnly);
     if (!isOk) {
-        logger()->error("[%1] file open failed", filePath);
+        logger()->error("[参数文件读取失败][%1] file open failed", filePath);
         return -1;
     }
 
@@ -379,7 +413,6 @@ int DataCenter::parseParam1001(QString filePath)
     return 0;
 }
 
-
 /*
  * 车票类型参数
 */
@@ -388,7 +421,7 @@ int DataCenter::parseParam1004(QString filePath)
     QFile file(filePath);
     bool isOk = file.open(QFile::ReadOnly);
     if (!isOk) {
-        logger()->error("[%1] file open failed", filePath);
+        logger()->error("[参数文件读取失败][%1] file open failed", filePath);
         return -1;
     }
 
@@ -444,7 +477,7 @@ int DataCenter::parseParam2002(QString filePath)
     QFile file(filePath);
     bool isOk = file.open(QFile::ReadOnly);
     if (!isOk) {
-        logger()->error("[%1] file open failed", filePath);
+        logger()->error("[参数文件读取失败][%1] file open failed", filePath);
         return -1;
     }
 
@@ -475,7 +508,7 @@ int DataCenter::parseParam2004(QString filePath)
     QFile file(filePath);
     bool isOk = file.open(QFile::ReadOnly);
     if (!isOk) {
-        logger()->error("[%1] file open failed", filePath);
+        logger()->error("[参数文件读取失败][%1] file open failed", filePath);
         return -1;
     }
 
@@ -529,14 +562,14 @@ int DataCenter::parseParam2004(QString filePath)
 
         m_operatorMap.insert(codeStr, info);
 
-//        logger()->info("[param2004]code={%1}, name={%2}, card={%3}, pwd={%4}, type={%5}, access={%6}, validDate={%7}",
-//                       codeStr,
-//                       nameStr,
-//                       info->card(),
-//                       info->pwd(),
-//                       QString::number(info->type(), 16),
-//                       QString::number(info->access(), 16),
-//                       info->validDate().toString("yyyyMMddHHmmss"));
+        logger()->info("[param2004]code={%1}, name={%2}, card={%3}, pwd={%4}, type={%5}, access={%6}, validDate={%7}",
+                       codeStr,
+                       nameStr,
+                       info->card(),
+                       info->pwd(),
+                       QString::number(info->type(), 16),
+                       QString::number(info->access(), 16),
+                       info->validDate().toString("yyyyMMddHHmmss"));
     }
 
     file.close();
@@ -545,7 +578,7 @@ int DataCenter::parseParam2004(QString filePath)
 }
 
 
-// 用户鉴权
+// 用户鉴权：暂时只校验用户名和密码，不校验权限
 bool DataCenter::isValidUser(QString userCode, QString pwd)
 {
     if (userCode == "04326688" && pwd == "123456") {
@@ -565,9 +598,32 @@ bool DataCenter::isValidUser(QString userCode, QString pwd)
     return false;
 }
 
-void DataCenter::ftpTaskFinished()
+
+void DataCenter::ftpTaskFinished(int taskId)
 {
-    // TODO:
+    // 参数文件下载任务完成
+    if (taskId == m_curParamTaskId) {
+        m_curParamTaskId = -1;
+        logger()->info("参数下载完成。");
+
+        //参数文件更新
+        updateParamVersion();
+
+        // TODO:参数更新上报
+
+    }
+
+    if (taskId == m_curSoftwareTaskId) {
+        m_curSoftwareTaskId = -1;
+        logger()->info("读写器软件下载完成。");
+    }
+}
+
+// 任务队列里所有任务完成，暂时不需要
+void DataCenter::ftpAllTaskFinished()
+{
+//    qDebug() << "all task " << "done now.";
+
 }
 
 
@@ -652,6 +708,7 @@ QString DataCenter::getTicketTypeString(int type)
 //    return typeStr;
 }
 
+// 票卡状态、错误码对应关系
 QString DataCenter::getTicketStateString(int icType, int state)
 {
     QString typeStr = "未定义卡";
@@ -665,7 +722,6 @@ QString DataCenter::getTicketStateString(int icType, int state)
 
     return typeStr;
 }
-
 QString DataCenter::getULStateStr(int state) {
     QString typeStr = "未定义卡";
     //00初始化，01售票，02进站，03出站，05注销，12超程更新，
@@ -729,25 +785,10 @@ QString DataCenter::getOCTStateStr(int state) {
 
     return typeStr;
 }
-
-QString DataCenter::getTradeTypeString(int type)
+QString DataCenter::getReaderErrorStr(BYTE errorCode)
 {
-    QString typeStr = "未知";
-    switch(type) {
-    case 0x02:
-        typeStr = "充值";
-        break;
-    case 0x06:
-    case 0x09:
-        typeStr = "消费";
-        break;
-    default:
-        break;
-    }
-    return typeStr;
-
+    return m_readerErrCodeMap.value(errorCode);
 }
-
 QString DataCenter::getUpdateTypeString(int type)
 {
     QString typeStr = "不可更新";
@@ -778,17 +819,33 @@ QString DataCenter::getUpdateTypeString(int type)
 
     return typeStr;
 }
+QString DataCenter::getTradeTypeString(int type)
+{
+    QString typeStr = "未知";
+    switch(type) {
+    case 0x02:
+        typeStr = "充值";
+        break;
+    case 0x06:
+    case 0x09:
+        typeStr = "消费";
+        break;
+    default:
+        break;
+    }
+    return typeStr;
 
+}
+
+// 签到签退
 LoginInfo *DataCenter::getLoginInfo() const
 {
     return m_loginInfo;
 }
-
 void DataCenter::setLoginInfo(LoginInfo *loginInfo)
 {
     m_loginInfo = loginInfo;
 }
-
 void DataCenter::setLoginData(QString user, QString pwd)
 {
     m_loginInfo = new LoginInfo(this);
@@ -798,7 +855,6 @@ void DataCenter::setLoginData(QString user, QString pwd)
 
     setIsLogin(true);
 }
-
 bool DataCenter::setLogoutData(QString user, QString pwd)
 {
     if (m_loginInfo == NULL) {
@@ -812,7 +868,6 @@ bool DataCenter::setLogoutData(QString user, QString pwd)
     }
     return false;
 }
-
 bool DataCenter::localAuthentication(QString user, QString pwd)
 {
     if (m_loginInfo == NULL) {
@@ -822,6 +877,7 @@ bool DataCenter::localAuthentication(QString user, QString pwd)
             && pwd == m_loginInfo->password());
 }
 
+
 QString DataCenter::getOperatorId()
 {
     if (m_loginInfo == NULL) {
@@ -830,89 +886,69 @@ QString DataCenter::getOperatorId()
     return m_loginInfo->userName();
 }
 
-QString DataCenter::getReaderErrorStr(BYTE errorCode)
-{
-    return m_readerErrCodeMap.value(errorCode);
-}
 
 
 // 文件下载
 void DataCenter::onSoftwareUpdate(QString fileName)
 {
-    QString urlStr = m_basicInfo->ftpUrl().toString() + "Soft/";
+    QString remotePath = m_basicInfo->ftpUrl().toString() + "/Soft/";
     QString localPath = QDir::currentPath() + QDir::separator() +
             "bom-param" + QDir::separator();
 
-    // TODO:
-//    LibcurlFtp* ftp = new LibcurlFtp(this);
-//    ftp->ftpDownload(urlStr, fileName, localPath);
-
-//    delete ftp;
-//    ftp = nullptr;
-
+    m_curSoftwareTaskId = taskId++;
+    FtpDownloadTask* task = new FtpDownloadTask(m_curSoftwareTaskId);
+    task->setFileInfo(remotePath, fileName, localPath);
+    m_ftpTaskThread->addTask(task);
 }
 
-// 参数更新
-void DataCenter::onParamUpdate(QList<int> typeList)
+// 参数更新 type: 0 - 普通同步   1 - 强制同步
+void DataCenter::onParamUpdate(QList<int> typeList, int type)
 {
-    QList<QString> fileList = getServerFileList(typeList);
+    if (typeList.size() == 0) {
+        logger()->info("[onParamUpdate]没有参数需要更新。");
+        return;
+    }
 
-    QString urlStr = m_basicInfo->ftpUrl().toString() + "Parameter/Cur/";
+    // TODO:将来参数版本，
+    QString remotePath = m_basicInfo->ftpUrl().toString() + "/Parameter/Cur/";
     QString localPath = QDir::currentPath() + QDir::separator() + "bom-param" + QDir::separator();
 
-    // TODO:文件下载
-    for (QString file:fileList) {
-        FtpDownloadTask* task = new FtpDownloadTask(taskId++);
-        task->setFileInfo(urlStr, file, localPath);
-        m_ftpTaskThread->addTask(task);
-    }
+    // 参数限制
+    QHash<int,long> filter = getParamFileFilter(typeList);
+
+    m_curParamTaskId = taskId++;
+    FtpDownloadTask* task = new FtpDownloadTask(m_curParamTaskId);
+    task->setFileInfo(remotePath, "fileList.txt", localPath);
+
+    bool isForceUpdate = (type == 0 ? false : true);
+    task->setFilter(filter, isForceUpdate);
+    m_ftpTaskThread->addTask(task);
+
+    // TODO:通知进行参数更新，参数上报, taskId用起来
+    // 更新参数版本记录文件
 }
 
-// TODO:临时方案 - 获取要下载文件列表
-QList<QString> DataCenter::getServerFileList(QList<int> typeList)
+// 参数类型码，同步类型
+QHash<int,long> DataCenter::getParamFileFilter(QList<int> typeList)
 {
-    // 服务器上参数版本信息
-    QString pathServer = QDir::currentPath() + QDir::separator() + "bom-param" + QDir::separator() + "server_version.json";
-    QList<BomParamVersionInfo*> serverList = SettingCenter::getThis()->getParamVersionInfo(pathServer);
-
-    QString pathLocal = QDir::currentPath() + QDir::separator() + "bom-param" + QDir::separator() + "version.json";
-    QList<BomParamVersionInfo*> localList = SettingCenter::getThis()->getParamVersionInfo(pathLocal);
-
-    QList<QString> list;
-    int size = serverList.size();
-    for(int i = 0; i < size; i++) {
-        int type = localList.at(i)->type();
-        if (!typeList.contains(type)) {
-            continue;
-        }
-        if (localList.at(i)->version() < serverList.at(i)->version()) {
-            list.append(serverList.at(i)->fileName());
-            long oldVersion = localList.at(i)->version();
-            long newVersion = serverList.at(i)->version();
-
-            // 4002 参数应用上报
-            QByteArray typeArr = MyHelper::intToBytes(type, 2);
-            QByteArray versionOld = MyHelper::intToBytes(oldVersion, 4).toHex();
-            QByteArray versionNew = MyHelper::intToBytes(newVersion, 4).toHex();
-            QByteArray time(7, 0);
-
-            ParamAppliedNotify((BYTE*)typeArr.data(),
-                               (BYTE*)versionOld.data(),
-                               (BYTE*)versionNew.data(),
-                               (BYTE*)time.data());
+    QHash<int,long> filter;
+    filter.clear();
+    for (int type:typeList) {
+        if (m_paramVersionMap.contains(type)) {
+            long version = m_paramVersionMap.value(type)->version();
+            filter.insert(type, version);
         }
     }
-
-    return list;
+    return filter;
 }
 
 // 交易文件上传
-void DataCenter::uploadTradeFile(QString filePath, QString fileName, QByteArray md5Arr, int type)
+void DataCenter::uploadTradeFile(QString localFilePath, QString fileName, QByteArray md5Arr, int type)
 {
     if (m_ftpTaskThread->isRunning()) {
         FtpUploadTask* task = new FtpUploadTask(taskId++);
         QString serverFilePath = m_basicInfo->ftpUrl().toString() + "/Transaction/";
-        task->setFileInfo(serverFilePath, fileName, filePath);
+        task->setFileInfo(serverFilePath, fileName, localFilePath);
         m_ftpTaskThread->addTask(task);
     }
 
@@ -995,34 +1031,53 @@ void DataCenter::deviceState2afc(BYTE event)
 {
     BYTE state = getDeviceState();
 
-    // 事件要传2个字节
+    // 事件要传2个字节 : 网络字节序
     BYTE eventArr[2];
-    eventArr[0] = event;
-    eventArr[1] = 0x00;
+    eventArr[0] = 0x00;
+    eventArr[1] = event;
 
     BYTE ret = DeviceState(state, &event);
 
     logger()->info("设备状态上报{}，status=%2, event=%3", ret, state, event);
 }
 
-void DataCenter::param2afc()
+// 4002 参数应用上报
+void DataCenter::param2afc(int paramType, long oldVersion, long newVersion)
 {
 //    paramType：2字节参数类型码；
 //    versionOld：4字节生效前参数版本号，16进制；
 //    versionNew：4字节生效后参数版本号，16进制；
 //    applyTime：7字节参数生效时间，格式YYYYMMDD-hhmmss
 //    立即生效的参数，此处时间填写7字节全0
-    BYTE paramType[] = {0x06, 0x10};
-    BYTE versionOld[4] = {0};
-    BYTE versionNew[4] = {0};
-    BYTE applyTime[4] = {0};
-    BYTE ret = ParamAppliedNotify(paramType, versionOld, versionNew, applyTime);
-    logger()->info("参数应用 = {%1}", ret);
+    QByteArray typeArr = MyHelper::intToBytes(paramType, 2);
+    QByteArray versionOld = MyHelper::intToBytes(oldVersion, 4).toHex();
+    QByteArray versionNew = MyHelper::intToBytes(newVersion, 4).toHex();
+    QByteArray time(7, 0);
+
+    int ret = ParamAppliedNotify((BYTE*)typeArr.data(),
+                       (BYTE*)versionOld.data(),
+                       (BYTE*)versionNew.data(),
+                       (BYTE*)time.data());
+    logger()->info("参数应用 = {%1}, type={%2}, oldVersion={%3}, newVersion={%4}",
+                   ret,
+                   QString::number(paramType, 16),
+                   QString::number(oldVersion, 16),
+                   QString::number(newVersion, 16));
 }
 
 void DataCenter::setStationMode(int stationMode)
 {
     m_stationMode = stationMode;
+    // TODO:怎么使用
+    // 第一册5.8：故障期间，显示列车运行模式
+//    Bit 0	紧急模式             1：生效，0:无效
+//    Bit 1	进站免检模式         1：生效，0:无效
+//    Bit 2	日期免检模式         1：生效，0:无效
+//    Bit 3	时间免检模式         1：生效，0:无效
+//    Bit 4	列车故障模式         1：生效，0:无效
+//    Bit 5	车费免检模式         1：生效，0:无效
+//    Bit 6 ~ 15	[未定义]
+
 }
 
 QString DataCenter::getReaderVersion()
@@ -1030,7 +1085,7 @@ QString DataCenter::getReaderVersion()
     PVERSION_INFO version = {0};
     int ret = getVersion(version);
     if (ret != 0) {
-        return "000000A2";
+        return "00000000";
     }
 
     QByteArray versionArray = QByteArray((char*)version->SoftVersion, 2);
@@ -1054,19 +1109,6 @@ long DataCenter::getTradeDataCountLT() const
 {
     return m_tradeDataCountLT;
 }
-
-QUrl DataCenter::getFtpUrl()
-{
-    // test code
-    m_ftpUrl.setScheme("ftp");
-    m_ftpUrl.setHost("192.168.2.193");
-    m_ftpUrl.setPort(21);
-    m_ftpUrl.setUserName("ismftp");
-    m_ftpUrl.setPassword("1234Asdf");
-
-    return m_ftpUrl;
-}
-
 
 
 //DEV_OK = 0,       // 正常

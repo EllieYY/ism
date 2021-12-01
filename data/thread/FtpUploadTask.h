@@ -12,14 +12,16 @@ public:
     explicit FtpUploadTask(int taskId);
     ~FtpUploadTask();
 
-    void setFileInfo(QUrl server,  QString fileName, QString localPath);
+    void setFileInfo(QString remotePath,  QString fileName, QString localPath);
 
     int doWork() override;
     QString message() override;
+    int taskId() override;
 
 private:
     LibcurlFtp* m_ftp;
-    QUrl m_ftpUrl;
+
+    QString m_remotePath;
     QString m_localPath;
     QString m_fileName;
     int m_id;

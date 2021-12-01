@@ -7,7 +7,7 @@ class BomParamVersionInfo : public QObject
 {
     Q_OBJECT
 public:
-    explicit BomParamVersionInfo(long type, long version, QString fileName, QObject *parent = nullptr);
+    explicit BomParamVersionInfo(QObject *parent = nullptr);
 
     long type() const;
     void setType(long type);

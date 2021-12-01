@@ -1,3 +1,7 @@
+/*
+ * AFC相关业务监听线程
+*/
+
 #include "AFCTaskThread.h"
 #include "NCNetwork_Lib.h"
 #include "MyHelper.h"
@@ -56,12 +60,12 @@ void AFCTaskThread::dealCheck()
 
         // 获取消息
         messageBuff buff = {0};
-//        getSpecNeedDeal(m_dealSeq, &buff);
+        getSpecNeedDeal(m_dealSeq, &buff);
 
-//        // 消息回复
-//        bool ok;
-//        int type = QByteArray((char*)buff.messageType, 2).toHex().toInt(&ok, 16);
-//        afcResp(type, buff.messageBody, buff.recordCount);
+        // 消息回复
+        bool ok;
+        int type = QByteArray((char*)buff.messageType, 2).toHex().toInt(&ok, 16);
+        afcResp(type, buff.messageBody, buff.recordCount);
     }
 }
 
@@ -74,21 +78,21 @@ void AFCTaskThread::respCheck()
 
         // 获取消息
         messageBuff buff = {0};
-//        getSpecNeedResponse(m_respSeq, &buff);
+        getSpecNeedResponse(m_respSeq, &buff);
 
-//        // 消息回复
-//        bool ok;
-//        int type = QByteArray((char*)buff.messageType, 2).toHex().toInt(&ok, 16);
-//        afcResp(type, buff.messageBody, buff.recordCount);
+        // 消息回复
+        bool ok;
+        int type = QByteArray((char*)buff.messageType, 2).toHex().toInt(&ok, 16);
+        afcResp(type, buff.messageBody, buff.recordCount);
     }
 }
 
 void AFCTaskThread::afcResp(int type, uchar *body, int count)
 {
     if (type == 0x4001) {    // 参数查询
-        make4001Resp();
+        make4001Resp(body);
     } else if (type == 0x9005) {   // 软件/部件版本查询
-        make9005Resp();
+        make9005Resp(body);
     } else if (type == 0x2000) {   // 模式命令
         parse2000(body);
     } else if (type == 0x3000) {    // 设备控制命令
@@ -104,15 +108,26 @@ void AFCTaskThread::afcResp(int type, uchar *body, int count)
     }
 }
 
-void AFCTaskThread::make4001Resp()
+void AFCTaskThread::make4001Resp(uchar *msg)
 {
+    // 参数类别解析
+    QByteArray array = QByteArray((char*)msg, sizeof(AFC_4001_PKG_BODY));
+    pAFC_4001_PKG_BODY info = (pAFC_4001_PKG_BODY)array.data();
+    int type = info->syncType;
+
+    QString msgStr = array.toHex().toUpper();
+    logger()->info("[4001h]msg=%1, type=%2", msgStr, QString::number(type, 16));
+
+    // 读取当前参数版本的记录文件
     QString pathLocal = QDir::currentPath() + QDir::separator() + "bom-param" + QDir::separator() + "version.json";
+    // TODO:根据参数类别，读取对应的记录信息
+    QList<BomParamVersionInfo*> list = SettingCenter::getThis()->getParamVersionInfo(pathLocal);
+
 
     QList<AFC_4001_PKG_BODY_R> paramList;
-    QList<BomParamVersionInfo*> list = SettingCenter::getThis()->getParamVersionInfo(pathLocal);
     for (BomParamVersionInfo* item : list) {
         AFC_4001_PKG_BODY_R param = {0};
-        param.paramType = 0x01;    // 当前参数
+        param.paramType = type;    // 当前参数
 
         QByteArray typeArray = MyHelper::intToBytes(item->type(), 2);
         BYTE* typeByte = (BYTE*)typeArray.data();
@@ -135,11 +150,13 @@ void AFCTaskThread::make4001Resp()
         memmove(p + index, &paramList.at(i), paramSize);
     }
 
-    ParamQuery(p, paramNum);
-    logger()->info("make 4001 resp");
+    int ret = ParamQuery(p, paramNum);
+    QString paramStr;
+    paramStr.append((char*)p);
+    logger()->info("4001 resp:[ParamQuery] = %1, param = %2", ret, paramStr);
 }
 
-void AFCTaskThread::make9005Resp()
+void AFCTaskThread::make9005Resp(uchar *body)
 {
     QString deviceIdStr = DataCenter::getThis()->getDeviceId();
     QString versionStr = DataCenter::getThis()->getReaderVersion();
@@ -167,7 +184,7 @@ void AFCTaskThread::make9005Resp()
     QByteArray paramArray;
     paramArray.append((char*)&param, sizeof(AFC_9005_PKG_BODY_R));
     QString msg = paramArray.toHex().toUpper();
-    logger()->info("make 9005 resp, %1, param = [%2]", ret, msg);
+    logger()->info("9005 resp, [SoftVersionQuery] = %1, param = [%2]", ret, msg);
 }
 
 void AFCTaskThread::parse2000(uchar *msg)
@@ -219,7 +236,6 @@ void AFCTaskThread::parse3000(uchar *msg)
 */
 void AFCTaskThread::parse4000(uchar *msg, int count)
 {
-    qDebug() << "count = " << count;
     QByteArray array = QByteArray((char*)msg, sizeof(AFC_4000_PKG_BODY));
     QString targetStr = array.mid(0, 4).toHex();
 
@@ -236,18 +252,18 @@ void AFCTaskThread::parse4000(uchar *msg, int count)
         typeList.append(type);
     }
 
+    // 通知进行参数更新
     if (typeList.size() > 0) {
-        emit paramTypeUpdate(typeList);
+        int type = array.at(4);
+        emit paramTypeUpdate(typeList, type);
     }
 
     // 日志记录
     QString msgStr = array.toHex().toUpper();
     QString typeStr = array.mid(4, 1).toHex();
-    logger()->info("[4000h]msg=%1, target=%2, type=%3, paramList=[%4]",
-                   msgStr, targetStr, typeStr, paramList.join(","));
+    logger()->info("[4000h]msg=%1, msgLength=%5, target=%2, type=%3, paramList=[%4]",
+                   msgStr, targetStr, typeStr, paramList.join(","), count);
 }
-
-
 
 // 系统时间同步
 void AFCTaskThread::parse9001(uchar *msg)

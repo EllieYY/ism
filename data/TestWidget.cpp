@@ -45,8 +45,8 @@ void TestWidget::init()
     m_ftp->setUserInfo("ismftp", "1234Asdf");
 
     m_curlFtp = new LibcurlFtp(this);
-    m_curlFtp->setHostPort("192.168.2.193", 21);
-    m_curlFtp->setUserInfo("ismftp", "1234Asdf");
+//    m_curlFtp->setHostPort("192.168.2.193", 21);
+//    m_curlFtp->setUserInfo("ismftp", "1234Asdf");
 }
 
 void TestWidget::secEvent()
@@ -159,10 +159,9 @@ void TestWidget::on_pushButton_download_clicked()
 //    QString localPath = "ism-net";
 //    QString serverPath = "folder1/";
 
-    fileDownloadedCallBack callBack;
-    QHash<int, int> filter;
+    QHash<int, long> filter;
     QString fileListFile = "fileList.txt";
-    m_curlFtp->Download(callBack, serverPath, fileListFile, localPath, filter);
+//    m_curlFtp->ftpList(serverPath, fileListFile, localPath, filter, false);
 
     qDebug() << "dowmload……";
 //    m_ftp->get("/root/set-net.sh", "D:\\set-net.sh");

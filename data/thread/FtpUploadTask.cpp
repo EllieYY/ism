@@ -16,9 +16,9 @@ FtpUploadTask::~FtpUploadTask()
     }
 }
 
-void FtpUploadTask::setFileInfo(QUrl server,  QString fileName, QString localPath)
+void FtpUploadTask::setFileInfo(QString remotePath,  QString fileName, QString localPath)
 {
-    m_ftpUrl = server;
+    m_remotePath = remotePath;
     m_fileName = fileName;
     m_localPath = localPath;
 }
@@ -26,10 +26,10 @@ void FtpUploadTask::setFileInfo(QUrl server,  QString fileName, QString localPat
 
 int FtpUploadTask::doWork()
 {
-    m_ftp->setHostPort(m_ftpUrl.host(), m_ftpUrl.port());
-    m_ftp->setUserInfo(m_ftpUrl.userName(), m_ftpUrl.password());
+//    m_ftp->setHostPort(m_ftpUrl.host(), m_ftpUrl.port());
+//    m_ftp->setUserInfo(m_ftpUrl.userName(), m_ftpUrl.password());
 
-    m_ftp->ftpUpload(m_ftpUrl.toString(), m_fileName, m_localPath);
+    m_ftp->ftpUpload(m_remotePath, m_fileName, m_localPath);
 
     qDebug() << "[CMyTask:" << m_id << "]run in thread:" << QThread::currentThreadId() << " >>> "
              << QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss zzz");
@@ -40,4 +40,9 @@ int FtpUploadTask::doWork()
 QString FtpUploadTask::message()
 {
     return QString("[%1] uploading...").arg(m_localPath);
+}
+
+int FtpUploadTask::taskId()
+{
+    return m_id;
 }

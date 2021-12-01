@@ -48,8 +48,12 @@ public:
     BasicInfo* getBasicInfo();
 
     // 参数文件版本信息
-    void saveParamVersionInfo(QList<BomParamVersionInfo*> list);
+    void saveParamVersionInfo(QList<BomParamVersionInfo*> list, QString fileName);
     QList<BomParamVersionInfo*> getParamVersionInfo(QString filePath);
+
+    // 下载失败的参数文件信息
+    void saveDownloadFailedFiles(QList<QString> fileNames);
+    QList<QString> getDownloadFailedFiles();
 
 private:
     QList<InterchangeInfo*> matchInterchangeStations(QList<InterchangeInfo*> stations, QString lineCode);

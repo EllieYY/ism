@@ -58,6 +58,9 @@ ISMFrame::ISMFrame(QWidget *parent) :
 
 ISMFrame::~ISMFrame()
 {
+    if(DataCenter::getThis() != NULL) {
+        delete DataCenter::getThis();
+    }
     delete ui;
 }
 

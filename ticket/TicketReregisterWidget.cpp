@@ -58,15 +58,18 @@ bool TicketReregisterWidget::showData()
     // 进站时间 | 出站时间 | 更新原因 | 应收费用
     ui->lineEdit1->setText(info->enTime().toString("yyyy-MM-dd HH:mm:ss"));
     ui->lineEdit3->setText(info->exTime().toString("yyyy-MM-dd HH:mm:ss"));
-    QString reason = DataCenter::getThis()->getUpdateTypeString(m_updateType);
-    ui->lineEdit5->setText(reason);
     ui->lineEdit6->setText(QString::number(info->updateAmount()));
     ui->textTips->setText("");
+
+    int errorCode = info->errorCode();
+    QString errMsg = DataCenter::getThis()->getReaderErrorStr(errorCode);
+//    QString reason = DataCenter::getThis()->getUpdateTypeString(m_updateType);
+    ui->lineEdit5->setText(errMsg);
+
 
     // 操作控制
     ui->selectBtn2->setDisabled(true);
     ui->selectBtn3->setDisabled(true);
-
 
     if (!info->isAllowUpdate()) {
         // 无需更新
@@ -81,7 +84,9 @@ bool TicketReregisterWidget::showData()
             ui->tUpdateBtn->setDisabled(true);
             ui->textTips->setText("票卡不可更新");
             ui->lineEdit5->setText("不可更新");
-            QString tipsStr = QString("当前票卡无法进行票卡更新[%1]，请联系工作人员处理。")
+
+            QString tipsStr = QString("%1，无法进行票卡更新[%2]，请联系工作人员处理。")
+                    .arg(errMsg)
                     .arg(info->errorCode());
             MyHelper::ShowMessageBoxInfo(tipsStr);
             return true;
