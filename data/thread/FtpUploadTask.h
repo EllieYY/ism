@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include "Task.h"
-#include <QUrl>
 
 class LibcurlFtp;
 class FtpUploadTask : public CTask

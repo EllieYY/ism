@@ -32,6 +32,7 @@ InquiryMainWidget::~InquiryMainWidget()
 
 bool InquiryMainWidget::showData()
 {
+    HttpTool::getThis()->requestHotIssues();
     ui->msgListWidget->clear();
     showMsg("请问有什么可以帮您？", QNChatMessage::User_She);
 
@@ -50,8 +51,6 @@ void InquiryMainWidget::init()
     {
         ui->voice->setDisabled(true);
     }
-
-    HttpTool::getThis()->requestHotIssues();
 
     setStyle();
     connect(ui->send, &QPushButton::clicked, this, &InquiryMainWidget::onMsgSend);

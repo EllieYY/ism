@@ -11,6 +11,7 @@ class LineInterchangeInfo;
 class InterchangeInfo;
 class BasicInfo;
 class BomParamVersionInfo;
+class TradeFileInfo;
 class SettingCenter : public QObject
 {
     Q_OBJECT
@@ -21,8 +22,8 @@ public:
 
 public:
     // 交易序列号
-    void saveTradeSerial(int serial);
-    int getTradeSerial();
+    void saveTradeFileInfo(TradeFileInfo* info);
+    TradeFileInfo* getTradeFileInfo();
 
     // 线路基础信息
     void saveLineBasicInfo(QList<LineInfo*> lines);

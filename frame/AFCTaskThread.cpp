@@ -15,8 +15,8 @@
 
 AFCTaskThread::AFCTaskThread(QObject *parent) : QThread(parent)
 {
-    m_dealSeq = -1;
-    m_respSeq = -1;
+    m_dealSeq = 0;
+    m_respSeq = 0;
 }
 
 void AFCTaskThread::run()
@@ -43,7 +43,7 @@ void AFCTaskThread::run()
 
     // 开始服务
     DataCenter::getThis()->deviceState2afc(DEV_SERVICE_ON);
-    DataCenter::getThis()->param2afc();
+//    DataCenter::getThis()->param2afc();
 
     while(1) {
         respCheck();
@@ -89,6 +89,7 @@ void AFCTaskThread::respCheck()
 
 void AFCTaskThread::afcResp(int type, uchar *body, int count)
 {
+    logger()->info("msg[%1]", QString::number(type, 16));
     if (type == 0x4001) {    // 参数查询
         make4001Resp(body);
     } else if (type == 0x9005) {   // 软件/部件版本查询
@@ -158,14 +159,20 @@ void AFCTaskThread::make4001Resp(uchar *msg)
 
 void AFCTaskThread::make9005Resp(uchar *body)
 {
+    QByteArray array = QByteArray((char*)body, sizeof(50));
+    QString msgStr = array.toHex().toUpper();
+    logger()->info("[9005h]msg=%1", msgStr);
+
     QString deviceIdStr = DataCenter::getThis()->getDeviceId();
     QString versionStr = DataCenter::getThis()->getReaderVersion();
 
+    logger()->info("-----1#");
     AFC_9005_PKG_BODY_R param = {0};
     param.AppType = 0x01;         // 读卡器
     MyHelper::hexStrToByte(deviceIdStr, 4, param.PartID);  // 部件ID
     MyHelper::hexStrToByte(versionStr, 4, param.AppVer);   // 读写器版本号
 
+    logger()->info("-----2#");
     QList<AFC_9005_PKG_BODY_R> paramList;
     paramList.append(param);
 
@@ -179,7 +186,10 @@ void AFCTaskThread::make9005Resp(uchar *body)
         memmove(p + index, &paramList.at(i), paramSize);
     }
 
+    logger()->info("before [SoftVersionQuery]");
     int ret = SoftVersionQuery(p, paramNum);
+
+    logger()->info("after [SoftVersionQuery]");
 
     QByteArray paramArray;
     paramArray.append((char*)&param, sizeof(AFC_9005_PKG_BODY_R));

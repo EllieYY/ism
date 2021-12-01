@@ -70,6 +70,8 @@ SOURCES += \
     data/OperatorInfo.cpp \
     data/SettingCenter.cpp \
     data/TestWidget.cpp \
+    data/TradeFileInfo.cpp \
+    data/X7000FileInfo.cpp \
     data/asr/ASRHttpTool.cpp \
     data/asr/AsrConfig.cpp \
     data/asr/AsrError.cpp \
@@ -87,6 +89,7 @@ SOURCES += \
     data/thread/FtpUploadTask.cpp \
     data/thread/Task.cpp \
     data/thread/TaskThread.cpp \
+    data/thread/TradeFileUploadTask.cpp \
     data/ticket/QRCodeInfo.cpp \
     data/ticket/ReregisterInfo.cpp \
     data/ticket/TicketBasicInfo.cpp \
@@ -145,6 +148,8 @@ HEADERS += \
     data/OperatorInfo.h \
     data/SettingCenter.h \
     data/TestWidget.h \
+    data/TradeFileInfo.h \
+    data/X7000FileInfo.h \
     data/asr/ASRHttpTool.h \
     data/asr/AsrConfig.h \
     data/asr/AsrError.h \
@@ -162,6 +167,7 @@ HEADERS += \
     data/thread/FtpUploadTask.h \
     data/thread/Task.h \
     data/thread/TaskThread.h \
+    data/thread/TradeFileUploadTask.h \
     data/ticket/QRCodeInfo.h \
     data/ticket/ReregisterInfo.h \
     data/ticket/TicketBasicInfo.h \

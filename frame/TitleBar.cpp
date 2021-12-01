@@ -33,6 +33,19 @@ TitleBar *TitleBar::getThis()
 
 bool TitleBar::showData()
 {
+//    // 系统运行模式设置
+//    if (m_dataUpdateNum[STATION_MODE])
+//    {
+//        int afcState = DataCenter::getThis()->getServiceState();
+//        if (afcState == 0) {
+//            ui->cardBtn->setDisabled(false);
+//        } else {
+//            ui->cardBtn->setDisabled(true);
+//        }
+
+//        m_dataUpdateNum[STATION_MODE] = false;
+//    }
+
     if (!m_dataUpdateNum[AFC_ONLINE_STATE_ID])
     {
         return true;

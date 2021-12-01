@@ -10,9 +10,7 @@ MainWidget::MainWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-
     init();
-
 
 #if IS_TEST_MODE
     setTestData();

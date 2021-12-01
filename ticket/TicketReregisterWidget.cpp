@@ -312,77 +312,40 @@ void TicketReregisterWidget::onSupplementaryOk(bool result)
 
 void TicketReregisterWidget::writeTradeFile(BYTE icType, BYTE *data)
 {
-    QString fileType = getFileTypeStr(icType);
+    QString fileType = DataCenter::getThis()->getTradeFileTypeStr(icType);
     QString deviceId = DataCenter::getThis()->getDeviceId();
     QDateTime curTime = QDateTime::currentDateTime();
-    QString curTimeStr = curTime.toString("yyyyMMddHHmmss");
-    int serial = getTradeFileSerial();
+    QString curTimeStr = curTime.toString("yyyyMMdd");
+    int serial = DataCenter::getThis()->getTradeSerial();
 
-    //命名规则：交易文件类别（1个字符）+“.”+节点编码（8位）+“.”+YYYYMMDDHHMMSS +“.”+文件序列号（6位）
+    QString filePath = QDir::currentPath() + QDir::separator() +
+            "sc" + QDir::separator() +
+            "transcation" + QDir::separator();
+
+    //临存文件命名规则：交易文件类别（1个字符）+“.”+节点编码（8位）+“.”+YYYYMMDD +“.”+文件序列号（6位）
     QString fileName = QString("%1.%2.%3.%4")
             .arg(fileType).arg(deviceId).arg(curTimeStr)
             .arg(serial, 6, 10, QLatin1Char('0'));
-    qDebug() << "trade file name: " << fileName;
+    logger()->info("[writeTradeFile]trade file name: %1", fileName);
 
-    QFile file(fileName);
-    file.open(QIODevice::WriteOnly);
+    QFile file(filePath + fileName);
+    file.open(QIODevice::ReadWrite | QIODevice::Append);   // 追加读写
 
-    // 文件头
     QByteArray array;
     array.clear();
 
-    array.append(icType); // 文件类型
-    array.append(MyHelper::hexStrToByte(curTimeStr));
-    array.append(0x01);
-    array.append(MyHelper::hexStrToByte(deviceId));
-    array.append(MyHelper::intToBytes(serial, 4));
-    int num = 1;
-    array.append(MyHelper::intToBytes(num, 4));
-
-    qDebug() << "文件头 size = " << array.size();
-    QString headStr = array.toHex().toUpper();
-    qDebug() << "文件头内容：" << headStr;
-
     // 文件内容
-    int length = num * getTradeDataLength(icType);
-    qDebug() << "num = " << num << "; length = " << length;
+    int length = getTradeDataLength(icType);
     array.append((char*)(data + 8), length);
 
     qDebug() << "文件内容 size = " << array.size();
     QString bodyStr = array.toHex().toUpper();
-    qDebug() << "文件头内容：" << bodyStr;
+    logger()->info("[writeTradeFile]fileName={%1},文件内容：", fileName, bodyStr);
 
-   // MD5校验值
-    QByteArray md5Arr =  QCryptographicHash::hash(array, QCryptographicHash::Md5);
-    QString md5Str = md5Arr.toHex();
-    qDebug() << "md5: " << md5Str;
-    array.append(MyHelper::hexStrToByte(md5Str));
-    qDebug() << "内容大小：" << array.size();
-
-    file.write(array);   //这种方式也不会有多余字节
+    file.write(array);   //这种方式不会有多余字节
     file.close();
 
-    // 文件上传
-    DataCenter::getThis()->uploadTradeFile(fileName, fileName, md5Arr, icType);
-}
-
-QString TicketReregisterWidget::getFileTypeStr(int icType)
-{
-    QString str = "Y";
-    switch(icType) {
-    case UL_CARD:
-        str = "S";
-        break;
-    case METRO_CARD:
-        str = "V";
-        break;
-    case OCT_CARD:
-        str = "Y";
-        break;
-    default:
-        break;
-    }
-    return str;
+    DataCenter::getThis()->addTradeFileInfo(fileName);
 
 }
 
@@ -398,6 +361,9 @@ int TicketReregisterWidget::getTradeDataLength(int icType)
         break;
     case OCT_CARD:
         length = sizeof(OCTCARD_TRADE_INFO);
+        break;
+    case TU_CARD:
+        length = sizeof(TUCARD_TRADE_INFO);
         break;
     default:
         break;

@@ -24,6 +24,7 @@ class AFCTaskThread;
 class OperatorInfo;
 class TaskThread;
 class BomParamVersionInfo;
+class TradeFileInfo;
 
 // 各节点心跳ID
 typedef enum
@@ -67,8 +68,8 @@ public:
     QString getStationCode() const;
     bool    isPayZone() const;
     QString stationCode2Name(QString code) const;
-    int getTradeSerial();   // 交易序列号
     int getStationMode();   // 车站模式
+    void setStationMode(int stationMode);   // 车站运行模式设置
 
     // 设备id
     QString getDeviceId() const;
@@ -117,9 +118,13 @@ public:
     QString getULStateStr(int state);
     QString getCPUStateStr(int state);
     QString getOCTStateStr(int state);
+    QString getTUStateStr(int state);
+
     QString getTradeTypeString(int type);
     QString getUpdateTypeString(int type);
     QString getReaderErrorStr(BYTE errorCode);
+    QString getTradeFileTypeStr(int icType);
+    int getTradeFileType(QString icTypeStr);
 
     // 签到、签退信息记录
     LoginInfo *getLoginInfo() const;
@@ -133,11 +138,16 @@ public:
     /* ---- FTP相关 --------------------------------*/
     void onSoftwareUpdate(QString fileName);   // 读写器程序更新
     void onParamUpdate(QList<int> typeList, int type);  // 参数更新
-    QHash<int,long> getParamFileFilter(QList<int> typeList);
+    QHash<int,long> getParamFileFilter(QList<int> typeList);    // 参数文件更新筛选
 
     void uploadTradeFile(QString filePath, QString fileName, QByteArray md5Arr, int type);  // 交易文件上传:本地文件路径、文件名称、md5
     void ftpTaskFinished(int taskId);     // 文件上传任务完成
     void ftpAllTaskFinished();            // 文件上传任务完成
+
+    /* ---- 交易文件相关 ---------------------------*/
+    void addTradeFileInfo(QString fileName);   // 暂存交易文件
+    int getTradeSerial();   // 交易序列号
+    int packageTradeFile();    // 交易文件组包
 
 private:
     void initData();
@@ -161,8 +171,9 @@ public:
     void afcHeart(bool onlineFlag);
     void samInfo2afc();                 // 上传SAM卡号
     void deviceState2afc(BYTE event);   // 设备状态上报
+
     QString getReaderVersion();         // 读写器版本信息查询
-    void setStationMode(int stationMode);   // 车站运行模式设置
+
 
     // 系统运行参数
     long getDeviceStateIntervalSec() const;
@@ -201,19 +212,17 @@ private:
     long m_deviceStateIntervalSec;          //1001： 设备状态上传间隔，单位秒
     long m_tradeDataIntervalSec;            //1001： 交易信息上传时间间隔
     long m_tradeDataCountLT;                //1001： 交易数量上传下限，超过下限即可上传
-    long m_timeCount;    // 定时上传时间计数
+    long m_timeCount;               // 定时上传时间计数
     QHash<int, QString> m_ticketCodeMap;    //1004：票卡类型对应关系 <code, chName>
     int m_maxCountForLoginFail;             //2002： 连续登录失败最大次数 -- 暂时不用
     QHash<QString, OperatorInfo*> m_operatorMap;  // 2004：操作员登录信息
 
     // 交易文件相关
+    TradeFileInfo* m_tradeFileInfo;     // 交易文件信息记录
+    long m_tradeSerial;                 // 交易序列号
+    int m_numCount;                     // 交易文件个数计数
 
-    long m_tradeSerial;  // 交易序列号
-
-    int m_numCount;      // 交易文件个数计数
-
-
-    /* ---- FTP相关 ---------*/
+    /* ---- FTP相关 ----------------------*/
     QUrl m_ftpUrl;                  // 文件服务器连接信息
     TaskThread* m_ftpTaskThread;    // 任务线程
     int taskId;                     // 任务Id

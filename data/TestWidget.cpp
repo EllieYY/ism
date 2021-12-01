@@ -71,7 +71,7 @@ void TestWidget::on_Btn3001_clicked()
 
 void TestWidget::on_Btn4002_clicked()
 {
-    DataCenter::getThis()->param2afc();
+//    DataCenter::getThis()->param2afc();
 }
 
 void TestWidget::on_Btn7000_clicked()

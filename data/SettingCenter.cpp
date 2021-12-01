@@ -22,6 +22,7 @@
 #include "ASRHttpTool.h"
 #include "BasicInfo.h"
 #include "BomParamVersionInfo.h"
+#include "TradeFileInfo.h"
 
 SettingCenter* SettingCenter::m_pInstance = NULL;
 SettingCenter::SettingCenter(QObject *parent) : QObject(parent)
@@ -38,44 +39,74 @@ SettingCenter *SettingCenter::getThis()
 
 
 // 交易序列号
-void SettingCenter::saveTradeSerial(int serial)
+void SettingCenter::saveTradeFileInfo(TradeFileInfo* info)
 {
+    if (info == nullptr) {
+        return;
+    }
     QJsonObject rootObject;
 
-    rootObject.insert("datetime", QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"));
-    rootObject.insert("serialNo", serial);
+    rootObject.insert("datetime", info->datetime().toString("yyyy-MM-dd HH:mm:ss"));
+    rootObject.insert("serialNo", (int)info->tradeSerial());
+    rootObject.insert("fileCount", info->fileCount());
+    QSet<QString> fileList = info->fileNameSet();
 
-    saveJsonFile(rootObject, "tradeSerial.json");
+    QJsonArray jsonArray;
+    for (QString name:fileList) {
+        jsonArray.append(name);
+    }
+    rootObject.insert("fileList", jsonArray);
+
+    saveJsonFile(rootObject, "sc/transcation/tradeFileInfo.json");
 }
 
-int SettingCenter::getTradeSerial()
+TradeFileInfo* SettingCenter::getTradeFileInfo()
 {
-    int tradeSerial = 1;
-    QJsonDocument jsonDocument = readJsonFile("tradeSerial.json");
+    TradeFileInfo* info = new TradeFileInfo(this);
+
+    QString fileName = QString("sc/transcation/tradeFileInfo.json");
+
+    QJsonDocument jsonDocument = readJsonFile(fileName);
     if (jsonDocument.isNull() || jsonDocument.isEmpty()) {
-        return tradeSerial;
+        return info;
     }
     QJsonObject rootObject = jsonDocument.object();
     QList<LineInfo *> lines;
     if(!rootObject.contains("datetime") || !rootObject.value("datetime").isString() ||
-            !rootObject.contains("serialNo"))
+            !rootObject.contains("serialNo") || !rootObject.contains("fileCount"))
     {
         qDebug() << "No target value";
         qDebug() << rootObject.keys();
-        return tradeSerial;
+        return info;
     }
 
+
+    int fileCount = rootObject.value("fileCount").toInt();
+    int tradeSerial = rootObject.value("serialNo").toInt();
     QString timeStr = rootObject.value("datetime").toString();
-    QDate dDate = QDateTime::fromString(timeStr, "yyyy-MM-dd HH:mm:ss").date();
-    QDate curDate = QDate::currentDate();
+    QDateTime dDate = QDateTime::fromString(timeStr, "yyyy-MM-dd HH:mm:ss");
+    QDateTime curDate = QDateTime::currentDateTime();
+
+    QJsonArray jsonArray = rootObject.value("fileList").toArray();
+    QSet<QString> fileList;
+    for(auto iter = jsonArray.constBegin(); iter != jsonArray.constEnd(); ++iter)
+    {
+        QString name = iter->toString();
+        fileList.insert(name);
+    }
 
     // 非当天记录
     if (dDate.daysTo(curDate) > 0) {
-        return tradeSerial;
+        info->setDatetime(curDate);
+        info->setTradeSerial(1);
+    } else {
+        info->setDatetime(dDate);
+        info->setTradeSerial(tradeSerial);
+        info->setFileNameSet(fileList);
     }
+    info->setFileCount(fileCount);
 
-    tradeSerial = rootObject.value("serialNo").toInt();
-    return tradeSerial;
+    return info;
 }
 
 
@@ -798,7 +829,7 @@ void SettingCenter::saveJsonFile(QJsonObject rootObject, const QString &fileName
     jsonDocument.setObject(rootObject);
     QByteArray byteArray = jsonDocument.toJson(QJsonDocument::Indented);
 
-    QString filePath = QDir::currentPath() + QDir::separator() + QDir::separator() + fileName;
+    QString filePath = QDir::currentPath() + QDir::separator() + fileName;
     QFile file(fileName);
     if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
@@ -816,7 +847,7 @@ QJsonDocument SettingCenter::readJsonFile(const QString &fileName)
 {
     QJsonDocument doc;
 
-    QString filePath = QDir::currentPath() + QDir::separator() + QDir::separator() + fileName;
+    QString filePath = QDir::currentPath() + QDir::separator() + fileName;
     QFile file(filePath);
     if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {

@@ -30,6 +30,8 @@
 #include "TaskThread.h"
 #include "FtpUploadTask.h"
 #include "FtpDownloadTask.h"
+#include "TradeFileInfo.h"
+#include "TradeFileUploadTask.h"
 
 
 static int HRT_NUM = 5;
@@ -73,14 +75,33 @@ DataCenter *DataCenter::getThis()
 // 心跳连接处理
 void DataCenter::secEvent()
 {
+    m_timeCount++;
+
     for (int i = 0; i < HRT_NUM; i++) {
         m_hrtCnt[i] = m_hrtCnt[i] + 1;
 //        if (m_hrtCnt[i] == 1000000000) {    // 超过10秒未连接则掉线处理
 //            setHrtOffData(i);
 //        }
     }
-}
 
+    bool devTriggerd = false;
+    if ((m_timeCount % m_deviceStateIntervalSec) == 0) {
+        devTriggerd = true;
+        logger()->info("设备状态定时上送：%1, %2", m_timeCount, m_deviceStateIntervalSec);
+        this->deviceState2afc(DEV_OK);
+    }
+
+    bool fileTriggered = false;
+    if ((m_timeCount % 10) == 0 || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
+        fileTriggered = true;
+        logger()->info("交易文件定时上送：%1, %2", m_timeCount, m_tradeDataIntervalSec);
+        packageTradeFile();
+    }
+
+    if (devTriggerd && fileTriggered) {
+        m_timeCount = 0;
+    }
+}
 
 void DataCenter::init()
 {
@@ -106,12 +127,12 @@ void DataCenter::init()
 
     logger()->info("基础数据更新");
     // 获取基础数据并更新数据 #7
-    HttpTool::getThis()->requestLineBaseInfo();
-    HttpTool::getThis()->requestLineStations();
-    HttpTool::getThis()->requestInterchanges();
-    HttpTool::getThis()->requestTimeTables();
-    HttpTool::getThis()->requestStationMap();
-    HttpTool::getThis()->requestStationPreMap();
+//    HttpTool::getThis()->requestLineBaseInfo();
+//    HttpTool::getThis()->requestLineStations();
+//    HttpTool::getThis()->requestInterchanges();
+//    HttpTool::getThis()->requestTimeTables();
+//    HttpTool::getThis()->requestStationMap();
+//    HttpTool::getThis()->requestStationPreMap();
 //    HttpTool::getThis()->requestLineMap();
 
     m_stationCodeMap.clear();
@@ -165,7 +186,11 @@ void DataCenter::initData()
 
     //定时任务相关
     m_timeCount = 0;
-    m_tradeSerial = SettingCenter::getThis()->getTradeSerial();
+    m_tradeFileInfo = NULL;
+    m_tradeFileInfo = SettingCenter::getThis()->getTradeFileInfo();
+
+    // 站点模式
+    m_stationMode = 0;
 
     // 参数版本信息获取
     initParamVersion();
@@ -174,7 +199,6 @@ void DataCenter::initData()
     for (int i = 0; i < HRT_NUM; i++) {
         m_hrtCnt[i] = 0;
     }
-
 }
 
 void DataCenter::initDevice()
@@ -202,6 +226,23 @@ void DataCenter::initDevice()
     }
     logger()->info("[readerComOpen]读写器open={%1}, 端口号={%2}; [readerInit]={%3}",
                    ret, m_basicInfo->readerPort(), initRet);
+
+    // 获取读写器版本
+    VERSION_INFO version = {0};
+    int retVersion = getVersion(&version);
+    if (retVersion != 0) {
+        m_readerVersion = "00000000";
+    } else {
+        QByteArray versionArray;
+        versionArray.append((char*)version.SoftVersion, 2);
+        m_readerVersion = "0000" + versionArray.toHex().toUpper();
+    }
+
+    QByteArray str;
+    str.append((char*)&version, sizeof(VERSION_INFO));
+    QString outputStr = str.toHex();
+    logger()->info("[getVersion] = %1, output = %2", retVersion, outputStr);
+
 
     // 钱箱初始化
     int bimPort = m_basicInfo->bimPort();
@@ -459,7 +500,7 @@ int DataCenter::parseParam1004(QString filePath)
         QString chStr = MyHelper::getCorrectUnicode(ch);
 
         m_ticketCodeMap.insert(code, chStr);
-        logger()->info("src={%1},enStr={%2},chStr={%3}", info, enStr, chStr);
+//        logger()->info("src={%1},enStr={%2},chStr={%3}", info, enStr, chStr);
 
         stream.skipRawData(193);
     }
@@ -562,14 +603,14 @@ int DataCenter::parseParam2004(QString filePath)
 
         m_operatorMap.insert(codeStr, info);
 
-        logger()->info("[param2004]code={%1}, name={%2}, card={%3}, pwd={%4}, type={%5}, access={%6}, validDate={%7}",
-                       codeStr,
-                       nameStr,
-                       info->card(),
-                       info->pwd(),
-                       QString::number(info->type(), 16),
-                       QString::number(info->access(), 16),
-                       info->validDate().toString("yyyyMMddHHmmss"));
+//        logger()->info("[param2004]code={%1}, name={%2}, card={%3}, pwd={%4}, type={%5}, access={%6}, validDate={%7}",
+//                       codeStr,
+//                       nameStr,
+//                       info->card(),
+//                       info->pwd(),
+//                       QString::number(info->type(), 16),
+//                       QString::number(info->access(), 16),
+//                       info->validDate().toString("yyyyMMddHHmmss"));
     }
 
     file.close();
@@ -624,6 +665,50 @@ void DataCenter::ftpAllTaskFinished()
 {
 //    qDebug() << "all task " << "done now.";
 
+}
+
+
+// 交易文件相关
+void DataCenter::addTradeFileInfo(QString fileName)
+{
+    if (m_tradeFileInfo == nullptr) {
+        m_tradeFileInfo = new TradeFileInfo(this);
+    }
+
+    m_tradeFileInfo->addFileName(fileName);
+}
+
+int DataCenter::getTradeSerial()
+{
+    if (m_tradeFileInfo == nullptr) {
+        m_tradeFileInfo = new TradeFileInfo(this);
+    }
+
+    return m_tradeFileInfo->tradeSerial();
+}
+
+int DataCenter::packageTradeFile()
+{
+    if (m_tradeFileInfo == nullptr || m_tradeFileInfo->fileCount() <= 0) {
+        return -1;
+    }
+
+    int fileCount = m_tradeFileInfo->fileCount();
+    QSet<QString> fileNameList = m_tradeFileInfo->fileNameSet();
+    if (m_ftpTaskThread->isRunning()) {
+        TradeFileUploadTask* task = new TradeFileUploadTask(taskId++);
+        QString serverFilePath = m_basicInfo->ftpUrl().toString() + "/Transaction/";
+        task->packageTradeFile(fileCount, fileNameList, serverFilePath);
+        m_ftpTaskThread->addTask(task);
+    }
+
+    // TODO:
+    m_tradeFileInfo->reset();
+    SettingCenter::getThis()->saveTradeFileInfo(m_tradeFileInfo);
+
+//    qDebug() << "trade file name: " << fileName;
+
+    return 0;
 }
 
 
@@ -691,21 +776,6 @@ void DataCenter::setLineInterchanges(const QList<LineInterchangeInfo *> &lineInt
 QString DataCenter::getTicketTypeString(int type)
 {
     return m_ticketCodeMap.value(type);
-//    QString typeStr = "未定义卡";
-//    switch(type) {
-//    case UL_CARD:
-//        typeStr = "token票";
-//        break;
-//    case METRO_CARD:
-//        typeStr = "地铁储值卡";
-//        break;
-//    case OCT_CARD:
-//        typeStr = "洪城一卡通";
-//        break;
-//    default:
-//        break;
-//    }
-//    return typeStr;
 }
 
 // 票卡状态、错误码对应关系
@@ -718,6 +788,8 @@ QString DataCenter::getTicketStateString(int icType, int state)
         typeStr = getCPUStateStr(state);
     } else if (icType == OCT_CARD) {
         typeStr = getOCTStateStr(state);
+    } else if (icType == TU_CARD) {
+        typeStr = getTUStateStr(state);
     }
 
     return typeStr;
@@ -785,6 +857,28 @@ QString DataCenter::getOCTStateStr(int state) {
 
     return typeStr;
 }
+
+QString DataCenter::getTUStateStr(int state)
+{
+    QString typeStr = "未定义卡";
+
+    // //00：初始状态; 01：进站; 02：出站; 03：进站更新; 04：出站更新
+    if (state == 1) {
+        typeStr = "出站";
+    } else if (state == 2) {
+        typeStr = "进站";
+    } else if (state == 3) {
+        typeStr = "进站更新";
+    }else if (state == 4) {
+        typeStr = "出站更新";
+    } else if (state == 0) {
+        typeStr = "初始状态";
+    }
+
+    return typeStr;
+
+}
+
 QString DataCenter::getReaderErrorStr(BYTE errorCode)
 {
     return m_readerErrCodeMap.value(errorCode);
@@ -836,6 +930,44 @@ QString DataCenter::getTradeTypeString(int type)
     return typeStr;
 
 }
+QString DataCenter::getTradeFileTypeStr(int icType)
+{
+    QString str = "Y";
+    switch(icType) {
+    case UL_CARD:
+        str = "S";
+        break;
+    case METRO_CARD:
+        str = "V";
+        break;
+    case OCT_CARD:
+        str = "Y";
+        break;
+    case TU_CARD:
+        str = "J";
+        break;
+    default:
+        break;
+    }
+    return str;
+}
+
+int DataCenter::getTradeFileType(QString icTypeStr)
+{
+    BYTE type = OCT_CARD;
+    if (icTypeStr.compare("S") == 0) {
+        type = UL_CARD;
+    } else if (icTypeStr.compare("V") == 0) {
+        type = METRO_CARD;
+    } else if (icTypeStr.compare("Y") == 0) {
+        type = OCT_CARD;
+    } else if (icTypeStr.compare("J") == 0) {
+        type = TU_CARD;
+    }
+
+    return type;
+}
+
 
 // 签到签退
 LoginInfo *DataCenter::getLoginInfo() const
@@ -1032,13 +1164,17 @@ void DataCenter::deviceState2afc(BYTE event)
     BYTE state = getDeviceState();
 
     // 事件要传2个字节 : 网络字节序
-    BYTE eventArr[2];
-    eventArr[0] = 0x00;
-    eventArr[1] = event;
+    int num = 0;
+    BYTE eventArr[2] = {0};
+    if (event != NULL) {
+        eventArr[0] = 0x00;
+        eventArr[1] = event;
+        num = 2;
+    }
 
-    BYTE ret = DeviceState(state, &event);
+    BYTE ret = DeviceState(state, &event, num);
 
-    logger()->info("设备状态上报{}，status=%2, event=%3", ret, state, event);
+    logger()->info("设备状态上报{%1}，status=%2, event=%3", ret, state, event);
 }
 
 // 4002 参数应用上报
@@ -1065,33 +1201,9 @@ void DataCenter::param2afc(int paramType, long oldVersion, long newVersion)
                    QString::number(newVersion, 16));
 }
 
-void DataCenter::setStationMode(int stationMode)
-{
-    m_stationMode = stationMode;
-    // TODO:怎么使用
-    // 第一册5.8：故障期间，显示列车运行模式
-//    Bit 0	紧急模式             1：生效，0:无效
-//    Bit 1	进站免检模式         1：生效，0:无效
-//    Bit 2	日期免检模式         1：生效，0:无效
-//    Bit 3	时间免检模式         1：生效，0:无效
-//    Bit 4	列车故障模式         1：生效，0:无效
-//    Bit 5	车费免检模式         1：生效，0:无效
-//    Bit 6 ~ 15	[未定义]
-
-}
 
 QString DataCenter::getReaderVersion()
 {
-    PVERSION_INFO version = {0};
-    int ret = getVersion(version);
-    if (ret != 0) {
-        return "00000000";
-    }
-
-    QByteArray versionArray = QByteArray((char*)version->SoftVersion, 2);
-    m_readerVersion = "0000" + versionArray.toHex().toUpper();
-    logger()->info("[getVersion] = %1, version = %2", ret, m_readerVersion);
-
     return m_readerVersion;
 }
 
@@ -1332,19 +1444,25 @@ QString DataCenter::stationCode2Name(QString code) const
     return m_stationCodeMap.value(code);
 }
 
-int DataCenter::getTradeSerial()
-{
-    m_tradeSerial++;
-    // 写入文件
-    SettingCenter::getThis()->saveTradeSerial(m_tradeSerial);
-
-    return m_tradeSerial;
-}
-
 int DataCenter::getStationMode()
 {
-    // TODO:默认正常模式-0
-    return 0;
+    return m_stationMode;
+}
+
+void DataCenter::setStationMode(int stationMode)
+{
+    m_stationMode = stationMode;
+    // 页面做控制显示
+    // 第一册5.8：故障期间，显示列车运行模式
+//    Bit 0	紧急模式             1：生效，0:无效
+//    Bit 1	进站免检模式         1：生效，0:无效
+//    Bit 2	日期免检模式         1：生效，0:无效
+//    Bit 3	时间免检模式         1：生效，0:无效
+//    Bit 4	列车故障模式         1：生效，0:无效
+//    Bit 5	车费免检模式         1：生效，0:无效
+//    Bit 6 ~ 15	[未定义]
+
+    WidgetMng::notify(STATION_MODE);
 }
 
 QList<LineInfo *> DataCenter::getLineList() const

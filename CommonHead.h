@@ -62,7 +62,7 @@ typedef enum
 }EN_WGT_ID;
 
 
-#define MAX_DATA_TYPE_NUM	13
+#define MAX_DATA_TYPE_NUM	14
 typedef enum
 {
     BACK_UP                         = 0,   // 预留
@@ -77,7 +77,8 @@ typedef enum
     PAPER_MONEY_STATE               = 9,   // 纸币模块可用状态
     TICKET_BASIC                    = 10,  // 票卡基本信息
     TICKET_TRANS                    = 11,  // 票卡交易信息
-    TICKET_REREGISTER               = 12   // 票卡更新信息
+    TICKET_REREGISTER               = 12,   // 票卡更新信息
+    STATION_MODE                    = 13    // 系统运行模式
 }EN_PARAM_ID;
 
 typedef enum
@@ -96,6 +97,7 @@ typedef enum
     UL_CARD            = 0x01,                    //# token票
     METRO_CARD         = 0x02,                    //# 地铁储值卡
     OCT_CARD           = 0x03,                    //# 洪城一卡通
+    TU_CARD            = 0x07,                    //# 交通部卡
     UNKONW             = 0x00                     //# 未识别
 }TICKET_TYPE;
 
