@@ -146,8 +146,10 @@ public:
 
     /* ---- 交易文件相关 ---------------------------*/
     void addTradeFileInfo(QString fileName);   // 暂存交易文件
-    int getTradeSerial();   // 交易序列号
-    int packageTradeFile();    // 交易文件组包
+    int packageTradeFile();        // 交易文件组包
+    ulong getTradeFileSerial();         // 交易文件序列号
+    ulong getDeviceTradeSerial();   // 终端交易流水号
+    bool findFileForDelete(const QString filePath, int days);    // 定时删除交易文件
 
 private:
     void initData();
@@ -187,6 +189,10 @@ public:
     BYTE getDeviceState();
 
     BasicInfo *getBasicInfo() const;
+
+    // 解决时间同步，页面定时器失效标识
+    bool getTimeReset() const;
+    void setTimeReset(bool timeReset);
 
 private:
     long m_hrtCnt[5];                           // 心跳计数
@@ -263,10 +269,12 @@ private:
     QHash<QString, QString> m_stationCodeMap;     // <code, name>
     QHash<int, BomParamVersionInfo*> m_paramVersionMap;    // 本地应用的SC参数版本信息
 
-
     // 子线程
     HeartTimer*  m_timer;    // 心跳检测异步线程
     AFCTaskThread* m_taskThread;
+
+    // 系统时间设置
+    bool m_timeReset;       // 时间重置标识
 
 signals:
 

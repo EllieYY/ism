@@ -2,14 +2,15 @@
 
 TradeFileInfo::TradeFileInfo(QObject *parent) : QObject(parent)
 {
-    m_tradeSerial = 0;
+    m_fileTradeSerial = 0;
+    m_deviceTradeSerial = 0;
     reset();
-
 }
 
 void TradeFileInfo::reset()
 {
-    setTradeSerial(m_tradeSerial + 1);
+    setFileTradeSerial(m_fileTradeSerial + 1);
+    setDeviceTradeSerial(m_deviceTradeSerial + 1);
     m_fileCount = 0;
     m_datetime = QDateTime::currentDateTime();
     m_fileNameSet.clear();
@@ -23,19 +24,6 @@ int TradeFileInfo::fileCount() const
 void TradeFileInfo::setFileCount(int fileCount)
 {
     m_fileCount = fileCount;
-}
-
-long TradeFileInfo::tradeSerial() const
-{
-    return m_tradeSerial;
-}
-
-void TradeFileInfo::setTradeSerial(long tradeSerial)
-{
-    m_tradeSerial = tradeSerial;
-    if (m_tradeSerial > 999999) {
-        m_tradeSerial = 1;
-    }
 }
 
 QSet<QString> TradeFileInfo::fileNameSet() const
@@ -58,6 +46,31 @@ void TradeFileInfo::setDatetime(const QDateTime &datetime)
 {
     m_datetime = datetime;
 }
+
+ulong TradeFileInfo::deviceTradeSerial() const
+{
+    return m_deviceTradeSerial;
+}
+
+void TradeFileInfo::setDeviceTradeSerial(const ulong &deviceTradeSerial)
+{
+    m_deviceTradeSerial = deviceTradeSerial;
+}
+
+ulong TradeFileInfo::fileTradeSerial() const
+{
+
+    return m_fileTradeSerial;
+}
+
+void TradeFileInfo::setFileTradeSerial(const ulong &fileTradeSerial)
+{
+    m_fileTradeSerial = fileTradeSerial;
+    if (m_fileTradeSerial > 999999) {
+        m_fileTradeSerial = 1;
+    }
+}
+
 
 void TradeFileInfo::setFileNameSet(const QSet<QString> &fileNameSet)
 {

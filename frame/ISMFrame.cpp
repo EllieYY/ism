@@ -42,6 +42,7 @@
 #include "LoginDlg.h"
 #include "LogoutDlg.h"
 #include "TestWidget.h"
+#include <QDebug>
 
 ISMFrame::ISMFrame(QWidget *parent) :
     QFrame(parent),
@@ -87,17 +88,28 @@ void ISMFrame::init()
 
 void ISMFrame::initTimer()
 {
+//    qDebug() << "ISMFrame::initTimer";
     m_oldtime = QDateTime::currentDateTime();
     m_time	  = new QTimer(this);
     connect(m_time, &QTimer::timeout, this, &ISMFrame::onTimer);
-    m_time->start(50);
+    m_time->start(500);
 }
 
 void ISMFrame::onTimer()
 {
+    qDebug() << "onTimer";
+//    bool timeRest = DataCenter::getThis()->getTimeReset();
     QDateTime time = QDateTime::currentDateTime();
-    if (m_oldtime.secsTo(time) > 0)
+    long interval = m_oldtime.secsTo(time);
+
+    QString info = QString("curTime=%1, oldTime=%2, interval=%3")
+            .arg(time.toString("HHmmss")
+                 .arg(m_oldtime.toString("HHmmss"))
+                 .arg(interval));
+    qDebug() << "[ontimer] " << info;
+    if (interval > 0)
     {
+//        qDebug() << "ISMFrame::onTimer";
         m_oldtime = time;
         secEvent();
     }
@@ -106,12 +118,15 @@ void ISMFrame::onTimer()
 //# 秒驱动
 void ISMFrame::secEvent()
 {
+//    qDebug() << "ISMFrame::secEvent";
     // TODO:未签到时，这里加控制
-    DataCenter::getThis()->secEvent();
+
     StatusBar::getThis()->secEvent();
     TitleBar::getThis()->secEvent();
 
     WidgetMng::getThis()->secEvent();    // 子窗口的秒驱动
+
+    DataCenter::getThis()->secEvent();
 
     // TODO:定时自动签退
 

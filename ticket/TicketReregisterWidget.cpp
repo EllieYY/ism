@@ -185,7 +185,10 @@ void TicketReregisterWidget::onUpdateTicket()
 
     // 参数配置
     // 设备交易流水 | 车站模式 | 车票类型 | 支付方式 | 交易金额 | 更新方式 | 操作员编号 | 更新车站（进站出站更新要填）
-    int tradeSerial = DataCenter::getThis()->getTradeSerial();
+
+    // 设备交易流水号，不是交易文件序号
+    ulong tradeSerial = DataCenter::getThis()->getDeviceTradeSerial();
+
     MyHelper::intToBigEndianByte(tradeSerial, 4, updateIn.DevTradeSerial);
     int stationMode = DataCenter::getThis()->getStationMode();
     MyHelper::intToBigEndianByte(stationMode, 2, updateIn.StationMode);
@@ -230,6 +233,7 @@ void TicketReregisterWidget::onUpdateTicket()
     // 更新成功提示。
     MyHelper::ShowMessageBoxInfo("票卡更新成功。");
     ui->tUpdateBtn->setDisabled(true);
+    ui->cashPollBtn->setDisabled(true);
 //    close();
 }
 
@@ -316,7 +320,7 @@ void TicketReregisterWidget::writeTradeFile(BYTE icType, BYTE *data)
     QString deviceId = DataCenter::getThis()->getDeviceId();
     QDateTime curTime = QDateTime::currentDateTime();
     QString curTimeStr = curTime.toString("yyyyMMdd");
-    int serial = DataCenter::getThis()->getTradeSerial();
+    int serial = DataCenter::getThis()->getTradeFileSerial();
 
     QString filePath = QDir::currentPath() + QDir::separator() +
             "sc" + QDir::separator() +

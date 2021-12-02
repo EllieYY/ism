@@ -47,7 +47,8 @@ void SettingCenter::saveTradeFileInfo(TradeFileInfo* info)
     QJsonObject rootObject;
 
     rootObject.insert("datetime", info->datetime().toString("yyyy-MM-dd HH:mm:ss"));
-    rootObject.insert("serialNo", (int)info->tradeSerial());
+    rootObject.insert("fileSerialNo", QString::number(info->fileTradeSerial()));
+    rootObject.insert("deviceSerialNo", QString::number(info->deviceTradeSerial()));
     rootObject.insert("fileCount", info->fileCount());
     QSet<QString> fileList = info->fileNameSet();
 
@@ -73,7 +74,9 @@ TradeFileInfo* SettingCenter::getTradeFileInfo()
     QJsonObject rootObject = jsonDocument.object();
     QList<LineInfo *> lines;
     if(!rootObject.contains("datetime") || !rootObject.value("datetime").isString() ||
-            !rootObject.contains("serialNo") || !rootObject.contains("fileCount"))
+            !rootObject.contains("fileSerialNo") || !rootObject.value("fileSerialNo").isString() ||
+            !rootObject.contains("deviceSerialNo") || !rootObject.value("deviceSerialNo").isString() ||
+            !rootObject.contains("fileCount"))
     {
         qDebug() << "No target value";
         qDebug() << rootObject.keys();
@@ -82,7 +85,8 @@ TradeFileInfo* SettingCenter::getTradeFileInfo()
 
 
     int fileCount = rootObject.value("fileCount").toInt();
-    int tradeSerial = rootObject.value("serialNo").toInt();
+    ulong fileSerial = rootObject.value("fileSerialNo").toString().toULong();
+    ulong devTradeSerial = rootObject.value("deviceSerialNo").toString().toULong();
     QString timeStr = rootObject.value("datetime").toString();
     QDateTime dDate = QDateTime::fromString(timeStr, "yyyy-MM-dd HH:mm:ss");
     QDateTime curDate = QDateTime::currentDateTime();
@@ -95,16 +99,19 @@ TradeFileInfo* SettingCenter::getTradeFileInfo()
         fileList.insert(name);
     }
 
-    // 非当天记录
+    // 新的一天，序号从1开始
     if (dDate.daysTo(curDate) > 0) {
         info->setDatetime(curDate);
-        info->setTradeSerial(1);
-    } else {
+        info->setFileTradeSerial(1);
+        info->setDeviceTradeSerial(1);
+        info->setFileCount(0);
+    } else {    // 当天读取，序号延续之前的，考虑程序崩溃重启
         info->setDatetime(dDate);
-        info->setTradeSerial(tradeSerial);
+        info->setFileTradeSerial(fileSerial);
+        info->setDeviceTradeSerial(devTradeSerial);
         info->setFileNameSet(fileList);
+        info->setFileCount(fileCount);
     }
-    info->setFileCount(fileCount);
 
     return info;
 }

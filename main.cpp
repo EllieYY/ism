@@ -32,9 +32,9 @@ int main(int argc, char *argv[])
     a.setStyleSheet(qss);
 //    a.setPalette(QPalette(QColor("#F0F0F0")));
 
-    ISMFrame w;
-    w.login();
-//    w.show();
+    ISMFrame* w = new ISMFrame();
+//    w.login();
+    w->show();
 
     int ret = a.exec();
 //    Singleton<LogHandler>::getInstance().uninstallMessageHandler();

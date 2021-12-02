@@ -95,7 +95,7 @@ void CardReadWidget::readTransactionInfo()
     if (ret != 0x00) {
         ui->readerInfoLabel->setText("票卡信息读取失败");
         QString errMsg = DataCenter::getThis()->getReaderErrorStr(ret);
-        MyHelper::ShowMessageBoxInfo(QString("票卡信息获取失败[%1]:%2，如有疑问，请联系工作人员。")
+        MyHelper::ShowMessageBoxInfo(QString("票卡信息获取失败[%1]:%2，请尝试重新读卡，或联系工作人员。")
                                      .arg(ret).arg(errMsg));
         initReadState();
         return;
@@ -149,7 +149,7 @@ void CardReadWidget::readReregisterInfo()
     if (ret != 0x00) {
         ui->readerInfoLabel->setText("票卡信息读取失败");
         QString errMsg = DataCenter::getThis()->getReaderErrorStr(ret);
-        MyHelper::ShowMessageBoxInfo(QString("票卡信息获取失败[%1]:%2，如有疑问，请联系工作人员。")
+        MyHelper::ShowMessageBoxInfo(QString("票卡信息获取失败[%1]:%2，请尝试重新读卡，或联系工作人员。")
                                      .arg(ret).arg(errMsg));
         initReadState();
         return;

@@ -195,6 +195,9 @@ void DataCenter::initData()
     // 参数版本信息获取
     initParamVersion();
 
+    // 时间重置标识
+    m_timeReset = false;
+
     // 心跳
     for (int i = 0; i < HRT_NUM; i++) {
         m_hrtCnt[i] = 0;
@@ -226,6 +229,10 @@ void DataCenter::initDevice()
     }
     logger()->info("[readerComOpen]读写器open={%1}, 端口号={%2}; [readerInit]={%3}",
                    ret, m_basicInfo->readerPort(), initRet);
+
+    // 读写器状态上传给ISM后台
+    QString readerStateStr = ((initRet == 0) ? "1" : "0");   // 1-正常 0-离线
+    HttpTool::getThis()->updateStates(readerStateStr);
 
     // 获取读写器版本
     VERSION_INFO version = {0};
@@ -678,20 +685,86 @@ void DataCenter::addTradeFileInfo(QString fileName)
     m_tradeFileInfo->addFileName(fileName);
 }
 
-int DataCenter::getTradeSerial()
+// 交易文件流水号
+ulong DataCenter::getTradeFileSerial()
 {
     if (m_tradeFileInfo == nullptr) {
         m_tradeFileInfo = new TradeFileInfo(this);
     }
 
-    return m_tradeFileInfo->tradeSerial();
+    return m_tradeFileInfo->fileTradeSerial();
 }
+
+// 终端交易序号
+ulong DataCenter::getDeviceTradeSerial()
+{
+    if (m_tradeFileInfo == nullptr) {
+        m_tradeFileInfo = new TradeFileInfo(this);
+    }
+
+    ulong serial = m_tradeFileInfo->deviceTradeSerial();
+    m_tradeFileInfo->setDeviceTradeSerial(serial + 1);
+    SettingCenter::getThis()->saveTradeFileInfo(m_tradeFileInfo);
+    return serial;
+}
+
+// days表示往前删除的天数
+bool DataCenter::findFileForDelete(const QString filePath, int days)
+{
+    // 最多保留30天的交易数据
+    // 因为判断的是最后修改时间，所以天数要比传参多一天
+    int deleteDays = - days + 1;
+    if (days <= 0) {
+        deleteDays = days + 1;
+    } else if (days > 30) {
+        deleteDays = -29;
+    }
+
+    QDir dir(filePath);
+    if (!dir.exists())
+        return false;
+    dir.setFilter(QDir::Dirs | QDir::Files);
+    dir.setSorting(QDir::DirsFirst);
+    QFileInfoList list = dir.entryInfoList();
+    int i = 0;
+    do {
+        QFileInfo fileInfo = list.at(i);
+        if(fileInfo.fileName() == "." | fileInfo.fileName() == "..")
+        {
+            i++;
+            continue;
+        }
+        bool bisDir = fileInfo.isDir();
+        if(bisDir) {   // 不对子目录下的文件进行删除操作
+            continue;
+        } else {
+            // 跳过json文件（配置文件）
+            if (fileInfo.fileName().contains(".json")) {
+                continue;
+            }
+            //如果是文件，判断文件日期。
+            QDateTime delDateTime = QDateTime::currentDateTime().addDays(deleteDays);
+            qint64 nSecs = delDateTime.secsTo(fileInfo.lastModified());
+            if (nSecs < 0) {
+                qDebug() << qPrintable(QString("%1 %2 %3").arg(fileInfo.size(), 10)
+                                                    .arg(fileInfo.fileName(),10).arg(fileInfo.path()))<<endl;
+                //删除30天前的文件
+                fileInfo.dir().remove(fileInfo.fileName());
+            }
+        }
+        i++;
+    } while(i<list.size());
+    return true;
+}
+
 
 int DataCenter::packageTradeFile()
 {
     if (m_tradeFileInfo == nullptr || m_tradeFileInfo->fileCount() <= 0) {
         return -1;
     }
+
+    qDebug() << "fileCount" << m_tradeFileInfo->fileCount();
 
     int fileCount = m_tradeFileInfo->fileCount();
     QSet<QString> fileNameList = m_tradeFileInfo->fileNameSet();
@@ -1278,6 +1351,16 @@ BYTE DataCenter::getDeviceState()
 BasicInfo *DataCenter::getBasicInfo() const
 {
     return m_basicInfo;
+}
+
+bool DataCenter::getTimeReset() const
+{
+    return m_timeReset;
+}
+
+void DataCenter::setTimeReset(bool timeReset)
+{
+    m_timeReset = timeReset;
 }
 
 

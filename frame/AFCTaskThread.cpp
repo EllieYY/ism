@@ -1,7 +1,6 @@
 /*
  * AFC相关业务监听线程
 */
-
 #include "AFCTaskThread.h"
 #include "NCNetwork_Lib.h"
 #include "MyHelper.h"
@@ -300,6 +299,7 @@ void AFCTaskThread::parse9001(uchar *msg)
     st.wSecond = time.second();
     SetLocalTime(&st);
 
+    DataCenter::getThis()->setTimeReset(true);
     // 日志记录
     QString msgStr = array.toHex().toUpper();
     logger()->info("[9001h]msg=%1, datetime=%2", msgStr, timeStr);

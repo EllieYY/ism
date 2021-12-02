@@ -16,9 +16,6 @@ public:
     int fileCount() const;
     void setFileCount(int fileCount);
 
-    long tradeSerial() const;
-    void setTradeSerial(long tradeSerial);
-
     QSet<QString> fileNameSet() const;
     void addFileName(QString name);
     void setFileNameSet(const QSet<QString> &fileNameSet);
@@ -26,11 +23,18 @@ public:
     QDateTime datetime() const;
     void setDatetime(const QDateTime &datetime);
 
+    ulong deviceTradeSerial() const;
+    void setDeviceTradeSerial(const ulong &deviceTradeSerial);
+
+    ulong fileTradeSerial() const;
+    void setFileTradeSerial(const ulong &fileTradeSerial);
+
 private:
     int m_fileCount;            // 文件个数
-    long m_tradeSerial;         // 交易文件序列号
+    ulong m_fileTradeSerial;         // 交易文件序列号
     QDateTime m_datetime;
     QSet<QString> m_fileNameSet;  // 交易文件名称列表
+    ulong m_deviceTradeSerial;    // 终端交易流水号   从1开始，不重复
 
 signals:
 

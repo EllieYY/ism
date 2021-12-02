@@ -93,5 +93,14 @@ void TitleBar::onLogout()
 
 void TitleBar::secEvent()
 {
+    qDebug() << "TitleBar::secEvent()";
+    // 当前时间
+    QDateTime currentDateTime = QDateTime::currentDateTime();
+    QString currentDateStr = currentDateTime.toString("yyyy.MM.dd hh:mm:ss ddd");
+
+    qDebug() << "current time:" << currentDateStr;
+
+    ui->dateLabel->setText(currentDateStr);
+
     showData();
 }

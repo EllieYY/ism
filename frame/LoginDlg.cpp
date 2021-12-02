@@ -33,7 +33,6 @@ void LoginDlg::init()
     initStyle();
 
     connect(ui->loginBtn, &QPushButton::clicked, this, &LoginDlg::login);
-
 }
 
 void LoginDlg::initStyle()
@@ -46,7 +45,6 @@ void LoginDlg::initStyle()
     int screenWidth = mm.width();
     int screenHeight = mm.height();
     this->setFixedSize(screenWidth, screenHeight);
-
 
     QAction *pLeadindAction_user = new QAction(this);
     QImage userIcon("images/login/user.png");
@@ -63,7 +61,6 @@ void LoginDlg::initStyle()
     ui->pwdLineEdit->setPlaceholderText("请输入密码");
     ui->pwdLineEdit->installEventFilter(this);
     ui->pwdLineEdit->setFocusPolicy(Qt::ClickFocus);
-
 }
 
 void LoginDlg::login()

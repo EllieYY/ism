@@ -33,9 +33,8 @@ public:
     void requestAnswer(QString question, QString seesionId);
 
     // 数据更新
-    void updateStates(QString readerState);
-    void updateTicketInfo(QString type, QString detail, QString state);
-
+    void updateStates(QString readerState);   // 1-正常  0-离线
+    void updateTicketInfo(QString icType, QString detail, QString state);   //
 
     // 来源于配置文件
     void setId(const QString &deviceId, const QString &stationId);

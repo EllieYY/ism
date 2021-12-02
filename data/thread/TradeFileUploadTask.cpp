@@ -53,7 +53,7 @@ void TradeFileUploadTask::packageTradeFile(int fileCount, QSet<QString> fileName
         QString deviceId = DataCenter::getThis()->getDeviceId();
         QDateTime curTime = QDateTime::currentDateTime();
         QString curTimeStr = curTime.toString("yyyyMMddHHmmss");
-        int serial = DataCenter::getThis()->getTradeSerial();
+        int serial = DataCenter::getThis()->getTradeFileSerial();
 
         //命名规则：交易文件类别（1个字符）+“.”+节点编码（8位）+“.”+YYYYMMDDHHMMSS +“.”+文件序列号（6位）
         QString targetFileName = QString("%1.%2.%3.%4")
