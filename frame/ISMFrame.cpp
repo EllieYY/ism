@@ -97,16 +97,16 @@ void ISMFrame::initTimer()
 
 void ISMFrame::onTimer()
 {
-    qDebug() << "onTimer";
+//    qDebug() << "onTimer";
 //    bool timeRest = DataCenter::getThis()->getTimeReset();
     QDateTime time = QDateTime::currentDateTime();
     long interval = m_oldtime.secsTo(time);
 
-    QString info = QString("curTime=%1, oldTime=%2, interval=%3")
-            .arg(time.toString("HHmmss")
-                 .arg(m_oldtime.toString("HHmmss"))
-                 .arg(interval));
-    qDebug() << "[ontimer] " << info;
+//    QString info = QString("curTime=%1, oldTime=%2, interval=%3")
+//            .arg(time.toString("HHmmss")
+//                 .arg(m_oldtime.toString("HHmmss"))
+//                 .arg(interval));
+//    qDebug() << "[ontimer] " << info;
     if (interval > 0)
     {
 //        qDebug() << "ISMFrame::onTimer";

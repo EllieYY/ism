@@ -258,14 +258,17 @@ void DataCenter::initDevice()
 
     m_isBanknotesUsable = false;
     m_isSpecieUsable = false;
-    int retC = ConnectMachine(bimPort, brcPort, f53Port);
-    if ((retC & 0x0F) == 0) {
-        m_isBanknotesUsable = true;
-    } else if ((retC & 0xF0) == 0) {
-        m_isSpecieUsable = true;
-    }
-    logger()->info("[ConnectMachine]钱箱初始化={%1}, 端口号：bim={%2}, f53={%3}, brc={%4}",
-                   retC, bimPort, f53Port, brcPort);
+    long retC = ConnectMachine(bimPort, brcPort, f53Port);
+
+    // TODO:test
+//    retC = 0;
+    m_cashboxInitRet = retC;
+
+    m_isBanknotesUsable = ((retC & 0x0F0F) == 0);
+    m_isSpecieUsable = ((retC & 0x00F0) == 0);
+
+    logger()->info("[ConnectMachine]钱箱初始化={%1}, 端口号：bim={%2}, f53={%3}, brc={%4}, 纸币可用{%5}, 硬币可用{%6}",
+                   retC, bimPort, f53Port, brcPort, m_isBanknotesUsable, m_isSpecieUsable);
 }
 
 void DataCenter::closeDevice()
@@ -336,13 +339,13 @@ void DataCenter::updateParamVersion()
         QString filePath = path + fileName;
         int ret = -1;
         if (type == 0x1001) {
-            parseParam1001(filePath);
+            ret = parseParam1001(filePath);
         } else if (type == 0x1004) {
-            parseParam1004(filePath);
+            ret = parseParam1004(filePath);
         } else if (type == 0x2002) {
-            parseParam2002(filePath);
+            ret = parseParam2002(filePath);
         } else if (type == 0x2004) {
-            parseParam2004(filePath);
+            ret = parseParam2004(filePath);
         }
 
         // 避免界面被阻塞
@@ -1361,6 +1364,16 @@ bool DataCenter::getTimeReset() const
 void DataCenter::setTimeReset(bool timeReset)
 {
     m_timeReset = timeReset;
+}
+
+long DataCenter::getCashboxInitRet() const
+{
+    return m_cashboxInitRet;
+}
+
+void DataCenter::setCashboxInitRet(long cashboxInitRet)
+{
+    m_cashboxInitRet = cashboxInitRet;
 }
 
 

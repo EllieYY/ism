@@ -14,8 +14,8 @@ public:
     virtual ~AsyncTimer();
 
     void startTimer(int msec = 1000);
-    void pauseTimer();
-    void resumeTimer();
+    void pauseAsyncTimer();
+    void resumeAsyncTimer();
     void stopTimer();
 
 protected:

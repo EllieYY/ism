@@ -22,8 +22,11 @@ LoginDlg::~LoginDlg()
 
 void LoginDlg::initShow()
 {
-    ui->userLineEdit->setText("");
-    ui->pwdLineEdit->setText("");
+//    ui->userLineEdit->setText("");
+//    ui->pwdLineEdit->setText("");
+
+    ui->userLineEdit->setText("04326688");
+    ui->pwdLineEdit->setText("123456");
     show();
 }
 

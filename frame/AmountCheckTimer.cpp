@@ -22,23 +22,29 @@ AmountCheckTimer::~AmountCheckTimer()
 
 void AmountCheckTimer::run()
 {
+     qDebug() << "run0...";
     long currentTime = QDateTime::currentSecsSinceEpoch();
     if (m_startTime < 0) {
         m_startTime = currentTime;
     }
 
-    if (!pauseFlag) {
+    qDebug() << "run1...";
+    if (pauseFlag) {
+        qDebug() << "pause...";
         m_startTime = currentTime;
         return;
     }
     long diff = currentTime - m_startTime;
 
+    qDebug() << "cheking...";
     // 投币完成检测
     int bankNoteCount = 0;
     int coinCount = 0;
     int ret = CheckCoinStatus(&bankNoteCount, &coinCount);
+    emit checkState(ret, bankNoteCount, coinCount);
     if (ret == 0) {
         m_startTime = -1;
+        pauseFlag = true;
         emit receiveOk(bankNoteCount, coinCount);
     }
 

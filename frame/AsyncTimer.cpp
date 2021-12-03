@@ -38,13 +38,15 @@ void AsyncTimer::startTimer(int msec)
     }
 }
 
-void AsyncTimer::pauseTimer()
+void AsyncTimer::pauseAsyncTimer()
 {
+    qDebug() << "pauseTimer";
     pauseFlag = true;
 }
 
-void AsyncTimer::resumeTimer()
+void AsyncTimer::resumeAsyncTimer()
 {
+    qDebug() << "resumeTimer";
     pauseFlag = false;
 }
 

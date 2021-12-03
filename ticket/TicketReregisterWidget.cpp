@@ -128,6 +128,10 @@ bool TicketReregisterWidget::showData()
 
     m_difference = m_difference < 0 ? 0 : m_difference;
 
+
+    // TODO:test code
+//    m_difference = 5;
+
     if ((info->isAllowOctPay() && m_difference <= m_banlance) || m_difference <= 0) {
         ui->cashPollBtn->setDisabled(true);
         ui->tUpdateBtn->setDisabled(false);
@@ -243,8 +247,10 @@ void TicketReregisterWidget::cashSupplementary()
 {
     if (m_difference > 0) {
         BYTE state = DataCenter::getThis()->getCashboxState();
-        m_fareWidget = new CompensationFareWidget();
+        m_fareWidget = new CompensationFareWidget(this);
+
         connect(m_fareWidget, &CompensationFareWidget::supplementaryOk, this, &TicketReregisterWidget::onSupplementaryOk);
+        m_fareWidget->show();
         m_fareWidget->initShow(m_difference, state);
     } else {
         MyHelper::ShowMessageBoxInfo("无需现金缴费，请直接更新。");
@@ -350,7 +356,6 @@ void TicketReregisterWidget::writeTradeFile(BYTE icType, BYTE *data)
     file.close();
 
     DataCenter::getThis()->addTradeFileInfo(fileName);
-
 }
 
 int TicketReregisterWidget::getTradeDataLength(int icType)

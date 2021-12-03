@@ -26,6 +26,7 @@ private:
 signals:
     void receiveOk(int banknotes, int coins);
     void timeoutReceive(int banknotes, int coins);
+    void checkState(int, int, int);
 
 };
 

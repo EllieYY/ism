@@ -182,10 +182,14 @@ void LogoutDlg::brcSetOk()
     // 获取数值
     int num = ui->unitLabel_0->text().toInt();
     int ret = Modify_Hopper_Balance(num);
-    if (ret != 0) {
-        MyHelper::ShowMessageBoxError("设置失败，请重试。");
-        return;
-    }
+
+    QString info = QString("修改找零器中硬币数量Modify_Hopper_Balance(%1) = %2").arg(num).arg(ret);
+    MyHelper::ShowMessageBoxInfo(info);
+
+//    if (ret != 0) {
+//        MyHelper::ShowMessageBoxError("设置失败，请重试。");
+//        return;
+//    }
 
     // 参数数值生效，用户提醒
     ui->frame->hide();
@@ -204,10 +208,14 @@ void LogoutDlg::f53SetOk()
     int num2 = ui->unitLabel_2->text().toInt();
 
     int ret = F53Bill_Setting(denomination1, denomination2);
-    if (ret != 0) {
-        MyHelper::ShowMessageBoxError("设置失败，请重试。");
-        return;
-    }
+
+    QString info = QString("设置纸钞找零模块参数F53Bill_Setting([钱箱1]%1, [钱箱2]%2) = %3").arg(denomination1).arg(denomination2).arg(ret);
+    MyHelper::ShowMessageBoxInfo(info);
+
+//    if (ret != 0) {
+//        MyHelper::ShowMessageBoxError("设置失败，请重试。");
+//        return;
+//    }
 
     // 参数数值生效，用户提醒
     ui->frame->hide();

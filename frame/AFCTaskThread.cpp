@@ -297,7 +297,9 @@ void AFCTaskThread::parse9001(uchar *msg)
     st.wHour = time.hour();
     st.wMinute = time.minute();
     st.wSecond = time.second();
-    SetLocalTime(&st);
+
+    // TODO：重设置时间之后，定时器有问题，待修改
+//    SetLocalTime(&st);
 
     DataCenter::getThis()->setTimeReset(true);
     // 日志记录

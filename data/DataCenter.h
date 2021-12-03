@@ -194,6 +194,9 @@ public:
     bool getTimeReset() const;
     void setTimeReset(bool timeReset);
 
+    long getCashboxInitRet() const;
+    void setCashboxInitRet(long cashboxInitRet);
+
 private:
     long m_hrtCnt[5];                           // 心跳计数
     int m_serviceState;                         // 服务状态 0-正常 1-异常 2-暂停
@@ -260,6 +263,7 @@ private:
     QString m_readerVersion;         // 读写器版本信息 -- 软件、部件版本
 
     //部件设备状态
+    long m_cashboxInitRet;        // 钱箱初始化返回信息
     bool m_isReaderUsable;              // 读写器可用状态
     bool m_isSpecieUsable;              // 硬币模块可用状态
     bool m_isBanknotesUsable;           // 纸币模块可用状态
