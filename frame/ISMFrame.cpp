@@ -63,13 +63,14 @@ ISMFrame::ISMFrame(QWidget *parent) :
 
 ISMFrame::~ISMFrame()
 {
-    if(DataCenter::getThis() != NULL) {
-        delete DataCenter::getThis();
-    }
-
     if (m_deviceThread->isRunning()) {
         m_deviceThread->quit();
         m_deviceThread->wait();
+        m_deviceThread->deleteLater();
+    }
+
+    if(DataCenter::getThis() != NULL) {
+        delete DataCenter::getThis();
     }
 
     delete ui;
@@ -112,9 +113,13 @@ void ISMFrame::initDevice()
     m_deviceThread = new QThread();
 
     m_deviceManager = new DeviceManager();
-    m_deviceManager->startTimer(400);
+    connect(this, &ISMFrame::initDeviceInThread, m_deviceManager, &DeviceManager::initDevice);
+    m_deviceManager->startDeviceTimer();
+
     m_deviceManager->moveToThread(m_deviceThread);
     m_deviceThread->start();
+
+    emit initDeviceInThread();
 }
 
 void ISMFrame::initTimer()

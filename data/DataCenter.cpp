@@ -22,7 +22,6 @@
 #include "Station.h"
 #include "LineStations.h"
 #include "NC_ReaderLib.h"
-#include "HeartTimer.h"
 #include "AFCTaskThread.h"
 #include "BomParamVersionInfo.h"
 #include "OperatorInfo.h"
@@ -32,6 +31,7 @@
 #include "FtpDownloadTask.h"
 #include "TradeFileInfo.h"
 #include "TradeFileUploadTask.h"
+#include "AFCHeartTask.h"
 
 
 static int HRT_NUM = 5;
@@ -52,16 +52,16 @@ DataCenter::~DataCenter()
     // 设备关闭
     closeDevice();
 
-    if (m_taskThread->isRunning())
+    if (m_afcTaskThread->isRunning())
     {
-        m_taskThread->quit();
-        m_taskThread->wait();
+        m_afcTaskThread->quit();
+        m_afcTaskThread->wait();
     }
 
-    if (m_ftpTaskThread->isRunning()) {
-        m_ftpTaskThread->stopRun();
-        m_ftpTaskThread->quit();
-        m_ftpTaskThread->wait();
+    if (m_taskThread->isRunning()) {
+        m_taskThread->stopRun();
+        m_taskThread->quit();
+        m_taskThread->wait();
     }
 }
 
@@ -76,14 +76,24 @@ DataCenter *DataCenter::getThis()
 void DataCenter::secEvent()
 {
     m_timeCount++;
-
     for (int i = 0; i < HRT_NUM; i++) {
         m_hrtCnt[i] = m_hrtCnt[i] + 1;
-//        if (m_hrtCnt[i] == 1000000000) {    // 超过10秒未连接则掉线处理
-//            setHrtOffData(i);
-//        }
+        if (m_hrtCnt[i] == 600) {    // 超过10分钟未连接则掉线处理
+            setHrtOffData(i);
+        }
     }
 
+    // AFC相关定时上传
+    // AFC心跳检测 - 一分钟一次
+    if ((m_timeCount % 60) == 0) {
+        if (m_taskThread != NULL && m_taskThread->isRunning()) {
+            taskId++;
+            AFCHeartTask* task = new AFCHeartTask(taskId++);
+            m_taskThread->addTask(task);
+        }
+    }
+
+    // 设备状态定时长传
     bool devTriggerd = false;
     if ((m_timeCount % m_deviceStateIntervalSec) == 0) {
         devTriggerd = true;
@@ -91,8 +101,10 @@ void DataCenter::secEvent()
         this->deviceState2afc(DEV_OK);
     }
 
+    // 交易文件定时上传
     bool fileTriggered = false;
-    if ((m_timeCount % 10) == 0 || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
+    // TODO:修改使用配置参数中的时间间隔
+    if ((m_timeCount % m_tradeDataIntervalSec) == 0 || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
         fileTriggered = true;
         logger()->info("交易文件定时上送：%1, %2", m_timeCount, m_tradeDataIntervalSec);
         packageTradeFile();
@@ -143,21 +155,20 @@ void DataCenter::init()
         }
     }
 
-    m_taskThread = new AFCTaskThread();
-    connect(m_taskThread, &AFCTaskThread::paramTypeUpdate, this, &DataCenter::onParamUpdate, Qt::DirectConnection);
-    connect(m_taskThread, &AFCTaskThread::softwareUpdate, this, &DataCenter::onSoftwareUpdate, Qt::DirectConnection);
-    m_taskThread->start();
+    // AFC监听线程
+    m_afcTaskThread = NULL;
+    m_afcTaskThread = new AFCTaskThread();
+    connect(m_afcTaskThread, &AFCTaskThread::paramTypeUpdate, this, &DataCenter::onParamUpdate, Qt::DirectConnection);
+    connect(m_afcTaskThread, &AFCTaskThread::softwareUpdate, this, &DataCenter::onSoftwareUpdate, Qt::DirectConnection);
+    m_afcTaskThread->start();
 
-    m_timer = new HeartTimer();
-    connect(m_timer, &HeartTimer::onlineFlag, this, &DataCenter::afcHeart);
-    m_timer->startTimer(60000);
 
-    int id = 0;
-    m_ftpTaskThread = new TaskThread();
+    m_taskThread = NULL;
+    m_taskThread = new TaskThread();
 //    connect(m_ftpTaskThread, &TaskThread::allTaskDone, this, &DataCenter::ftpAllTaskFinished);
-    connect(m_ftpTaskThread, &TaskThread::taskDone, this, &DataCenter::ftpTaskFinished);
+    connect(m_taskThread, &TaskThread::taskDone, this, &DataCenter::ftpTaskFinished);
 
-    initDevice();
+//    initDevice();
     initReaderErrCode();
 }
 
@@ -174,12 +185,15 @@ void DataCenter::initData()
     m_isReaderUsable = false;         // 读写器可用状态
     m_isSpecieUsable = false;         // 硬币模块可用状态
     m_isBanknotesUsable = false;      // 纸币模块可用状态
+    m_isSamOk = false;
 
-    // 服务状态&网络状态
-    m_serviceState = 0;
-    m_netState = 0;
+
+    // AFC网络状态 - 默认在线
+    m_afcNetState = 0;
 
     // FTP 任务Id
+    m_afcTaskThread = NULL;
+    m_taskThread = NULL;
     taskId = 0;
     m_curParamTaskId = -1;
     m_curSoftwareTaskId = -1;
@@ -771,11 +785,11 @@ int DataCenter::packageTradeFile()
 
     int fileCount = m_tradeFileInfo->fileCount();
     QSet<QString> fileNameList = m_tradeFileInfo->fileNameSet();
-    if (m_ftpTaskThread->isRunning()) {
+    if (m_taskThread->isRunning()) {
         TradeFileUploadTask* task = new TradeFileUploadTask(taskId++);
         QString serverFilePath = m_basicInfo->ftpUrl().toString() + "/Transaction/";
         task->packageTradeFile(fileCount, fileNameList, serverFilePath);
-        m_ftpTaskThread->addTask(task);
+        m_taskThread->addTask(task);
     }
 
     // TODO:
@@ -1106,7 +1120,7 @@ void DataCenter::onSoftwareUpdate(QString fileName)
     m_curSoftwareTaskId = taskId++;
     FtpDownloadTask* task = new FtpDownloadTask(m_curSoftwareTaskId);
     task->setFileInfo(remotePath, fileName, localPath);
-    m_ftpTaskThread->addTask(task);
+    m_taskThread->addTask(task);
 }
 
 // 参数更新 type: 0 - 普通同步   1 - 强制同步
@@ -1130,7 +1144,7 @@ void DataCenter::onParamUpdate(QList<int> typeList, int type)
 
     bool isForceUpdate = (type == 0 ? false : true);
     task->setFilter(filter, isForceUpdate);
-    m_ftpTaskThread->addTask(task);
+    m_taskThread->addTask(task);
 
     // TODO:通知进行参数更新，参数上报, taskId用起来
     // 更新参数版本记录文件
@@ -1153,11 +1167,11 @@ QHash<int,long> DataCenter::getParamFileFilter(QList<int> typeList)
 // 交易文件上传
 void DataCenter::uploadTradeFile(QString localFilePath, QString fileName, QByteArray md5Arr, int type)
 {
-    if (m_ftpTaskThread->isRunning()) {
+    if (m_taskThread->isRunning()) {
         FtpUploadTask* task = new FtpUploadTask(taskId++);
         QString serverFilePath = m_basicInfo->ftpUrl().toString() + "/Transaction/";
         task->setFileInfo(serverFilePath, fileName, localFilePath);
-        m_ftpTaskThread->addTask(task);
+        m_taskThread->addTask(task);
     }
 
     // 发送7000报文
@@ -1207,8 +1221,7 @@ void DataCenter::setHrtOffData(int idx)
     {
     case AFC_HRT: // AFC
 //        init_param34(m_v34);
-        m_serviceState = 1;
-        m_netState = 1;
+        m_afcNetState = 1;
         WidgetMng::notify(AFC_ONLINE_STATE_ID);
         break;
     case READER_HRT: // 读写器
@@ -1229,8 +1242,7 @@ void DataCenter::setHrtOffData(int idx)
 void DataCenter::afcHeart(bool onlineFlag)
 {
     if (onlineFlag) {
-        m_netState = 0;
-        m_serviceState = 0;
+        m_afcNetState = 0;
         m_hrtCnt[AFC_HRT] = 0;
     }
 }
@@ -1278,10 +1290,6 @@ void DataCenter::param2afc(int paramType, long oldVersion, long newVersion)
 }
 
 
-QString DataCenter::getReaderVersion()
-{
-    return m_readerVersion;
-}
 
 long DataCenter::getDeviceStateIntervalSec() const
 {
@@ -1366,15 +1374,7 @@ void DataCenter::setTimeReset(bool timeReset)
     m_timeReset = timeReset;
 }
 
-long DataCenter::getCashboxInitRet() const
-{
-    return m_cashboxInitRet;
-}
 
-void DataCenter::setCashboxInitRet(long cashboxInitRet)
-{
-    m_cashboxInitRet = cashboxInitRet;
-}
 
 
 
@@ -1485,35 +1485,100 @@ QList<QTableWidgetItem *> DataCenter::getTicketItems(TicketBasicInfo *info)
     return itemList;
 }
 
-
-// 服务状态
-int DataCenter::getServiceState() const
-{
-    return m_serviceState;
-}
-
-void DataCenter::setServiceState(int serviceState)
-{
-    m_serviceState = serviceState;
-}
-
-
 // 网络状态
 int DataCenter::getNetState() const
 {
-    return m_netState;
+    return m_afcNetState;
 }
 
 void DataCenter::setNetState(int netState)
 {
-    m_netState = netState;
+    m_afcNetState = netState;
 }
 
+
+// 硬件设备状态
 BYTE DataCenter::getCashboxState()
 {
     BYTE bim = m_isBanknotesUsable ? 0x02 : 0x00;
     BYTE brc = m_isSpecieUsable ? 0x01 : 0x00;
     return (bim + brc);
+}
+
+void DataCenter::setCashboxState(int coinState, int banknotes, int banknotesRe)
+{
+    m_isSpecieUsable = (coinState == 0);              // 硬币模块可用状态
+    m_isBanknotesUsable = (banknotes == 0);           // 纸币模块可用状态
+}
+
+void DataCenter::cashboxOnline(bool coin, bool banknotes, bool banknotesRe)
+{
+    if (coin) {
+        m_hrtCnt[BRC_HRT] = 0;
+    }
+
+    if (banknotes) {
+        m_hrtCnt[BIM_HRT] = 0;
+    }
+
+    if (banknotesRe) {
+        m_hrtCnt[F53_HRT] = 0;
+    }
+}
+
+long DataCenter::getCashboxInitRet() const
+{
+    return m_cashboxInitRet;
+}
+
+void DataCenter::setCashboxInitRet(long cashboxInitRet)
+{
+    m_cashboxInitRet = cashboxInitRet;
+}
+
+bool DataCenter::getIsReaderUsable() const
+{
+    return m_isReaderUsable;
+}
+
+void DataCenter::setReaderState(int readerState)
+{
+    m_isReaderUsable = (readerState == 0);
+
+    // 读写器状态上传给ISM后台
+    QString readerStateStr = ((readerState == 0) ? "1" : "0");   // 1-正常 0-离线
+    HttpTool::getThis()->updateStates(readerStateStr);
+}
+
+
+QString DataCenter::getReaderVersion()
+{
+    return m_readerVersion;
+}
+
+void DataCenter::setReaderVersion(QString version)
+{
+    m_readerVersion = version;
+}
+
+void DataCenter::setSAMInfo(BYTE *mtrSam, BYTE *octSam, BYTE *jtbSam)
+{
+    memcpy(m_mtrSam, mtrSam, 6);
+    memcpy(m_octSam, octSam, 6);
+    memcpy(m_jtbSam, jtbSam, 6);
+    m_isSamOk = true;
+}
+
+void DataCenter::getSAMInfo(BYTE *mtrSam, BYTE *octSam, BYTE *jtbSam)
+{
+    memcpy(mtrSam, m_mtrSam, 6);
+    memcpy(octSam, m_octSam, 6);
+    memcpy(jtbSam, m_jtbSam, 6);
+}
+
+bool DataCenter::getIsSamOk() const
+{
+    return m_isSamOk;
 }
 
 

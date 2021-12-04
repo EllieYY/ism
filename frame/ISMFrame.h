@@ -27,6 +27,9 @@ public:
     void login();
     void logout();
 
+signals:
+    void initDeviceInThread();
+
 private:
     void init();
     void initDevice();

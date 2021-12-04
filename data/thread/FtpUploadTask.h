@@ -1,7 +1,6 @@
 #ifndef FTPUPLOADTASK_H
 #define FTPUPLOADTASK_H
 
-#include <QObject>
 #include "Task.h"
 
 class LibcurlFtp;

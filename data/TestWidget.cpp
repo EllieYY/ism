@@ -3,7 +3,6 @@
 #include "DataCenter.h"
 #include "NCNetwork_Lib.h"
 #include "MyHelper.h"
-#include "FtpManager.h"
 #include <QFileDialog>
 #include "curl.h"
 #include <iostream>
@@ -26,10 +25,7 @@ TestWidget::~TestWidget()
         m_curlFtp = NULL;
     }
 
-    if (m_ftp != NULL) {
-        delete m_ftp;
-        m_ftp = NULL;
-    }
+
     delete ui;
 }
 
@@ -38,11 +34,6 @@ void TestWidget::init()
 {
     ui->lineEdit_upload->setText("D:/");
     ui->lineEdit_download->setText("ftp://ismftp:1234Asdf@192.168.2.193:21/");
-
-    m_userName = "123445";
-    m_ftp = new FtpManager(this);
-    m_ftp->setHostPort("192.168.2.193", 21);
-    m_ftp->setUserInfo("ismftp", "1234Asdf");
 
     m_curlFtp = new LibcurlFtp(this);
 //    m_curlFtp->setHostPort("192.168.2.193", 21);

@@ -16,6 +16,7 @@ AFCTaskThread::AFCTaskThread(QObject *parent) : QThread(parent)
 {
     m_dealSeq = 0;
     m_respSeq = 0;
+    m_9002Ok = false;
 }
 
 void AFCTaskThread::run()
@@ -45,6 +46,9 @@ void AFCTaskThread::run()
 //    DataCenter::getThis()->param2afc();
 
     while(1) {
+        if (!m_9002Ok && DataCenter::getThis()->getIsSamOk()) {
+            pacakge9002();
+        }
         respCheck();
         dealCheck();
     }
@@ -329,5 +333,25 @@ void AFCTaskThread::parse9004(uchar *msg)
     // 日志记录
     QString msgStr = array.toHex().toUpper();
     logger()->info("[9004h]msg=%1, type=%2, filename=%3", msgStr, type, fileName);
+}
+
+void AFCTaskThread::pacakge9002()
+{
+    BYTE mtrSam[6] = {0};
+    BYTE octSam[6] = {0};
+    BYTE jtbSam[6] = {0};
+    DataCenter::getThis()->getSAMInfo(mtrSam, octSam, jtbSam);
+
+    BYTE result = DeviceSAMInfo(mtrSam, octSam, jtbSam);
+    QString mtrStr = QByteArray((char*)mtrSam, 6).toHex().toUpper();
+    QString octStr = QByteArray((char*)octSam, 6).toHex().toUpper();
+    QString jtbStr = QByteArray((char*)jtbSam, 6).toHex().toUpper();
+
+    logger()->info("[9002] [DeviceSAMInfo]={%4}；SAM卡号：地铁{%1}，洪城一卡通{%2}，交通部{%3}",
+                   mtrStr, octStr, jtbStr, result);
+
+    if (result == 0) {
+        m_9002Ok = true;
+    }
 }
 

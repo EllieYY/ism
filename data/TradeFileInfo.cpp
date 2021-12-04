@@ -3,14 +3,13 @@
 TradeFileInfo::TradeFileInfo(QObject *parent) : QObject(parent)
 {
     m_fileTradeSerial = 0;
-    m_deviceTradeSerial = 0;
+    m_deviceTradeSerial = 1;
     reset();
 }
 
 void TradeFileInfo::reset()
 {
     setFileTradeSerial(m_fileTradeSerial + 1);
-    setDeviceTradeSerial(m_deviceTradeSerial + 1);
     m_fileCount = 0;
     m_datetime = QDateTime::currentDateTime();
     m_fileNameSet.clear();

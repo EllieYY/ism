@@ -27,6 +27,7 @@ class BomParamVersionInfo;
 class TradeFileInfo;
 
 // 各节点心跳ID
+#define HEART_NUM 5
 typedef enum
 {
     AFC_HRT = 0,
@@ -52,16 +53,25 @@ public:
     void secEvent();
     void setHrtOffData(int idx);        // 掉线处理
 
-    // 服务连接状态
-    int getServiceState() const;
-    void setServiceState(int serviceState);
-
-    // 网络连接状态
+    // AFC网络连接状态
     int getNetState() const;
     void setNetState(int netState);
 
-    // 钱箱状态获取 0-故障 1-硬币 2-纸币 3-硬币纸币均可
-    BYTE getCashboxState();
+    // 设备状态信息：读写器、硬币模块、纸币模块、纸币找零模块
+    // -1：未初始化，0：正常可用，其他值含义按接口定义来
+    bool getIsReaderUsable() const;
+    void setReaderState(int readerState);
+    QString getReaderVersion();         // 读写器版本信息查询
+    void setReaderVersion(QString version);
+    void setSAMInfo(BYTE* mtrSam, BYTE* octSam, BYTE* jtbSam);
+    void getSAMInfo(BYTE* mtrSam, BYTE* octSam, BYTE* jtbSam);
+    bool getIsSamOk() const;
+
+    long getCashboxInitRet() const;
+    void setCashboxInitRet(long cashboxInitRet);
+    BYTE getCashboxState();   // 钱箱状态获取 0-故障 1-硬币 2-纸币 3-硬币纸币均可
+    void setCashboxState(int coinState, int banknotes, int banknotesRe);
+    void cashboxOnline(bool coin, bool banknotes, bool banknotesRe);
 
     // 站点信息
     QString getStationName() const;
@@ -174,15 +184,12 @@ public:
     void samInfo2afc();                 // 上传SAM卡号
     void deviceState2afc(BYTE event);   // 设备状态上报
 
-    QString getReaderVersion();         // 读写器版本信息查询
-
-
     // 系统运行参数
     long getDeviceStateIntervalSec() const;
     long getTradeDataIntervalSec() const;
     long getTradeDataCountLT() const;
 
-    // 设备状态变化
+    // ISM设备状态变化
     void setIsTest(bool isTest);
     void setServiceOff(bool serviceOff);
     void setIsLogin(bool isLogin);
@@ -194,13 +201,9 @@ public:
     bool getTimeReset() const;
     void setTimeReset(bool timeReset);
 
-    long getCashboxInitRet() const;
-    void setCashboxInitRet(long cashboxInitRet);
-
 private:
-    long m_hrtCnt[5];                           // 心跳计数
-    int m_serviceState;                         // 服务状态 0-正常 1-异常 2-暂停
-    int m_netState;                             // 网络状态 0-在线 1-离线
+    long m_hrtCnt[HEART_NUM];                   // 心跳计数
+    int m_afcNetState;                          // AFC网络状态 0-在线 1-离线
 
     BasicInfo* m_basicInfo;                     // 站点基础信息
     LoginInfo* m_loginInfo;                     // 登录信息
@@ -233,10 +236,6 @@ private:
 
     /* ---- FTP相关 ----------------------*/
     QUrl m_ftpUrl;                  // 文件服务器连接信息
-    TaskThread* m_ftpTaskThread;    // 任务线程
-    int taskId;                     // 任务Id
-    int m_curParamTaskId;           // 用来记录参数文件下载的任务Id
-    int m_curSoftwareTaskId;        // 记录软件程序下载的任务id
 
     //3001报文 设备状态
     //    0	开(1)/关(0)
@@ -268,14 +267,22 @@ private:
     bool m_isSpecieUsable;              // 硬币模块可用状态
     bool m_isBanknotesUsable;           // 纸币模块可用状态
 
+    bool m_isSamOk;    // SAM卡信息读取完成
+    BYTE m_mtrSam[6];
+    BYTE m_octSam[6];
+    BYTE m_jtbSam[6];
+
     // 读取本地参数配置信息
     QHash<BYTE, QString>  m_readerErrCodeMap;     // 读写器错误码
     QHash<QString, QString> m_stationCodeMap;     // <code, name>
     QHash<int, BomParamVersionInfo*> m_paramVersionMap;    // 本地应用的SC参数版本信息
 
     // 子线程
-    HeartTimer*  m_timer;    // 心跳检测异步线程
-    AFCTaskThread* m_taskThread;
+    AFCTaskThread* m_afcTaskThread; // AFC业务监听线程
+    TaskThread* m_taskThread;       // 任务线程
+    int taskId;                     // 任务Id
+    int m_curParamTaskId;           // 用来记录参数文件下载的任务Id
+    int m_curSoftwareTaskId;        // 记录软件程序下载的任务id
 
     // 系统时间设置
     bool m_timeReset;       // 时间重置标识

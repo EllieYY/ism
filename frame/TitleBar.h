@@ -27,6 +27,8 @@ private:
     void showLogoutBtn(bool isMain);
     void onLogout();
 
+    QString getModeStr(BYTE mode, int netState);   // 车站运行状态描述
+
 signals:
     void logout();
 

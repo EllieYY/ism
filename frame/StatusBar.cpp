@@ -41,6 +41,12 @@ void StatusBar::showButtons(bool isMainWnd)
 
 bool StatusBar::showData()
 {
+    if (!m_dataUpdateNum[AFC_ONLINE_STATE_ID])
+    {
+        return true;
+    }
+    m_dataUpdateNum[AFC_ONLINE_STATE_ID] = false;
+
     int netState = DataCenter::getThis()->getNetState();
     QString netStateStr = netState == 0 ? "网络状态：在线":"网络状态：离线";
     ui->netStateLabel->setText(netStateStr);

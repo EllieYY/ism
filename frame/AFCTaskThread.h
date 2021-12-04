@@ -29,11 +29,15 @@ private:
     void parse9001(uchar* msg);   // 强制时间同步
     void parse9004(uchar* msg);   // 软件、部件版本更新
 
+    void pacakge9002();     // 9002:设备与SAM卡对应关系上传
+
     QList<QString> getServerFileList(QList<int> typeList);
 
 private:
     int m_dealSeq;      // 待处理消息序号
     int m_respSeq;      // 待响应消息序号
+
+    bool m_9002Ok;      // SAM卡号上传标志
 
 signals:
     void paramTypeUpdate(QList<int> typeList, int type);     // 要更新的参数

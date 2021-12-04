@@ -11,7 +11,7 @@ namespace Ui {
 class TestWidget;
 }
 
-class FtpManager;
+
 class LibcurlFtp;
 class TestWidget : public WidgetBase
 {
@@ -60,10 +60,8 @@ private:
 
 private:
     QString m_userName;
-    FtpManager* m_ftp;
     LibcurlFtp* m_curlFtp;
     QString m_filePath;
-
 
 signals:
     void onCashboxChecking(bool);

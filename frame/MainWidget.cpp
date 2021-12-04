@@ -31,8 +31,8 @@ void MainWidget::onBtn(int btnId)
 //        QRCODE_DLG,                 //# 二维码
         INQUIRY_DLG,                //# 智能问询
         INFO_DLG,                   //# 信息查询
-//        GUID_DLG                    //# 服务指南
-        TEST_DLG
+        GUID_DLG                    //# 服务指南
+//        TEST_DLG
     };
 
     if  (btnId >= 0 && btnId < MAIN_WIDGET_NUM)
@@ -86,8 +86,8 @@ void MainWidget::secEvent()
     // AFC状态控制
     if (m_dataUpdateNum[AFC_ONLINE_STATE_ID])
     {
-        int afcState = DataCenter::getThis()->getServiceState();
-        if (afcState == 0) {
+        int afcNetState = DataCenter::getThis()->getNetState();
+        if (afcNetState == 0) {
             ui->cardBtn->setDisabled(false);
         } else {
             ui->cardBtn->setDisabled(true);

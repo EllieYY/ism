@@ -85,6 +85,7 @@ SOURCES += \
     data/line/LineStations.cpp \
     data/line/LineTimeTables.cpp \
     data/line/Station.cpp \
+    data/thread/AFCHeartTask.cpp \
     data/thread/FtpDownloadTask.cpp \
     data/thread/FtpUploadTask.cpp \
     data/thread/Task.cpp \
@@ -97,11 +98,7 @@ SOURCES += \
     device/DeviceManager.cpp \
     device/ReaderManager.cpp \
     frame/AFCTaskThread.cpp \
-    frame/AmountCheckTimer.cpp \
-    frame/AsyncTimer.cpp \
     frame/CustomTabWidget.cpp \
-    frame/FtpManager.cpp \
-    frame/HeartTimer.cpp \
     frame/ISMFrame.cpp \
     frame/ISMMessageBox.cpp \
     frame/ISMWaiting.cpp \
@@ -111,7 +108,6 @@ SOURCES += \
     frame/StationListWidget.cpp \
     frame/StationSelectWidget.cpp \
     frame/StatusBar.cpp \
-    frame/TimerThread.cpp \
     frame/TitleBar.cpp \
     guide/GuideMainWidget.cpp \
     info/InfoMainWidget.cpp \
@@ -164,6 +160,7 @@ HEADERS += \
     data/line/LineStations.h \
     data/line/LineTimeTables.h \
     data/line/Station.h \
+    data/thread/AFCHeartTask.h \
     data/thread/FtpDownloadTask.h \
     data/thread/FtpUploadTask.h \
     data/thread/Task.h \
@@ -176,11 +173,7 @@ HEADERS += \
     device/DeviceManager.h \
     device/ReaderManager.h \
     frame/AFCTaskThread.h \
-    frame/AmountCheckTimer.h \
-    frame/AsyncTimer.h \
     frame/CustomTabWidget.h \
-    frame/FtpManager.h \
-    frame/HeartTimer.h \
     frame/ISMFrame.h \
     frame/ISMMessageBox.h \
     frame/ISMWaiting.h \
@@ -192,7 +185,6 @@ HEADERS += \
     frame/StationListWidget.h \
     frame/StationSelectWidget.h \
     frame/StatusBar.h \
-    frame/TimerThread.h \
     frame/TitleBar.h \
     guide/GuideMainWidget.h \
     info/InfoMainWidget.h \

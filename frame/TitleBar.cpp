@@ -33,38 +33,16 @@ TitleBar *TitleBar::getThis()
 
 bool TitleBar::showData()
 {
-//    // 系统运行模式设置
-//    if (m_dataUpdateNum[STATION_MODE])
-//    {
-//        int afcState = DataCenter::getThis()->getServiceState();
-//        if (afcState == 0) {
-//            ui->cardBtn->setDisabled(false);
-//        } else {
-//            ui->cardBtn->setDisabled(true);
-//        }
-
-//        m_dataUpdateNum[STATION_MODE] = false;
-//    }
-
-    if (!m_dataUpdateNum[AFC_ONLINE_STATE_ID])
-    {
-        return true;
+    // 系统运行模式显示
+    int netState = DataCenter::getThis()->getNetState();
+    BYTE mode = DataCenter::getThis()->getStationMode();
+    QString styleSheet = "color: white;";
+    if (mode != 0) {
+        styleSheet = "color: red;";
     }
-    m_dataUpdateNum[AFC_ONLINE_STATE_ID] = false;
 
-    // 服务状态
-    int serviceState = DataCenter::getThis()->getServiceState();
-    QString serviceStateStr = "暂停服务";
-    switch(serviceState) {
-    case 0:
-        serviceStateStr = "正常服务";
-        break;
-    case 1:
-        serviceStateStr = "服务异常";
-    default:
-        break;
-    }
-    ui->stateLabel->setText(serviceStateStr);
+    QString modeStr = getModeStr(mode, netState);
+    ui->stateLabel->setText(modeStr);
 
     // 当前时间
     QDateTime currentDateTime = QDateTime::currentDateTime();
@@ -77,7 +55,7 @@ bool TitleBar::showData()
 
 void TitleBar::setTestData()
 {
-    DataCenter::getThis()->setServiceState(0);
+//    DataCenter::getThis()->setServiceState(0);
 }
 
 void TitleBar::showLogoutBtn(bool isMainWnd)
@@ -91,16 +69,36 @@ void TitleBar::onLogout()
     emit logout();
 }
 
+QString TitleBar::getModeStr(BYTE mode, int netState)
+{
+    // 第一册5.8：故障期间，显示列车运行模式
+//    Bit 0	紧急模式             1：生效，0:无效
+//    Bit 1	进站免检模式         1：生效，0:无效
+//    Bit 2	日期免检模式         1：生效，0:无效
+//    Bit 3	时间免检模式         1：生效，0:无效
+//    Bit 4	列车故障模式         1：生效，0:无效
+//    Bit 5	车费免检模式         1：生效，0:无效
+//    Bit 6 ~ 15	[未定义]
+
+    if (netState != 0) {
+        return "离线服务";
+    }
+
+    QString info = "正常服务";
+    if (mode == 0x00) {
+        info = "正常服务";
+    } else if (mode == 0x01) {
+        info = "紧急模式";
+    } else if (mode == 0x10) {
+        info = "列车故障模式";
+    } else {
+        info = "降级运行模式";
+    }
+
+    return info;
+}
+
 void TitleBar::secEvent()
 {
-//    qDebug() << "TitleBar::secEvent()";
-    // 当前时间
-    QDateTime currentDateTime = QDateTime::currentDateTime();
-    QString currentDateStr = currentDateTime.toString("yyyy.MM.dd hh:mm:ss ddd");
-
-//    qDebug() << "current time:" << currentDateStr;
-
-    ui->dateLabel->setText(currentDateStr);
-
     showData();
 }
