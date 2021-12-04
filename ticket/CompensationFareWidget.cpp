@@ -6,6 +6,7 @@
 #include "AmountCheckTimer.h"
 #include "DataCenter.h"
 #include <QDateTime>
+#include "DeviceManager.h"
 
 CompensationFareWidget::CompensationFareWidget(QWidget *parent) :
     QWidget(parent),
@@ -31,9 +32,9 @@ void CompensationFareWidget::initShow(int difference, uchar devState)
     ui->listWidget->clear();
 
     //TODO: test code
-    emit supplementaryOk(true);
-    close();
-    return;
+//    emit supplementaryOk(true);
+//    close();
+//    return;
 
 
     long ret = DataCenter::getThis()->getCashboxInitRet();
@@ -78,7 +79,7 @@ void CompensationFareWidget::initShow(int difference, uchar devState)
     ui->endBtn->setDisabled(true);
     ui->returnCashBtn->setDisabled(true);
 
-//    show();
+    show();
 }
 
 
@@ -106,7 +107,10 @@ void CompensationFareWidget::startPaying()
     }
 
     ui->listWidget->insertItem(0, "请开始投币。");
-    m_timer->startTimer(300);
+
+    // TODO:
+    emit startChecking(true);
+//    m_timer->startTimer(300);
     m_payingState = 0;
     ui->continueBtn->setDisabled(true);
     ui->endBtn->setDisabled(false);
@@ -116,13 +120,18 @@ void CompensationFareWidget::startPaying()
 // 继续投币
 void CompensationFareWidget::continuePaying()
 {
-    m_timer->resumeAsyncTimer();
+    // TODO:
+    emit startChecking(true);
+//    m_timer->resumeAsyncTimer();
 }
 
 void CompensationFareWidget::onAutoStopPaying(int bankNoteCount, int coinCount)
 {
-    // 暂停检测
-    m_timer->pauseAsyncTimer();
+    // TODO:
+//    emit startChecking(false);
+
+//    // 暂停检测
+//    m_timer->pauseAsyncTimer();
     m_payingState = 2;
 
     QString info3 = QString("onAutoStopPaying, 投入纸币%2，投入硬币%3").arg(bankNoteCount).arg(coinCount);
@@ -140,7 +149,9 @@ void CompensationFareWidget::onStopPaying()
         m_payingState = 1;
     }
     // 暂停检测
-    m_timer->pauseAsyncTimer();
+    emit startChecking(false);
+
+
     m_payingState = 2;
 
     // 结束硬件投币
@@ -157,7 +168,7 @@ void CompensationFareWidget::onStopPaying()
 
 void CompensationFareWidget::onAmountConfirm(int banknotes, int coins)
 {
-    m_timer->stopTimer();
+//    m_timer->stopTimer();
     ui->listWidget->insertItem(0, "结束投币，请确认投币金额。");
 
     // 计算已投入金额
@@ -289,10 +300,10 @@ void CompensationFareWidget::init()
 
     m_payingState = 2;
     m_timer = NULL;
-    m_timer = new AmountCheckTimer();
-    connect(m_timer, &AmountCheckTimer::receiveOk, this, &CompensationFareWidget::onAutoStopPaying);
-    connect(m_timer, &AmountCheckTimer::timeoutReceive, this, &CompensationFareWidget::onStopPaying);
-    connect(m_timer, &AmountCheckTimer::checkState, this, &CompensationFareWidget::showCheckState);
+//    m_timer = new AmountCheckTimer();
+//    connect(m_timer, &AmountCheckTimer::receiveOk, this, &CompensationFareWidget::onAutoStopPaying);
+//    connect(m_timer, &AmountCheckTimer::timeoutReceive, this, &CompensationFareWidget::onStopPaying);
+//    connect(m_timer, &AmountCheckTimer::checkState, this, &CompensationFareWidget::showCheckState);
 }
 
 

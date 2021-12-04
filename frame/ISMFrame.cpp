@@ -44,6 +44,10 @@
 #include "TestWidget.h"
 #include <QDebug>
 
+#include "DeviceManager.h"
+#include "ReaderManager.h"
+#include "CompensationFareWidget.h"
+
 ISMFrame::ISMFrame(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::ISMFrame)
@@ -62,6 +66,12 @@ ISMFrame::~ISMFrame()
     if(DataCenter::getThis() != NULL) {
         delete DataCenter::getThis();
     }
+
+    if (m_deviceThread->isRunning()) {
+        m_deviceThread->quit();
+        m_deviceThread->wait();
+    }
+
     delete ui;
 }
 
@@ -74,16 +84,37 @@ void ISMFrame::login()
 void ISMFrame::logout()
 {
     // 签退
-    LogoutDlg* dlg = new LogoutDlg();
+    LogoutDlg* dlg = new LogoutDlg(this);
     connect(dlg, &LogoutDlg::logoutOk, this, &ISMFrame::login);
     dlg->show();
 }
 
 void ISMFrame::init()
 {
-    initWgt();
-    initTimer();
+    qDebug() << "main thread: " <<  QThread::currentThreadId();
+
+    // 数据中心初始化
     DataCenter::getThis()->init();
+
+    // 设备初始化
+    initDevice();
+
+    // 窗口初始化
+    initWgt();
+
+    // 页面更新时钟初始化
+    initTimer();
+}
+
+void ISMFrame::initDevice()
+{
+    // 设备管理器初始化
+    m_deviceThread = new QThread();
+
+    m_deviceManager = new DeviceManager();
+    m_deviceManager->startTimer(400);
+    m_deviceManager->moveToThread(m_deviceThread);
+    m_deviceThread->start();
 }
 
 void ISMFrame::initTimer()
@@ -138,10 +169,18 @@ void ISMFrame::initWgt()
     new WidgetMng();
     DataCenter::getThis();
 
+    // 现金缴费窗口：窗口生成线程要跟设备管理线程属于同一个，否则信号槽连接不通
+    m_fareWidget = new CompensationFareWidget();
+    connect(m_fareWidget, &CompensationFareWidget::startChecking, m_deviceManager, &DeviceManager::onCheckingCashbox);
+    connect(m_deviceManager, &DeviceManager::receiveOk, m_fareWidget, &CompensationFareWidget::onAutoStopPaying);
+    connect(m_deviceManager, &DeviceManager::timeoutChecking, m_fareWidget, &CompensationFareWidget::onStopPaying);
+    connect(m_deviceManager, &DeviceManager::checkState, m_fareWidget, &CompensationFareWidget::showCheckState);
+    m_fareWidget->hide();
+
+
     //# 固定页面
     TitleBar* titleBar = new TitleBar(this);
     StatusBar* statusBar = new StatusBar(this);
-
     connect(titleBar, &TitleBar::logout, this, &ISMFrame::logout);
 
     //# 窗口注册
@@ -149,8 +188,11 @@ void ISMFrame::initWgt()
     layoutWnd->setSpacing(0);
     layoutWnd->setMargin(0);
 
-    // 测试页面：
-    registerWidget(layoutWnd, new TestWidget(this), TEST_DLG, false);
+    //TODO: 测试页面：
+    TestWidget* testWidget = new TestWidget(this);
+    registerWidget(layoutWnd, testWidget, TEST_DLG, false);
+//    connect(testWidget, &TestWidget::onCashboxChecking, m_deviceManager, &DeviceManager::onCheckingCashbox);
+//    connect(testWidget, &TestWidget::onReader, m_readerMng, &ReaderManager::onStartDoingSomething);
 
     registerWidget(layoutWnd, new MainWidget(this), MAIN_DLG, true);
     registerWidget(layoutWnd, new TicketMainWidget(this), CARD_DLG, false);
@@ -162,7 +204,11 @@ void ISMFrame::initWgt()
 //    registerWidget(layoutWnd, new TicketTransactionWidget(this), PURCHASE_DLG, false);
 //    registerWidget(layoutWnd, new RefundWidget(this), REFUND_DLG, false);
     registerWidget(layoutWnd, new TicketQueryWidget(this), QUERY_DLG, false);
-    registerWidget(layoutWnd, new TicketReregisterWidget(this), REREGISTER_DLG, false);
+
+    TicketReregisterWidget* registWidget = new TicketReregisterWidget(this);
+//    registWidget->setDeviceManager(m_deviceManager);
+    registWidget->setFareWidget(m_fareWidget);
+    registerWidget(layoutWnd, registWidget, REREGISTER_DLG, false);
 //    registerWidget(layoutWnd, new PaymentWidget(this), PAYMENT_DLG, false);
 
 //    // 二维码 -- 暂时移除该功能 {Ellie 2021-09-26}  -- 会议定稿：互联网支付相关业务去掉 20211012

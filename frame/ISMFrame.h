@@ -4,6 +4,7 @@
 #include <QFrame>
 #include <QVBoxLayout>
 #include <QDateTime>
+#include <QThread>
 
 namespace Ui {
 class ISMFrame;
@@ -12,6 +13,9 @@ class ISMFrame;
 
 class WidgetBase;
 class LoginDlg;
+class DeviceManager;
+class ReaderManager;
+class CompensationFareWidget;
 class ISMFrame : public QFrame
 {
     Q_OBJECT
@@ -25,6 +29,7 @@ public:
 
 private:
     void init();
+    void initDevice();
     void initTimer();
     void onTimer();
     void secEvent();
@@ -36,6 +41,11 @@ private:
     QDateTime m_oldtime;
     LoginDlg* m_loginDlg;
 
+    DeviceManager* m_deviceManager;
+    ReaderManager* m_readerMng;
+    QThread* m_deviceThread;
+
+    CompensationFareWidget* m_fareWidget;
 private:
     Ui::ISMFrame *ui;
 };

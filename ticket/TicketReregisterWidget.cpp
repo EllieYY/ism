@@ -7,6 +7,7 @@
 #include "CompensationFareWidget.h"
 #include "MyHelper.h"
 #include "NC_ReaderLib.h"
+#include "DeviceManager.h"
 
 TicketReregisterWidget::TicketReregisterWidget(QWidget *parent) :
     WidgetBase(parent),
@@ -24,6 +25,11 @@ TicketReregisterWidget::TicketReregisterWidget(QWidget *parent) :
 TicketReregisterWidget::~TicketReregisterWidget()
 {
     delete ui;
+}
+
+void TicketReregisterWidget::setDeviceManager(DeviceManager *devManager)
+{
+    m_deviceManager = devManager;
 }
 
 bool TicketReregisterWidget::showData()
@@ -164,7 +170,12 @@ void TicketReregisterWidget::init()
     connect(ui->calcFareBtn, &QPushButton::clicked, this, &TicketReregisterWidget::onCalcFare);
 
     m_difference = 0;
-    m_tradeFileSerial = 1;
+
+    // 现金交易窗口
+//    m_fareWidget = new CompensationFareWidget();
+//    connect(m_fareWidget, &CompensationFareWidget::startChecking, m_deviceManager, &DeviceManager::onCheckingCashbox);
+//    connect(m_fareWidget, &CompensationFareWidget::supplementaryOk, this, &TicketReregisterWidget::onSupplementaryOk);
+//    m_fareWidget->hide();
 }
 
 void TicketReregisterWidget::onStationSelected(QString lineName, QString stationName, QString stationCode)
@@ -247,10 +258,11 @@ void TicketReregisterWidget::cashSupplementary()
 {
     if (m_difference > 0) {
         BYTE state = DataCenter::getThis()->getCashboxState();
-        m_fareWidget = new CompensationFareWidget(this);
+//        m_fareWidget = new CompensationFareWidget(this);
 
-        connect(m_fareWidget, &CompensationFareWidget::supplementaryOk, this, &TicketReregisterWidget::onSupplementaryOk);
-        m_fareWidget->show();
+//        connect(m_fareWidget, &CompensationFareWidget::startChecking, m_deviceManager, &DeviceManager::onCheckingCashbox);
+//        connect(m_fareWidget, &CompensationFareWidget::supplementaryOk, this, &TicketReregisterWidget::onSupplementaryOk);
+//        m_fareWidget->show();
         m_fareWidget->initShow(m_difference, state);
     } else {
         MyHelper::ShowMessageBoxInfo("无需现金缴费，请直接更新。");
@@ -381,12 +393,9 @@ int TicketReregisterWidget::getTradeDataLength(int icType)
 
 }
 
-int TicketReregisterWidget::getTradeFileSerial()
+void TicketReregisterWidget::setFareWidget(CompensationFareWidget *fareWidget)
 {
-    if(m_tradeFileSerial > 9999) {
-        m_tradeFileSerial = 0;
-    }
-    return m_tradeFileSerial++;
+    m_fareWidget = fareWidget;
 }
 
 

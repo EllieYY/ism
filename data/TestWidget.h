@@ -30,7 +30,7 @@ private slots:
 //    void on_Btn7001_clicked();
     void on_Btn9003_login_clicked();
     void on_Btn9003_logout_clicked();
-    void on_Btn9002_clicked();
+//    void on_Btn9002_clicked();
 //    void on_Btn9002_2_clicked();
 
     // FTP文件上传下载
@@ -63,6 +63,11 @@ private:
     FtpManager* m_ftp;
     LibcurlFtp* m_curlFtp;
     QString m_filePath;
+
+
+signals:
+    void onCashboxChecking(bool);
+    void onReader(bool);
 
 private:
     Ui::TestWidget *ui;

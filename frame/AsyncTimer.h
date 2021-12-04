@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QThread>
 #include <QTimer>
+#include <QMutex>
 
 class TimerThread;
 class AsyncTimer : public QObject
@@ -27,7 +28,8 @@ protected slots:
 protected:
     QThread* thread;
     QTimer* timer;
-    bool pauseFlag;
+    volatile bool pauseFlag;
+    QMutex m_lock;
 
 signals:
     void stop();

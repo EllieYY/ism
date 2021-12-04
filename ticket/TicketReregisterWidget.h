@@ -11,6 +11,7 @@ class TicketReregisterWidget;
 }
 
 class CompensationFareWidget;
+class DeviceManager;
 class TicketReregisterWidget : public WidgetBase
 {
     Q_OBJECT
@@ -19,6 +20,11 @@ class TicketReregisterWidget : public WidgetBase
 public:
     explicit TicketReregisterWidget(QWidget *parent = nullptr);
     ~TicketReregisterWidget();
+
+public:
+    void setDeviceManager(DeviceManager* devManager);
+
+    void setFareWidget(CompensationFareWidget *fareWidget);
 
 private:
     bool showData();
@@ -56,7 +62,7 @@ private:
     float m_banlance;           // 余额
     BYTE m_payType;             // 支付方式
 
-    int m_tradeFileSerial;      // 交易文件流水号 0~999999
+    DeviceManager* m_deviceManager;
 
 signals:
     void selectStation();    // 选择车站

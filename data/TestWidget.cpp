@@ -66,11 +66,13 @@ void TestWidget::secEvent()
 
 void TestWidget::on_Btn3001_clicked()
 {
-    DataCenter::getThis()->deviceState2afc(DEV_SERVICE_ON);
+    emit onCashboxChecking(true);
+//    DataCenter::getThis()->deviceState2afc(DEV_SERVICE_ON);
 }
 
 void TestWidget::on_Btn4002_clicked()
 {
+    emit onCashboxChecking(false);
 //    DataCenter::getThis()->param2afc();
 }
 
@@ -94,38 +96,40 @@ void TestWidget::on_Btn7000_clicked()
 
 void TestWidget::on_Btn9003_login_clicked()
 {
-    // 登录
-    QString userName = "00002114";
-    BYTE * operatorID = reinterpret_cast<byte*>(userName.toLocal8Bit().data());
-    BYTE event = 2;          // 带口令登录
-    BYTE operatorType = 2;   // 维护人员
-    BYTE ret = OperatorAction(operatorID, event, operatorType);
-    if (ret != 0) {
-        MyHelper::ShowMessageBoxError(QString("登录失败[%1]，请联系工作人员。").arg(ret));
-        logger()->error("AFC登录失败{%1}", ret);
-        return;
-    }
+    emit onReader(true);
+//    // 登录
+//    QString userName = "00002114";
+//    BYTE * operatorID = reinterpret_cast<byte*>(userName.toLocal8Bit().data());
+//    BYTE event = 2;          // 带口令登录
+//    BYTE operatorType = 2;   // 维护人员
+//    BYTE ret = OperatorAction(operatorID, event, operatorType);
+//    if (ret != 0) {
+//        MyHelper::ShowMessageBoxError(QString("登录失败[%1]，请联系工作人员。").arg(ret));
+//        logger()->error("AFC登录失败{%1}", ret);
+//        return;
+//    }
 }
 
 void TestWidget::on_Btn9003_logout_clicked()
 {
-    // AFC 签退
-    QString userName = "00002114";
-    BYTE * operatorID = reinterpret_cast<byte*>(userName.toLocal8Bit().data());
-    BYTE event = 0;          // 签退
-    BYTE operatorType = 2;   // 维护人员
-    BYTE ret = OperatorAction(operatorID, event, operatorType);
-    if (ret != 0) {
-        MyHelper::ShowMessageBoxError(QString("签退失败[%1]，请联系工作人员。").arg(ret));
-        return;
-    }
+     emit onReader(false);
+//    // AFC 签退
+//    QString userName = "00002114";
+//    BYTE * operatorID = reinterpret_cast<byte*>(userName.toLocal8Bit().data());
+//    BYTE event = 0;          // 签退
+//    BYTE operatorType = 2;   // 维护人员
+//    BYTE ret = OperatorAction(operatorID, event, operatorType);
+//    if (ret != 0) {
+//        MyHelper::ShowMessageBoxError(QString("签退失败[%1]，请联系工作人员。").arg(ret));
+//        return;
+//    }
 
 }
 
-void TestWidget::on_Btn9002_clicked()
-{
-    DataCenter::getThis()->samInfo2afc();
-}
+//void TestWidget::on_Btn9002_clicked()
+//{
+//    DataCenter::getThis()->samInfo2afc();
+//}
 
 //void TestWidget::on_Btn9002_2_clicked()
 //{

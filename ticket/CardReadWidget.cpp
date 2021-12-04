@@ -129,7 +129,7 @@ void CardReadWidget::readTransactionInfo()
     initReadState();
     ui->readerInfoLabel->setText("票卡读取完成……");
 
-    delayMSec(500);
+//    delayMSec(500);
     emit readOk(m_ticketWidgetId);
     close();
 }
@@ -158,7 +158,7 @@ void CardReadWidget::readReregisterInfo()
     initReadState();
     ui->readerInfoLabel->setText("票卡读取完成……");
 
-    delayMSec(500);
+//    delayMSec(500);
 
     emit readOk(m_ticketWidgetId);
     close();

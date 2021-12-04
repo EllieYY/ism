@@ -40,14 +40,18 @@ void AsyncTimer::startTimer(int msec)
 
 void AsyncTimer::pauseAsyncTimer()
 {
+//    m_lock.lock();
     qDebug() << "pauseTimer";
     pauseFlag = true;
+//    m_lock.unlock();
 }
 
 void AsyncTimer::resumeAsyncTimer()
 {
+//    m_lock.lock();
     qDebug() << "resumeTimer";
     pauseFlag = false;
+//    m_lock.unlock();
 }
 
 void AsyncTimer::stopTimer()

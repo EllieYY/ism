@@ -95,6 +95,7 @@ SOURCES += \
     data/ticket/TicketBasicInfo.cpp \
     data/ticket/TransactionInfo.cpp \
     device/DeviceManager.cpp \
+    device/ReaderManager.cpp \
     frame/AFCTaskThread.cpp \
     frame/AmountCheckTimer.cpp \
     frame/AsyncTimer.cpp \
@@ -173,6 +174,7 @@ HEADERS += \
     data/ticket/TicketBasicInfo.h \
     data/ticket/TransactionInfo.h \
     device/DeviceManager.h \
+    device/ReaderManager.h \
     frame/AFCTaskThread.h \
     frame/AmountCheckTimer.h \
     frame/AsyncTimer.h \
