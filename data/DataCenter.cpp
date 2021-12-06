@@ -74,13 +74,14 @@ DataCenter *DataCenter::getThis()
 
 // 心跳连接处理
 void DataCenter::secEvent()
-{
+{    
+
     m_timeCount++;
     for (int i = 0; i < HRT_NUM; i++) {
         m_hrtCnt[i] = m_hrtCnt[i] + 1;
-        if (m_hrtCnt[i] == 600) {    // 超过10分钟未连接则掉线处理
-            setHrtOffData(i);
-        }
+//        if (m_hrtCnt[i] == 600) {    // 超过10分钟未连接则掉线处理
+//            setHrtOffData(i);
+//        }
     }
 
     // AFC相关定时上传
@@ -182,6 +183,7 @@ void DataCenter::initData()
     m_loginInfo = NULL;               // 登录信息
     m_ticketBasicInfo = NULL;         // 车票基本信息
 
+    m_cashboxInitRet = 0x0FFF;        // 初始化不可用
     m_isReaderUsable = false;         // 读写器可用状态
     m_isSpecieUsable = false;         // 硬币模块可用状态
     m_isBanknotesUsable = false;      // 纸币模块可用状态

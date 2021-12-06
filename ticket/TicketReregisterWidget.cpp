@@ -43,8 +43,13 @@ bool TicketReregisterWidget::showData()
     TicketBasicInfo* info = DataCenter::getThis()->getTicketBasicInfo();
     m_ticketType = info->typeNum();
     m_updateType = info->updateType();
-    m_difference = info->updateAmount();
+    m_difference = info->updateAmount();    
+
     m_isAllowOctPay = info->isAllowOctPay();
+
+    // TODO:test code
+    m_isAllowOctPay = false;
+
     m_banlance = info->balance();
     m_payType = 0x01;       // 现金支付
     if (m_isAllowOctPay) {  // 卡内扣费
@@ -112,7 +117,7 @@ bool TicketReregisterWidget::showData()
         } else {
             ui->selectBtn2->setDisabled(false);
             ui->lineEdit2->setText("");
-            ui->lineEdit6->setText("0");
+            ui->lineEdit6->setText("1");
             ui->textTips->setText("请补充进站信息。");
         }
     } else {
@@ -125,7 +130,7 @@ bool TicketReregisterWidget::showData()
     if (m_updateType == FARE_EX ) {
         ui->selectBtn3->setDisabled(false);
         ui->lineEdit4->setText("");
-        ui->lineEdit6->setText("--");
+        ui->lineEdit6->setText("1");
         ui->textTips->setText("请补充出站信息。");
     } else {
         QString exStationName = DataCenter::getThis()->stationCode2Name(info->exStationCode());
@@ -136,7 +141,7 @@ bool TicketReregisterWidget::showData()
 
 
     // TODO:test code
-//    m_difference = 5;
+    m_difference = 2;
 
     if ((info->isAllowOctPay() && m_difference <= m_banlance) || m_difference <= 0) {
         ui->cashPollBtn->setDisabled(true);
@@ -256,7 +261,11 @@ void TicketReregisterWidget::onUpdateTicket()
 // 现金补缴
 void TicketReregisterWidget::cashSupplementary()
 {
+    //test code
+    m_difference = ui->lineEdit6->text().toInt();
+
     if (m_difference > 0) {
+        m_difference = qCeil(m_difference);
         BYTE state = DataCenter::getThis()->getCashboxState();
 //        m_fareWidget = new CompensationFareWidget(this);
 
@@ -305,8 +314,8 @@ void TicketReregisterWidget::onCalcFare()
 
     logger()->info("[calcFare] amount = {%3}, 入参{%1}, 出参{%2}", strIn, strOut, calFareOut.intAmount);
 
-    m_difference = calFareOut.intAmount;
-    ui->lineEdit6->setText(QString::number(m_difference * 0.01));
+    m_difference = calFareOut.intAmount * 0.01;
+    ui->lineEdit6->setText(QString::number(m_difference));
     if (m_isAllowOctPay && m_difference < m_banlance) {
         ui->cashPollBtn->setDisabled(true);
         m_payType = 0x04;      // 卡内扣费
@@ -321,7 +330,7 @@ void TicketReregisterWidget::onCalcFare()
 void TicketReregisterWidget::onSupplementaryOk(bool result)
 {
     // TODO:test code.
-    ui->tUpdateBtn->setDisabled(false);
+//    ui->tUpdateBtn->setDisabled(false);
 
     if (result) {
         ui->textTips->setText("现金支付成功，请点击更新按钮进行更新。");
@@ -396,6 +405,7 @@ int TicketReregisterWidget::getTradeDataLength(int icType)
 void TicketReregisterWidget::setFareWidget(CompensationFareWidget *fareWidget)
 {
     m_fareWidget = fareWidget;
+    connect(m_fareWidget, &CompensationFareWidget::supplementaryOk, this, &TicketReregisterWidget::onSupplementaryOk);
 }
 
 
@@ -406,7 +416,7 @@ void TicketReregisterWidget::setStyle()
     ui->lineEdit3->setDisabled(true);
     ui->lineEdit4->setDisabled(true);
     ui->lineEdit5->setDisabled(true);
-    ui->lineEdit6->setDisabled(true);
+//    ui->lineEdit6->setDisabled(true);
 
     ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
     ui->tableWidget->verticalHeader()->setVisible(false);

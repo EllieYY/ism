@@ -86,7 +86,7 @@ void DeviceManager::timerEvent(QTimerEvent *event)
 void DeviceManager::cashboxChecking()
 {
     if (m_onChecking) {
-        qDebug() << "cashbox checking.....";
+//        qDebug() << "cashbox checking.....";
         long currentTime = QDateTime::currentSecsSinceEpoch();
         if (m_startTime <= 0) {   // 初始化投币开始时间
             m_startTime = currentTime;
@@ -103,12 +103,12 @@ void DeviceManager::cashboxChecking()
         } else {    // 检测超时：超时自动调用停止投币接口
             long diff = currentTime - m_startTime;
 
-//            //TODO: test code
-//            if (diff > 20) {
-//                m_onChecking = false;
-//                emit receiveOk(10, 1);
-//                return;
-//            }
+            //TODO: test code
+            if (diff > 10) {
+                m_onChecking = false;
+                emit checkState(3, 5, 1);
+                return;
+            }
 
             if (diff > MIN_5) {
                 m_onChecking = false;
@@ -122,7 +122,7 @@ void DeviceManager::cashboxChecking()
 
 void DeviceManager::hearChecking()
 {
-    qDebug() << "device heart checking.....";
+//    qDebug() << "device heart checking.....";
 
     // 钱箱心跳检测
     bool coin = (SimplePoll() == 0);
@@ -172,11 +172,14 @@ void DeviceManager::initCashbox(int portBanknotes, int portCoin, int portBanknot
         // 端口：纸币、硬币、纸币找零器
         int retC = ConnectMachine(portBanknotes, portCoin, portBanknoteRe);
         m_banknotes = (retC & 0x000F);
-        m_coinState = (retC & 0x00F0);
-        m_banknotesRe = (retC & 0x0F00);
+        m_coinState = (retC & 0x00F0) >> 4;
+        m_banknotesRe = (retC & 0x0F00) >> 8;
 
         logger()->info("[ConnectMachine]钱箱初始化={%1}, 端口号：billPort={%2}, coinPort={%3}, changePort={%4}, state={%5 %6 %7}",
-                       retC, portBanknotes, portCoin, portBanknoteRe, m_coinState, m_banknotes, m_banknotesRe);
+                       retC, portBanknotes, portCoin, portBanknoteRe,
+                       QString::number(m_coinState, 16),
+                       QString::number(m_banknotes, 16),
+                       QString::number(m_banknotesRe, 16));
 
         DataCenter::getThis()->setCashboxInitRet(retC);
 

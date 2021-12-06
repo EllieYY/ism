@@ -62,12 +62,12 @@ void CompensationFareWidget::initShow(int difference, uchar devState)
 
     // TODO:打开限制
     // 设备状态检查，限制功能使用
-//    if (devState == 0x00) {
-//        MyHelper::ShowMessageBoxError("硬件设备故障，无法投币，请联系工作人员。");
-//        supplementaryOk(false);
-//        close();
-//        return;
-//    }
+    if (devState == 0x00) {
+        MyHelper::ShowMessageBoxError("硬件设备故障，无法投币，请联系工作人员。");
+        supplementaryOk(false);
+        close();
+        return;
+    }
 
     deviceStateShow();
     ui->infoLabel->setText(QString("请投币%1元。").arg(m_difference));
@@ -79,7 +79,7 @@ void CompensationFareWidget::initShow(int difference, uchar devState)
 
     ui->continueBtn->setDisabled(false);
     ui->endBtn->setDisabled(true);
-    ui->returnCashBtn->setDisabled(true);
+    ui->returnCashBtn->setDisabled(false);
 
     show();
 }
@@ -162,11 +162,25 @@ void CompensationFareWidget::onStopPaying()
     QString info3 = QString("StopPutCoin()=%1，投入纸币%2，投入硬币%3").arg(ret).arg(banknotes).arg(coins);
     showInfo(info3);
 
-    onAmountConfirm(banknotes, coins);
+    // TODO:
+    if (m_income > 0 && (banknotes + coins) == 0) {
+        showInfo("为方便调试，StopPutCoin接口返回的投币金额为0时，使用投币状态检查接口返回的投币金额。");
+
+        onAmountConfirm(m_income, 0);
+    } else {
+        onAmountConfirm(banknotes, coins);
+    }
 }
 
 void CompensationFareWidget::onAmountConfirm(int banknotes, int coins)
 {
+    int amount1 = Request_money_in();   //查询接收到的币数
+    int amount2 = Request_Hopper_Balance();   // 检查找找零器中的硬币余额
+    int amount3 = Request_Cashbox_Counter();   //查询钱箱中的硬币数量
+    QString amountInfo = QString("接收到的硬币数[Request_money_in]=%1，\n找零器中硬币余额[Request_Hopper_Balance]=%2,\n钱箱中硬币数量[Request_Cashbox_Counter]=%3")
+            .arg(amount1).arg(amount2).arg(amount3);
+
+
     showInfo("结束投币，请确认投币金额。");
 
     // 计算已投入金额
@@ -238,9 +252,22 @@ void CompensationFareWidget::onAmountConfirm(int banknotes, int coins)
             QString changeInfo = QString("钱箱余额不足，无法找零。用户投入金额%1元，已找零硬币%2元，纸币%3元。\n%4")
                     .arg(m_income).arg(coinMoney).arg(billMoney)
                     .arg("请保留此找零凭证，联系工作人员找零或手动退币。");
+            showInfo(changeInfo);
             MyHelper::ShowMessageBoxError(changeInfo);
             return;
         }
+
+        int ret1 = MyHelper::ShowMessageBoxQuesion(info2);
+        if (ret1 != 1) {
+            qDebug() << "找零提问";
+            return;
+        }
+    }
+
+    int ret2 = MyHelper::ShowMessageBoxQuesion("确认金额，钱进钱箱");
+    if (ret2 != 1) {
+        qDebug() << "钱进钱箱提问";
+        return;
     }
 
     showInfo("钱进钱箱");
@@ -249,8 +276,11 @@ void CompensationFareWidget::onAmountConfirm(int banknotes, int coins)
     QString info3 = QString("ResultOperate(1) = %1").arg(retR);
     showInfo(info3);
 
-    emit supplementaryOk(true);
-    close();
+    m_isNeedReturn = false;
+
+    // TODO:用来测试
+//    emit supplementaryOk(true);
+//    close();
 }
 
 
@@ -304,11 +334,18 @@ void CompensationFareWidget::showInfo(QString info)
 {
     QString timeStr = QString::number(QDateTime::currentMSecsSinceEpoch());
     ui->listWidget->insertItem(0, timeStr + "  " +info);
+
+    logger()->info(info);
 }
 
 
 void CompensationFareWidget::showCheckState(int state, int bankNoteCount, int coinCount)
 {
+    // TODO:
+    // 计算已投入金额
+    int banknotesAmount = bankNoteCount > 0 ? bankNoteCount : 0;
+    int coinsAmount = coinCount > 0 ? coinCount : 0;
+    m_income = banknotesAmount + coinsAmount;
 
     QString info = QString("check state ret = %1, bankNoteCount = %2, coinCount = %3")
             .arg(state)

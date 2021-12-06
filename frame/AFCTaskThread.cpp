@@ -11,6 +11,7 @@
 #include "SettingCenter.h"
 #include "BomParamVersionInfo.h"
 #include "BasicInfo.h"
+#include "windows.h"
 
 AFCTaskThread::AFCTaskThread(QObject *parent) : QThread(parent)
 {
@@ -103,8 +104,6 @@ void AFCTaskThread::afcResp(int type, uchar *body, int count)
         parse3000(body);
     } else if (type == 0x4000) {    // 参数同步
         parse4000(body, count);
-    } else if (type == 0x7003) {    // 交易文件索取
-
     } else if (type == 0x9001) {    // 强制时间同步
         parse9001(body);
     } else if (type == 0x9004) {    // 软件、部件版本更新
