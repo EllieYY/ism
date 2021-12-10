@@ -23,6 +23,7 @@ public:
 
 signals:
     void returnCtl(bool isMainWnd);         //# 控制主页的返回和home按钮显示
+    void stopReadingTicket(bool,int);      // 停止票卡信息读取
 
 public slots:
     void onReturn();

@@ -75,6 +75,11 @@ void WidgetMng::showWidget(int wgtId,bool isReturn/*default false*/)
 			break;
 		}
     }
+
+    // 控制读卡器工作
+    if (wgtId != QUERY_DLG && wgtId != REREGISTER_DLG) {
+        emit stopReadingTicket(false, -1);
+    }
 }
 
 void WidgetMng::onReturn()

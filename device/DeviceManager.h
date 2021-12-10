@@ -25,16 +25,30 @@ public:    // slots
     void onCheckingCashbox(bool isOn);      // 钱箱开始检测
     void startDeviceTimer();
 
+    void setOnReading(bool onReading, int type);    // 票卡信息读取设置
+
 signals:
     // 投币检测相关
     void receiveOk(int banknotes, int coins);    // 自动检测结束投币
     void timeoutChecking();                      // 投币检测超时
     void checkState(int, int, int);
+    void ticketRead(int ret);             // 票卡信息读取结果反馈
 
 protected:
     void timerEvent(QTimerEvent* event);
+
+private:
     void cashboxChecking();
     void hearChecking();
+    void ticketReading();    // 票卡信息读取
+    void readTransactionInfo();     // 读取交易信息
+    void readReregisterInfo();      // 读取票卡更新信息
+    int readBasicInfo();           // 票卡基本信息读取
+
+    uchar readTicketInfo(uchar anti);    // 票卡信息读取
+    uchar readHistoryTrade(uchar anti);   // 卡片历史交易信息
+
+    void setTestData();
 
 private:
     void initReader(int port, QString deviceId);    // 读写器初始化
@@ -53,9 +67,14 @@ private:
     bool m_onChecking;     // 投币检测开始标识位
     long m_startTime;      // 投币时间控制
 
+    // 票卡信息读取
+    bool m_onReading;      // 读卡状态开启
+    int m_ticketInfoType;  // 读取票卡内容： 0-历史交易信息  1-票卡更新信息
+
     // 定时器id
     int m_checkingTimerId;    // 投币检测定时器
     int m_hearTimerId;        // 设备心跳定时器
+    int m_readingTimerId;     // 票卡读取定时器
 };
 
 #endif // DEVICEMANAGER_H

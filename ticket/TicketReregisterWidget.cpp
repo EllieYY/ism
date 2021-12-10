@@ -35,6 +35,9 @@ void TicketReregisterWidget::setDeviceManager(DeviceManager *devManager)
 bool TicketReregisterWidget::showData()
 {
     ui->calcFareBtn->hide();
+    ui->cashPollBtn->setDisabled(true);
+    ui->tUpdateBtn->setDisabled(true);
+
     if (!m_dataUpdateNum[TICKET_REREGISTER]) {
         return true;
     }
@@ -46,9 +49,6 @@ bool TicketReregisterWidget::showData()
     m_difference = info->updateAmount();    
 
     m_isAllowOctPay = info->isAllowOctPay();
-
-    // TODO:test code
-    m_isAllowOctPay = false;
 
     m_banlance = info->balance();
     m_payType = 0x01;       // 现金支付
@@ -77,7 +77,6 @@ bool TicketReregisterWidget::showData()
 //    QString reason = DataCenter::getThis()->getUpdateTypeString(m_updateType);
     ui->lineEdit5->setText(errMsg);
 
-
     // 操作控制
     ui->selectBtn2->setDisabled(true);
     ui->selectBtn3->setDisabled(true);
@@ -89,7 +88,6 @@ bool TicketReregisterWidget::showData()
             ui->textTips->setText("票卡无需更新");
             ui->lineEdit5->setText("无需更新");
             MyHelper::ShowMessageBoxInfo("当前票卡无需更新。");
-            return true;
         } else {
             // 不可更新
             ui->tUpdateBtn->setDisabled(true);
@@ -99,26 +97,29 @@ bool TicketReregisterWidget::showData()
             QString tipsStr = QString("%1，无法进行票卡更新[%2]，请联系工作人员处理。")
                     .arg(errMsg)
                     .arg(info->errorCode());
-            MyHelper::ShowMessageBoxInfo(tipsStr);
-            return true;
+            MyHelper::ShowMessageBoxInfo(tipsStr);          
         }
+        return true;
     }
 
-    ui->tUpdateBtn->setDisabled(true);
-
+    bool fareOk = false;
     // 进站更新（付费区）
     m_enStationCode = "";
     if (m_updateType == FARE_EN) {
-        if (info->typeNum() == UL_CARD) {
+        if (info->icType() == UL_CARD) {
             // 使用当前站点作为进站
             QString curStation = DataCenter::getThis()->getStationName();
             ui->lineEdit2->setText(curStation);
             m_enStationCode = DataCenter::getThis()->getStationCode();
+
+            fareOk = true;
+            // TODO:确认-此时费用应该为0
         } else {
             ui->selectBtn2->setDisabled(false);
             ui->lineEdit2->setText("");
-            ui->lineEdit6->setText("1");
+            ui->lineEdit6->setText("1");   // TODO:delete
             ui->textTips->setText("请补充进站信息。");
+            fareOk = false;
         }
     } else {
         QString enStationName = DataCenter::getThis()->stationCode2Name(info->enStationCode());
@@ -130,25 +131,28 @@ bool TicketReregisterWidget::showData()
     if (m_updateType == FARE_EX ) {
         ui->selectBtn3->setDisabled(false);
         ui->lineEdit4->setText("");
-        ui->lineEdit6->setText("1");
+        ui->lineEdit6->setText("1");  // TODO:delete
         ui->textTips->setText("请补充出站信息。");
+        fareOk = false;
     } else {
         QString exStationName = DataCenter::getThis()->stationCode2Name(info->exStationCode());
         ui->lineEdit4->setText(exStationName);
+        fareOk = true;
     }
 
-    m_difference = m_difference < 0 ? 0 : m_difference;
+    if (fareOk) {
+        m_difference = m_difference < 0 ? 0 : m_difference;
 
-
-    // TODO:test code
-    m_difference = 2;
-
-    if ((info->isAllowOctPay() && m_difference <= m_banlance) || m_difference <= 0) {
-        ui->cashPollBtn->setDisabled(true);
-        ui->tUpdateBtn->setDisabled(false);
-    } else if (m_difference > 0) {
-        m_payType = 0x01;      // 余额不足时，现金支付
-        ui->calcFareBtn->setDisabled(false);
+        if ((info->isAllowOctPay() && m_difference <= m_banlance) || m_difference <= 0) {
+            ui->cashPollBtn->setDisabled(true);
+            ui->tUpdateBtn->setDisabled(false);
+        } else if (m_difference > 0) {
+            m_payType = 0x01;      // 余额不足时，现金支付
+            ui->calcFareBtn->setDisabled(false);
+            ui->tUpdateBtn->setDisabled(true);
+        }
+    } else {
+        ui->calcFareBtn->setDisabled(true);
         ui->tUpdateBtn->setDisabled(true);
     }
 
@@ -189,6 +193,7 @@ void TicketReregisterWidget::onStationSelected(QString lineName, QString station
         ui->lineEdit4->setText(stationName);
         m_exStationCode = stationCode;
         ui->calcFareBtn->show();
+        ui->calcFareBtn->setDisabled(false);
         ui->textTips->setText("请计算补票费用。");
     } else {
         ui->lineEdit2->setText(stationName);
@@ -198,7 +203,6 @@ void TicketReregisterWidget::onStationSelected(QString lineName, QString station
 
 void TicketReregisterWidget::onUpdateTicket()
 {
-
     BYTE anti = DataCenter::getThis()->getAntiNo();
     UPDATE_CARD_IN updateIn = {0};
     UPDATE_RESP updateTradeData = {0};
@@ -233,9 +237,14 @@ void TicketReregisterWidget::onUpdateTicket()
 
     // 票卡更新
     BYTE ret = cardUpdate(anti, &updateIn, &updateTradeData);
-    if (ret != 0) {
+    if (ret == 0x05 || ret == 0x06) {
+        MyHelper::ShowMessageBoxInfo("请将票卡正确放置在感应区域内。");
+        return;
+    } else if (ret != 0) {
         QString errMsg = DataCenter::getThis()->getReaderErrorStr(ret);
-        MyHelper::ShowMessageBoxError(QString("票卡更新失败{%1}，请重试或者联系工作人员。").arg(QString::number(ret, 16)));
+        MyHelper::ShowMessageBoxError(QString("票卡更新失败{%1}:%2，请重试或者联系工作人员。")
+                                      .arg(QString::number(ret, 16))
+                                      .arg(errMsg));
         return;
     }
 
@@ -261,17 +270,12 @@ void TicketReregisterWidget::onUpdateTicket()
 // 现金补缴
 void TicketReregisterWidget::cashSupplementary()
 {
-    //test code
+    //TODO:test code
     m_difference = ui->lineEdit6->text().toInt();
 
     if (m_difference > 0) {
         m_difference = qCeil(m_difference);
         BYTE state = DataCenter::getThis()->getCashboxState();
-//        m_fareWidget = new CompensationFareWidget(this);
-
-//        connect(m_fareWidget, &CompensationFareWidget::startChecking, m_deviceManager, &DeviceManager::onCheckingCashbox);
-//        connect(m_fareWidget, &CompensationFareWidget::supplementaryOk, this, &TicketReregisterWidget::onSupplementaryOk);
-//        m_fareWidget->show();
         m_fareWidget->initShow(m_difference, state);
     } else {
         MyHelper::ShowMessageBoxInfo("无需现金缴费，请直接更新。");
@@ -298,6 +302,12 @@ void TicketReregisterWidget::onCalcFare()
     memcpy(calFareIn.TargetStation, pCode, 2);
 
     BYTE ret = calcFare(&calFareIn, &calFareOut);
+
+//    // TODO:test code
+//    ret = 0;
+//    calFareOut.intAmount = 300;
+
+
     if (ret != 0) {
         MyHelper::ShowMessageBoxError(QString("无法计算更新所需费用{%1}，请重试或联系人工客服。").arg(ret));
         return;
@@ -334,9 +344,11 @@ void TicketReregisterWidget::onSupplementaryOk(bool result)
 
     if (result) {
         ui->textTips->setText("现金支付成功，请点击更新按钮进行更新。");
+        ui->cashPollBtn->setDisabled(true);
         ui->tUpdateBtn->setDisabled(false);
     } else {
         ui->tUpdateBtn->setDisabled(true);
+        ui->cashPollBtn->setDisabled(false);
         MyHelper::ShowMessageBoxError("现金支付失败，请联系工作人员处理。");
     }
 }
@@ -367,7 +379,11 @@ void TicketReregisterWidget::writeTradeFile(BYTE icType, BYTE *data)
 
     // 文件内容
     int length = getTradeDataLength(icType);
-    array.append((char*)(data + 8), length);
+    if (icType == UL_CARD) {
+        array.append((char*)(data), length);
+    } else {
+        array.append((char*)(data + 8), length);
+    }
 
     qDebug() << "文件内容 size = " << array.size();
     QString bodyStr = array.toHex().toUpper();

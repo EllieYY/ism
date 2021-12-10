@@ -28,9 +28,9 @@ void CompensationFareWidget::initShow(int difference, uchar devState)
 
 
     //TODO: test code
-//    emit supplementaryOk(true);
-//    close();
-//    return;
+    emit supplementaryOk(true);
+    close();
+    return;
 
 
     long ret = DataCenter::getThis()->getCashboxInitRet();
@@ -61,13 +61,13 @@ void CompensationFareWidget::initShow(int difference, uchar devState)
 
 
     // TODO:打开限制
-    // 设备状态检查，限制功能使用
-    if (devState == 0x00) {
-        MyHelper::ShowMessageBoxError("硬件设备故障，无法投币，请联系工作人员。");
-        supplementaryOk(false);
-        close();
-        return;
-    }
+//    // 设备状态检查，限制功能使用
+//    if (devState == 0x00) {
+//        MyHelper::ShowMessageBoxError("硬件设备故障，无法投币，请联系工作人员。");
+//        supplementaryOk(false);
+//        close();
+//        return;
+//    }
 
     deviceStateShow();
     ui->infoLabel->setText(QString("请投币%1元。").arg(m_difference));

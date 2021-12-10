@@ -16,6 +16,7 @@ class LoginDlg;
 class DeviceManager;
 class ReaderManager;
 class CompensationFareWidget;
+class CardReadWidget;
 class ISMFrame : public QFrame
 {
     Q_OBJECT
@@ -49,6 +50,7 @@ private:
     QThread* m_deviceThread;
 
     CompensationFareWidget* m_fareWidget;
+//    CardReadWidget* m_cardReadWidget;
 private:
     Ui::ISMFrame *ui;
 };

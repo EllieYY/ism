@@ -9,6 +9,7 @@ class TicketMainWidget;
 }
 
 class CardReadWidget;
+class DeviceManager;
 class TicketMainWidget : public WidgetBase
 {
     Q_OBJECT
@@ -18,6 +19,10 @@ public:
     ~TicketMainWidget();
 
     void secEvent();
+
+    void setDeviceManager(DeviceManager* manager);
+
+//    void setCardReadWidget(CardReadWidget *cardReadWidget);
 
 private:
     void init();

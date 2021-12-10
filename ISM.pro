@@ -70,6 +70,7 @@ SOURCES += \
     data/OperatorInfo.cpp \
     data/SettingCenter.cpp \
     data/TestWidget.cpp \
+    data/TicketUpdateTestDlg.cpp \
     data/TradeFileInfo.cpp \
     data/X7000FileInfo.cpp \
     data/asr/ASRHttpTool.cpp \
@@ -145,6 +146,7 @@ HEADERS += \
     data/OperatorInfo.h \
     data/SettingCenter.h \
     data/TestWidget.h \
+    data/TicketUpdateTestDlg.h \
     data/TradeFileInfo.h \
     data/X7000FileInfo.h \
     data/asr/ASRHttpTool.h \
@@ -212,6 +214,7 @@ HEADERS += \
 
 FORMS += \
     data/TestWidget.ui \
+    data/TicketUpdateTestDlg.ui \
     frame/ISMFrame.ui \
     frame/ISMMessageBox.ui \
     frame/ISMWaiting.ui \

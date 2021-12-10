@@ -5,9 +5,12 @@
 #include "MyHelper.h"
 #include "BasicInfo.h"
 #include "DataCenter.h"
+#include "TicketBasicInfo.h"
+#include "TransactionInfo.h"
 
 #define RETRY_COUNT 3
 #define MIN_5 5*60
+#define MIN_1 60
 
 DeviceManager::DeviceManager(QObject *parent) : QObject(parent)
 {
@@ -17,11 +20,18 @@ DeviceManager::DeviceManager(QObject *parent) : QObject(parent)
     m_banknotes = -1;
     m_banknotesRe = -1;
 
+    // 钱箱检测
     m_onChecking = false;
     m_startTime = 0;
 
+    // 票卡信息读取
+    m_ticketInfoType = 0;   // 默认读取历史交易信息
+    m_onReading = false;
+
+    // 定时器
     m_checkingTimerId = 0;
     m_hearTimerId = 0;
+    m_readingTimerId = 0;
 }
 
 DeviceManager::~DeviceManager()
@@ -58,26 +68,17 @@ void DeviceManager::startDeviceTimer()
 {
     m_checkingTimerId = startTimer(300);
     m_hearTimerId = startTimer(1000);
+    m_readingTimerId = startTimer(500);
 }
 
 
 void DeviceManager::timerEvent(QTimerEvent *event)
 {
-//    qDebug() << "DeviceManager timer: " << QThread::currentThreadId() <<
-//                ", onChecking=" << m_onChecking;
-//    if (m_rwState == 0) {
-//        // 读写器心跳
-//    }
-//    if (m_coinState == 0) {
-//    }
-//    if (m_banknotes == 0) {
-//    }
-//    if (m_banknotesRe == 0) {
-//    }
-
     // 投币检测
     if (event->timerId() == m_checkingTimerId) {
         cashboxChecking();
+    } else if (event->timerId() == m_readingTimerId) {
+        ticketReading();
     } else if (event->timerId() == m_hearTimerId) {
         hearChecking();
     }
@@ -104,14 +105,15 @@ void DeviceManager::cashboxChecking()
             long diff = currentTime - m_startTime;
 
             //TODO: test code
-            if (diff > 10) {
-                m_onChecking = false;
-                emit checkState(3, 5, 1);
-                return;
-            }
+//            if (diff > 10) {
+//                m_onChecking = false;
+//                emit checkState(3, 5, 1);
+//                return;
+//            }
 
             if (diff > MIN_5) {
                 m_onChecking = false;
+                m_startTime = -1;
                 emit timeoutChecking();
             }
         }
@@ -132,6 +134,182 @@ void DeviceManager::hearChecking()
 
     // TODO:读写器心跳检测
 
+}
+
+void DeviceManager::ticketReading()
+{
+    if (!m_onReading) {
+        return;
+    }
+
+//    qDebug() << "reading....";
+
+    // 操作超时控制
+    long currentTime = QDateTime::currentSecsSinceEpoch();
+    if (m_startTime <= 0) {
+        m_startTime = currentTime;
+    }
+
+    // 超时判断
+    long diff = currentTime - m_startTime;
+    if (diff > MIN_1) {
+        m_startTime = -1;
+        emit ticketRead(0x05);
+        return;
+    }
+
+    // 读取卡信息
+    if (m_ticketInfoType == 0) {
+        readTransactionInfo();
+    } else if (m_ticketInfoType == 1) {
+        readReregisterInfo();
+    }
+}
+
+void DeviceManager::readTransactionInfo()
+{
+    if (readBasicInfo() != 0) {
+        return;
+    }
+
+    // 卡历史信息读取限制：排除token票
+    int cardType = DataCenter::getThis()->getTicketBasicInfo()->icType();
+    if (cardType != UL_CARD) {
+        BYTE anti = DataCenter::getThis()->getAntiNo();
+        int hisRet = readHistoryTrade(anti);
+        if (hisRet == 0x05 || hisRet == 0x06) {
+            return;
+        } else if (hisRet != 0x00) {
+            m_startTime = -1;
+            emit ticketRead(hisRet);
+            return;
+        }
+    }
+
+    m_startTime = -1;
+    emit ticketRead(0);
+}
+
+void DeviceManager::readReregisterInfo()
+{
+    if (readBasicInfo() != 0) {
+        return;
+    }
+
+    m_startTime = -1;
+    emit ticketRead(0);
+}
+
+int DeviceManager::readBasicInfo()
+{
+    BYTE anti = DataCenter::getThis()->getAntiNo();
+
+    // 票卡信息获取
+    int ret = readTicketInfo(anti);
+
+//    // TODO: 使用测试数据
+//    ret = 0;
+//    setTestData();
+
+    // 找不到卡的情况下继续读卡，其他错误直接提示
+    if (ret == 0x05 || ret == 0x06) {
+        return -1;
+    } else if (ret != 0x00) {
+        m_startTime = -1;
+        emit ticketRead(ret);
+        return -2;
+    }
+
+    return 0;
+}
+
+uchar DeviceManager::readTicketInfo(uchar anti)
+{
+    BYTE zone = DataCenter::getThis()->isPayZone() ? PAY : FREE;
+    ANALYSECARD_RESP analyseInfo = {0};
+    uchar ret = cardAnalyse(anti, zone, &analyseInfo);
+    if (ret != 0) {
+        return ret;
+    }
+
+    // 结果打印
+    QByteArray resArr = QByteArray((char*)&analyseInfo, sizeof(ANALYSECARD_RESP));
+    QString resStr = resArr.toHex();
+    logger()->info("[cardAnalyse] %1", resStr);
+
+    /* 字段解析 ------------*/
+    // 卡类型 | 逻辑卡号 | 发卡时间 | 有效期 | 卡状态 | 旅程状态 | 余额
+    int typeNum = analyseInfo.ticketType;
+    QString type = DataCenter::getThis()->getTicketTypeString(typeNum);
+    QString number = QByteArray((char*)analyseInfo.logicID, 10).toHex().toUpper();
+    QString startDate = QByteArray((char*)analyseInfo.issueStartDate, 4).toHex();
+    QString validDate = QByteArray((char*)analyseInfo.issueOutDate, 4).toHex();
+
+    int state = analyseInfo.ticketStatus;
+    int tripState = analyseInfo.ticketStatus;   // TODO:旅程状态待定
+    bool ok;
+    long balance = QByteArray((char*)analyseInfo.balance, 4).toHex().toLong(&ok, 16);
+
+    // 允许更新 | 卡扣更新 | 更新类型 | 应收费用
+    bool isAllowUpdate = analyseInfo.isAllowUpdate;
+    bool isAllowOctPay = analyseInfo.isAllowOctPay;
+    int updateType = analyseInfo.UpdateType;
+    uint amount = analyseInfo.UpdateAmount;
+
+    // 进站车站 | 进站时间 | 出站车站 | 出站时间
+    QString enStation = QByteArray((char*)analyseInfo.lastEnrtyStation, 2).toHex().toUpper();
+    QString exStation = QByteArray((char*)analyseInfo.lastExitStation, 2).toHex().toUpper();
+    QString enTime = QByteArray((char*)analyseInfo.lastEntryTime, 7).toHex();
+    QString exTime = QByteArray((char*)analyseInfo.lastExitTime, 7).toHex();
+
+    TicketBasicInfo* ticket = new TicketBasicInfo(
+                typeNum, type, number, startDate, validDate, state, tripState, balance);
+    ticket->setIcType(analyseInfo.ICType);
+    ticket->setErrorCode(analyseInfo.errCode);
+    ticket->setIsAllowOctPay(isAllowOctPay);
+    ticket->setIsAllowUpdate(isAllowUpdate);
+    ticket->setUpdateType(updateType);
+    ticket->setEnStationCode(enStation);
+    ticket->setEnTime(enTime);
+    ticket->setExStationCode(exStation);
+    ticket->setExTime(exTime);
+    ticket->setUpdateAmount(amount);
+
+    DataCenter::getThis()->setTicketBasicInfo(ticket);
+
+    return ret;
+}
+
+uchar DeviceManager::readHistoryTrade(uchar anti)
+{
+    HISTORY_RESP cardHistory = {0};
+    uchar hisRet = readCardHistory(anti, &cardHistory);
+    if (hisRet != 0x00) {
+        return hisRet;
+    }
+
+    // 结果打印
+    QByteArray resArr = QByteArray((char*)&cardHistory, sizeof(HISTORY_RESP));
+    QString resStr = resArr.toHex();
+    logger()->info("[readCardHistory] %1", resStr);
+
+    // 交易条数
+    QList<TransactionInfo*> transList;
+    int count = cardHistory.HistoryCount;
+    for (int i = 0; i < count; i++) {
+        CARD_HISTORY item = cardHistory.HistoryInfo[i];
+        // 交易时间 | 交易金额（分） | 交易类型 | 终端SAM卡号
+        bool ok;
+        QString time = QByteArray((char*)item.TradeDate, 7).toHex();
+        long amount = QByteArray((char*)item.TradeAmount, 4).toHex().toLong(&ok, 16);
+        int type = item.TradeType;
+        QString devCode = QByteArray((char*)item.PsamID, 6).toHex().toUpper();
+
+        transList.append(new TransactionInfo(time, type, amount, devCode));
+    }
+
+    DataCenter::getThis()->setTransInfoList(transList);
+    return hisRet;
 }
 
 // 0 - 不可用   1 - 初始化成功
@@ -237,4 +415,32 @@ void DeviceManager::readReaderVersion()
 
     logger()->info("[getVersion]=%1, version=%2", retVersion, versionStr);
     DataCenter::getThis()->setReaderVersion(versionStr);
+}
+
+void DeviceManager::setOnReading(bool onReading, int type)
+{
+//    qDebug() << "开始读卡: " << onReading;
+    m_onReading = onReading;
+    m_ticketInfoType = type;
+    m_startTime = -1;
+}
+
+void DeviceManager::setTestData()
+{
+    int typeNum = 0x80;
+    QString type = DataCenter::getThis()->getTicketTypeString(typeNum);
+    TicketBasicInfo* ticket = new TicketBasicInfo(
+                0x85, type, "30010088562007", "20200901", "20231001", 1, 1, 500);
+    ticket->setIsAllowOctPay(false);
+    ticket->setIsAllowUpdate(true);
+    ticket->setUpdateType(FARE_EN);
+    ticket->setEnStationCode("0203");
+    ticket->setEnTime("20211115212305");
+    ticket->setExStationCode("0306");
+    ticket->setExTime("20211115212606");
+    ticket->setUpdateAmount(0);
+    ticket->setIcType(UL_CARD);
+    ticket->setBalance(5);
+
+    DataCenter::getThis()->setTicketBasicInfo(ticket);
 }

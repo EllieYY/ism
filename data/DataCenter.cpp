@@ -87,6 +87,14 @@ void DataCenter::secEvent()
     // AFC相关定时上传
     // AFC心跳检测 - 一分钟一次
     if ((m_timeCount % 60) == 0) {
+//        // TODO:test code for device
+//        if( m_isReaderUsable) {
+//            m_isReaderUsable = false;
+//        } else {
+//            m_isReaderUsable = true;
+//        }
+
+
         if (m_taskThread != NULL && m_taskThread->isRunning()) {
             taskId++;
             AFCHeartTask* task = new AFCHeartTask(taskId++);
@@ -105,7 +113,7 @@ void DataCenter::secEvent()
     // 交易文件定时上传
     bool fileTriggered = false;
     // TODO:修改使用配置参数中的时间间隔
-    if ((m_timeCount % m_tradeDataIntervalSec) == 0 || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
+    if ((m_timeCount % 10) == 0 || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
         fileTriggered = true;
         logger()->info("交易文件定时上送：%1, %2", m_timeCount, m_tradeDataIntervalSec);
         packageTradeFile();
@@ -276,10 +284,7 @@ void DataCenter::initDevice()
     m_isSpecieUsable = false;
     long retC = ConnectMachine(bimPort, brcPort, f53Port);
 
-    // TODO:test
-//    retC = 0;
     m_cashboxInitRet = retC;
-
     m_isBanknotesUsable = ((retC & 0x0F0F) == 0);
     m_isSpecieUsable = ((retC & 0x00F0) == 0);
 

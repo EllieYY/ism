@@ -43,7 +43,7 @@ void MainWidget::onBtn(int btnId)
 
 void MainWidget::init()
 {
-//    ui->cardBtn->setDisabled(true);    // 默认关闭，硬件初始化成功之后可以使用
+    ui->cardBtn->setDisabled(true);    // 默认关闭，硬件初始化成功之后可以使用
     ui->cardBtn->setText("票卡处理");
     ui->QRCodeBtn->setText("二维码");
     ui->inquiryBtn->setText("智能问询");
@@ -97,7 +97,9 @@ void MainWidget::secEvent()
 //        m_dataUpdateNum[AFC_ONLINE_STATE_ID] = false;
 //    }
 
-    if (DataCenter::getThis()->getIsReaderUsable()) {
+//    if (DataCenter::getThis()->getIsReaderUsable()) {
         ui->cardBtn->setDisabled(false);
-    }
+//    } else {
+//        ui->cardBtn->setDisabled(true);
+//    }
 }

@@ -21,30 +21,75 @@ CardReadWidget::~CardReadWidget()
 
 void CardReadWidget::readCard(int id)
 {
+    ui->readerInfoLabel->setText("请将卡片正确放置在感应区域内。");
+
     m_ticketWidgetId = id;
+    if (QUERY_DLG == m_ticketWidgetId) {
+        m_infoType = 0;
+    } else if (REREGISTER_DLG == m_ticketWidgetId) {
+        m_infoType = 1;
+    }
+
     onRefundTicket();
+}
+
+
+// 票卡读取状态更新
+void CardReadWidget::updateReadingState(int ret)
+{
+    if (!isVisible()) {
+        return;
+    }
+
+    QString desInfo = "票卡交易信息";
+    if (REREGISTER_DLG == m_ticketWidgetId) {
+        desInfo = "票卡更新信息";
+    }
+
+    if (ret == 0) {
+        QString info = QString("%1读取完成。").arg(desInfo);
+        ui->readerInfoLabel->setText(info);
+
+        emit readOk(m_ticketWidgetId);
+        close();
+    } else {
+        QString errMsg = DataCenter::getThis()->getReaderErrorStr(ret);
+        QString info = QString("%1读取失败[%2]:%3。")
+                .arg(desInfo).arg(ret).arg(errMsg);
+        ui->readerInfoLabel->setText(info);
+        ui->readBtn->setDisabled(false);
+
+        emit doReading(false, m_infoType);
+        MyHelper::ShowMessageBoxInfo(QString("%1，请重新读卡或联系工作人员。")
+                                     .arg(info));
+    }
 }
 
 void CardReadWidget::secEvent()
 {
-    if (!m_isReading) {
-        return;
-    }
+//    if (!m_isReading) {
+//        return;
+//    }
 
-    if (QUERY_DLG == m_ticketWidgetId) {
-        ui->readerInfoLabel->setText("正在读取票卡基本信息……");
-        this->readTransactionInfo();
-    } else if (REREGISTER_DLG == m_ticketWidgetId) {
-        ui->readerInfoLabel->setText("正在读取票卡补登信息……");
-        this->readReregisterInfo();
-    }
+//    ui->readerInfoLabel->setText("正在读卡，请稍后……");
+
+//    if (QUERY_DLG == m_ticketWidgetId) {
+//        ui->readerInfoLabel->setText("正在读取票卡基本信息……");
+//        this->readTransactionInfo();
+//    } else if (REREGISTER_DLG == m_ticketWidgetId) {
+//        ui->readerInfoLabel->setText("正在读取票卡更新信息……");
+//        this->readReregisterInfo();
+//    }
 }
 
 
 void CardReadWidget::init()
 {
+
     m_isReading = false;
+    m_readCount = 0;
     m_ticketWidgetId = QUERY_DLG;
+    m_infoType = 0;
 
     setStyle();
 
@@ -55,6 +100,7 @@ void CardReadWidget::init()
 void CardReadWidget::initReadState()
 {
     m_isReading = false;
+    m_readCount = 0;
     ui->readBtn->setDisabled(false);
 }
 
@@ -72,7 +118,8 @@ void CardReadWidget::setStyle()
 
 void CardReadWidget::onClose()
 {
-    m_isReading = false;
+    emit doReading(false, m_infoType);
+//    m_isReading = false;
     ui->readBtn->setDisabled(false);
     ui->readerInfoLabel->setText("取消读卡。");
     this->close();
@@ -80,7 +127,8 @@ void CardReadWidget::onClose()
 
 void CardReadWidget::onRefundTicket()
 {
-    m_isReading = true;
+    emit doReading(true, m_infoType);
+//    m_isReading = true;
     ui->readBtn->setDisabled(true);
     ui->readerInfoLabel->setText("正在读卡，请稍后……");
 }
@@ -88,16 +136,7 @@ void CardReadWidget::onRefundTicket()
 
 void CardReadWidget::readTransactionInfo()
 {
-    BYTE anti = DataCenter::getThis()->getAntiNo();
-
-    // 票卡信息获取
-    int ret = readTicketInfo(anti);
-    if (ret != 0x00) {
-        ui->readerInfoLabel->setText("票卡信息读取失败");
-        QString errMsg = DataCenter::getThis()->getReaderErrorStr(ret);
-        MyHelper::ShowMessageBoxInfo(QString("票卡信息获取失败[%1]:%2，请尝试重新读卡，或联系工作人员。")
-                                     .arg(ret).arg(errMsg));
-        initReadState();
+    if (readBasicInfo() != 0) {
         return;
     }
 
@@ -107,7 +146,6 @@ void CardReadWidget::readTransactionInfo()
         initReadState();
         ui->readerInfoLabel->setText("票卡读取完成……");
 
-//        delayMSec(500);
         emit readOk(m_ticketWidgetId);
 
         close();
@@ -116,6 +154,7 @@ void CardReadWidget::readTransactionInfo()
 
 
     // 票卡交易历史
+    BYTE anti = DataCenter::getThis()->getAntiNo();
     int hisRet = readHistoryTrade(anti);
     if (hisRet != 0x00) {
         ui->readerInfoLabel->setText("票卡历史交易信息读取失败");
@@ -128,13 +167,23 @@ void CardReadWidget::readTransactionInfo()
 
     initReadState();
     ui->readerInfoLabel->setText("票卡读取完成……");
-
-//    delayMSec(500);
     emit readOk(m_ticketWidgetId);
     close();
 }
 
 void CardReadWidget::readReregisterInfo()
+{
+    if (readBasicInfo() != 0) {
+        return;
+    }
+
+    initReadState();
+    ui->readerInfoLabel->setText("票卡读取完成……");
+    emit readOk(m_ticketWidgetId);
+    close();
+}
+
+int CardReadWidget::readBasicInfo()
 {
     BYTE anti = DataCenter::getThis()->getAntiNo();
 
@@ -145,23 +194,24 @@ void CardReadWidget::readReregisterInfo()
     ret = 0;
     setTestData();
 
-
-    if (ret != 0x00) {
+    if (ret == 0x05 || ret == 0x06) {
+        m_readCount++;
+        if (m_readCount >= 60) {
+            MyHelper::ShowMessageBoxInfo("未找到票卡，请将票卡正确放置在读卡区内。");
+            ui->readerInfoLabel->setText("请确认票卡放置位置，并尝试重新读卡。");
+            initReadState();
+        }
+        return -1;
+    } else if (ret != 0x00) {
         ui->readerInfoLabel->setText("票卡信息读取失败");
         QString errMsg = DataCenter::getThis()->getReaderErrorStr(ret);
         MyHelper::ShowMessageBoxInfo(QString("票卡信息获取失败[%1]:%2，请尝试重新读卡，或联系工作人员。")
                                      .arg(ret).arg(errMsg));
         initReadState();
-        return;
+        return -2;
     }
 
-    initReadState();
-    ui->readerInfoLabel->setText("票卡读取完成……");
-
-//    delayMSec(500);
-
-    emit readOk(m_ticketWidgetId);
-    close();
+    return 0;
 }
 
 
@@ -262,12 +312,14 @@ void CardReadWidget::setTestData()
                 0x85, type, "30010088562007", "20200901", "20231001", 1, 1, 500);
     ticket->setIsAllowOctPay(false);
     ticket->setIsAllowUpdate(true);
-    ticket->setUpdateType(FARE_EX);
+    ticket->setUpdateType(FARE_EN);
     ticket->setEnStationCode("0203");
     ticket->setEnTime("20211115212305");
     ticket->setExStationCode("0306");
     ticket->setExTime("20211115212606");
-    ticket->setUpdateAmount(3);
+    ticket->setUpdateAmount(0);
+    ticket->setIcType(UL_CARD);
+    ticket->setBalance(5);
 
     DataCenter::getThis()->setTicketBasicInfo(ticket);
 

@@ -3,6 +3,8 @@
 #include "WidgetMng.h"
 #include "CommonHead.h"
 #include "CardReadWidget.h"
+#include "DeviceManager.h"
+
 
 TicketMainWidget::TicketMainWidget(QWidget *parent) :
     WidgetBase(parent),
@@ -23,6 +25,14 @@ void TicketMainWidget::secEvent()
     if (m_cardReadWidget->isVisible()) {
         m_cardReadWidget->secEvent();
     }
+}
+
+void TicketMainWidget::setDeviceManager(DeviceManager *manager)
+{
+    connect(manager, &DeviceManager::ticketRead,
+            m_cardReadWidget, &CardReadWidget::updateReadingState);
+    connect(m_cardReadWidget, &CardReadWidget::doReading,
+            manager, &DeviceManager::setOnReading);
 }
 
 const int  TICKET_WIDGET_NUM = 2;
@@ -51,6 +61,15 @@ void TicketMainWidget::onDataOk(int widgetId)
     }
     WidgetMng::getThis()->showWidget(widgetId);
 }
+
+//void TicketMainWidget::setCardReadWidget(CardReadWidget *cardReadWidget)
+//{
+//    m_cardReadWidget = cardReadWidget;
+//    connect(m_cardReadWidget, &CardReadWidget::readOk,
+//            this, &TicketMainWidget::onDataOk);
+
+//}
+
 
 void TicketMainWidget::init()
 {

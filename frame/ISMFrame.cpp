@@ -47,6 +47,7 @@
 #include "DeviceManager.h"
 #include "ReaderManager.h"
 #include "CompensationFareWidget.h"
+#include "CardReadWidget.h"
 
 ISMFrame::ISMFrame(QWidget *parent) :
     QFrame(parent),
@@ -128,7 +129,7 @@ void ISMFrame::initTimer()
     m_oldtime = QDateTime::currentDateTime();
     m_time	  = new QTimer(this);
     connect(m_time, &QTimer::timeout, this, &ISMFrame::onTimer);
-    m_time->start(500);
+    m_time->start(1000);
 }
 
 void ISMFrame::onTimer()
@@ -137,6 +138,8 @@ void ISMFrame::onTimer()
 //    bool timeRest = DataCenter::getThis()->getTimeReset();
     QDateTime time = QDateTime::currentDateTime();
     long interval = m_oldtime.secsTo(time);
+
+//    qDebug() << "onTimer: " << time.toString();
 
 //    QString info = QString("curTime=%1, oldTime=%2, interval=%3")
 //            .arg(time.toString("HHmmss")
@@ -171,8 +174,11 @@ void ISMFrame::secEvent()
 void ISMFrame::initWgt()
 {
     //# 页面管理员
-    new WidgetMng();
-    DataCenter::getThis();
+    WidgetMng* mng = new WidgetMng();
+
+    // 控制读写器停止工作
+    connect(mng, &WidgetMng::stopReadingTicket,
+            m_deviceManager, &DeviceManager::setOnReading);
 
     // 现金缴费窗口：窗口生成线程要跟设备管理线程属于同一个，否则信号槽连接不通
     m_fareWidget = new CompensationFareWidget();
@@ -200,7 +206,12 @@ void ISMFrame::initWgt()
 //    connect(testWidget, &TestWidget::onReader, m_readerMng, &ReaderManager::onStartDoingSomething);
 
     registerWidget(layoutWnd, new MainWidget(this), MAIN_DLG, true);
-    registerWidget(layoutWnd, new TicketMainWidget(this), CARD_DLG, false);
+
+    TicketMainWidget* ticketMainWgt = new TicketMainWidget(this);
+//    ticketMainWgt->setCardReadWidget(m_cardReadWidget);
+    ticketMainWgt->setDeviceManager(m_deviceManager);
+    registerWidget(layoutWnd, ticketMainWgt, CARD_DLG, false);
+
     registerWidget(layoutWnd, new InquiryMainWidget(this), INQUIRY_DLG, false);      // 2021-10-20
     registerWidget(layoutWnd, new InfoMainWidget(this), INFO_DLG, false);
     registerWidget(layoutWnd, new GuideMainWidget(this), GUID_DLG, false);
