@@ -469,6 +469,12 @@ border-radius: 3px;
                </item>
                <item row="3" column="5">
                 <widget class="QPushButton" name="calcFareBtn">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
                  <property name="text">
                   <string>费用计算</string>
                  </property>

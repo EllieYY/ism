@@ -28,9 +28,9 @@ void CompensationFareWidget::initShow(int difference, uchar devState)
 
 
     //TODO: test code
-    emit supplementaryOk(true);
-    close();
-    return;
+//    emit supplementaryOk(true);
+//    close();
+//    return;
 
 
     long ret = DataCenter::getThis()->getCashboxInitRet();

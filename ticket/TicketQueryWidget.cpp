@@ -109,6 +109,7 @@ void TicketQueryWidget::setStyle()
     ui->tableWidget->setFrameShape(QFrame::NoFrame);
     ui->tableWidget->verticalHeader()->setVisible(false);                 // 列表头不可见
     ui->tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);  // 表格不可编辑
+    ui->tableWidget->setSelectionMode(QAbstractItemView::SingleSelection); //设置只能选择一行，不能多行选中
 //    ui->tableWidget->setAlternatingRowColors(true);
 
 
@@ -120,6 +121,7 @@ void TicketQueryWidget::setStyle()
     ui->tableWidget_2->setFrameShape(QFrame::NoFrame);
     ui->tableWidget_2->verticalHeader()->setVisible(false);                 // 列表头不可见
     ui->tableWidget_2->setEditTriggers(QAbstractItemView::NoEditTriggers);  // 表格不可编辑
+    ui->tableWidget_2->setSelectionMode(QAbstractItemView::SingleSelection); //设置只能选择一行，不能多行选中
     ui->tableWidget_2->setAlternatingRowColors(true);
     ui->tableWidget_2->horizontalHeader()->setStyleSheet(
                 "QHeaderView::section{background: #C1EAD8;font-size: 28px;color: #09262A;}");

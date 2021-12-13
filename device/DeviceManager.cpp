@@ -433,7 +433,7 @@ void DeviceManager::setTestData()
                 0x85, type, "30010088562007", "20200901", "20231001", 1, 1, 500);
     ticket->setIsAllowOctPay(false);
     ticket->setIsAllowUpdate(true);
-    ticket->setUpdateType(FARE_EN);
+    ticket->setUpdateType(FARE_EX);
     ticket->setEnStationCode("0203");
     ticket->setEnTime("20211115212305");
     ticket->setExStationCode("0306");

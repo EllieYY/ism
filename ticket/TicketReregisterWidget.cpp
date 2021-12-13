@@ -113,11 +113,10 @@ bool TicketReregisterWidget::showData()
             m_enStationCode = DataCenter::getThis()->getStationCode();
 
             fareOk = true;
-            // TODO:确认-此时费用应该为0
         } else {
             ui->selectBtn2->setDisabled(false);
             ui->lineEdit2->setText("");
-            ui->lineEdit6->setText("1");   // TODO:delete
+//            ui->lineEdit6->setText("1");   // TODO:delete
             ui->textTips->setText("请补充进站信息。");
             fareOk = false;
         }
@@ -131,7 +130,7 @@ bool TicketReregisterWidget::showData()
     if (m_updateType == FARE_EX ) {
         ui->selectBtn3->setDisabled(false);
         ui->lineEdit4->setText("");
-        ui->lineEdit6->setText("1");  // TODO:delete
+        ui->lineEdit6->setText("");  // TODO:delete
         ui->textTips->setText("请补充出站信息。");
         fareOk = false;
     } else {

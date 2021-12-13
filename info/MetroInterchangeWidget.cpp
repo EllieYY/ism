@@ -104,6 +104,8 @@ void MetroInterchangeWidget::setStyle()
 
     ui->tableWidget->verticalHeader()->setVisible(false);                 // 列表头不可见
     ui->tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);  // 表格不可编辑
+    ui->tableWidget->setSelectionMode(QAbstractItemView::NoSelection); //设置只能选择一行，不能多行选中
+    ui->tableWidget->setFocusPolicy(Qt::NoFocus);    // 虚线框取消
 
     ui->tableWidget->setAlternatingRowColors(true);
 
