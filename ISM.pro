@@ -16,6 +16,7 @@ DESTDIR = ../ISM_BIN/
 #OBJECTS_DIR += $$PWD/tmp
 #DEPENDPATH += . forms include qrc sources
 
+RC_FILE += res.rc
 
 # 定义 Log4Qt 源码根目录
 LOG4QT_ROOT_PATH = $$PWD/../Log4Qt-master

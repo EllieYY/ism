@@ -37,6 +37,10 @@
 #include <QTableWidgetItem>
 
 
+#define PARAM_FILE_PATH "sc/parameter"
+#define SOFT_FILE_PATH "sc/soft"
+
+
 typedef enum
 {
     MAIN_DLG,                   //# 主界面

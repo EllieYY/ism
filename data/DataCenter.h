@@ -197,10 +197,6 @@ public:
 
     BasicInfo *getBasicInfo() const;
 
-    // 解决时间同步，页面定时器失效标识
-    bool getTimeReset() const;
-    void setTimeReset(bool timeReset);
-
 private:
     long m_hrtCnt[HEART_NUM];                   // 心跳计数
     int m_afcNetState;                          // AFC网络状态 0-在线 1-离线
@@ -283,9 +279,6 @@ private:
     int taskId;                     // 任务Id
     int m_curParamTaskId;           // 用来记录参数文件下载的任务Id
     int m_curSoftwareTaskId;        // 记录软件程序下载的任务id
-
-    // 系统时间设置
-    bool m_timeReset;       // 时间重置标识
 
 signals:
 

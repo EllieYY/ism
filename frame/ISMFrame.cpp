@@ -129,26 +129,25 @@ void ISMFrame::initTimer()
     m_oldtime = QDateTime::currentDateTime();
     m_time	  = new QTimer(this);
     connect(m_time, &QTimer::timeout, this, &ISMFrame::onTimer);
-    m_time->start(1000);
+    m_time->start(200);
 }
 
+
+// 时间取绝对值，考虑时间同步时，会设置早于当前时间的时间值
 void ISMFrame::onTimer()
 {
-//    qDebug() << "onTimer";
 //    bool timeRest = DataCenter::getThis()->getTimeReset();
     QDateTime time = QDateTime::currentDateTime();
-    long interval = m_oldtime.secsTo(time);
-
-//    qDebug() << "onTimer: " << time.toString();
+    long interval = abs(m_oldtime.secsTo(time));
 
 //    QString info = QString("curTime=%1, oldTime=%2, interval=%3")
-//            .arg(time.toString("HHmmss")
-//                 .arg(m_oldtime.toString("HHmmss"))
-//                 .arg(interval));
+//            .arg(time.toString("yyyy-MM-dd HH:mm:ss"))
+//            .arg(m_oldtime.toString("yyyy-MM-dd HH:mm:ss"))
+//            .arg(interval);
 //    qDebug() << "[ontimer] " << info;
+
     if (interval > 0)
     {
-//        qDebug() << "ISMFrame::onTimer";
         m_oldtime = time;
         secEvent();
     }

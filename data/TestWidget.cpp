@@ -42,6 +42,8 @@ void TestWidget::init()
 
 void TestWidget::secEvent()
 {
+    QDateTime time = QDateTime::currentDateTime();
+    ui->lineEditTime->setText(time.toString());
 
 }
 
@@ -495,3 +497,26 @@ void TestWidget::on_pushButton_pfile_clicked()
 }
 
 
+// 时间设置
+void TestWidget::on_timeBtn_clicked()
+{
+    QDateTime datetime = QDateTime::currentDateTime();
+    datetime = datetime.addDays(-1);
+
+    // 时间同步
+    SYSTEMTIME   st;
+    GetLocalTime(&st);
+
+    QDate date = datetime.date();
+    st.wYear = date.year();
+    st.wMonth = date.month();
+    st.wDay = date.day();
+
+    QTime time = datetime.time();
+    st.wHour = time.hour();
+    st.wMinute = time.minute();
+    st.wSecond = time.second();
+
+    SetLocalTime(&st);
+
+}

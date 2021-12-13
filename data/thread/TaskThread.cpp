@@ -71,7 +71,7 @@ void TaskThread::run()
 
             // 执行任务
             task->doWork();
-            qDebug() << "Task Done Now!";
+//            qDebug() << "Task Done Now!";
             emit taskDone(task->taskId());
             // 执行完成将其删除
             delete task; task = nullptr;
@@ -82,7 +82,7 @@ void TaskThread::run()
         {
             QMutexLocker locker(&mutex);
             if (taskQueue.isEmpty())
-                qDebug() << "All Task Is Done Now!";
+//                qDebug() << "All Task Is Done Now!";
                 emit allTaskDone();
         }
     }

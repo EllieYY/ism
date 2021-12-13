@@ -34,6 +34,7 @@
 #include "AFCHeartTask.h"
 
 
+
 static int HRT_NUM = 5;
 DataCenter* DataCenter::m_pInstance = NULL;
 DataCenter::DataCenter(QObject *parent) : QObject(parent)
@@ -113,7 +114,7 @@ void DataCenter::secEvent()
     // 交易文件定时上传
     bool fileTriggered = false;
     // TODO:修改使用配置参数中的时间间隔
-    if ((m_timeCount % 10) == 0 || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
+    if ((m_timeCount % 10) == m_tradeDataIntervalSec || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
         fileTriggered = true;
         logger()->info("交易文件定时上送：%1, %2", m_timeCount, m_tradeDataIntervalSec);
         packageTradeFile();
@@ -219,9 +220,6 @@ void DataCenter::initData()
     // 参数版本信息获取
     initParamVersion();
 
-    // 时间重置标识
-    m_timeReset = false;
-
     // 心跳
     for (int i = 0; i < HRT_NUM; i++) {
         m_hrtCnt[i] = 0;
@@ -323,7 +321,7 @@ void DataCenter::initReaderErrCode()
 void DataCenter::initParamVersion()
 {
     m_paramVersionMap.clear();
-    QString path = QDir::currentPath() + QDir::separator() + "bom-param" + QDir::separator();
+    QString path = QDir::currentPath() + QDir::separator() + PARAM_FILE_PATH + QDir::separator();
     QList<BomParamVersionInfo*> list = SettingCenter::getThis()->getParamVersionInfo(path + "version.json");
     for (BomParamVersionInfo* info: list) {
         long type = info->type();
@@ -350,7 +348,7 @@ void DataCenter::initParamVersion()
 // 使用待更新的参数文件:更新失败的参数重新写入待更新文件记录
 void DataCenter::updateParamVersion()
 {
-    QString path = QDir::currentPath() + QDir::separator() + "bom-param" + QDir::separator();
+    QString path = QDir::currentPath() + QDir::separator() + PARAM_FILE_PATH + QDir::separator();
     QList<BomParamVersionInfo*> list = SettingCenter::getThis()->getParamVersionInfo(path + "updateVersion.json");
     QList<BomParamVersionInfo*> updateList;
     for (BomParamVersionInfo* info: list) {
@@ -1122,7 +1120,7 @@ void DataCenter::onSoftwareUpdate(QString fileName)
 {
     QString remotePath = m_basicInfo->ftpUrl().toString() + "/Soft/";
     QString localPath = QDir::currentPath() + QDir::separator() +
-            "bom-param" + QDir::separator();
+            SOFT_FILE_PATH + QDir::separator();
 
     m_curSoftwareTaskId = taskId++;
     FtpDownloadTask* task = new FtpDownloadTask(m_curSoftwareTaskId);
@@ -1140,7 +1138,7 @@ void DataCenter::onParamUpdate(QList<int> typeList, int type)
 
     // TODO:将来参数版本，
     QString remotePath = m_basicInfo->ftpUrl().toString() + "/Parameter/Cur/";
-    QString localPath = QDir::currentPath() + QDir::separator() + "bom-param" + QDir::separator();
+    QString localPath = QDir::currentPath() + QDir::separator() + PARAM_FILE_PATH + QDir::separator();
 
     // 参数限制
     QHash<int,long> filter = getParamFileFilter(typeList);
@@ -1370,19 +1368,6 @@ BasicInfo *DataCenter::getBasicInfo() const
 {
     return m_basicInfo;
 }
-
-bool DataCenter::getTimeReset() const
-{
-    return m_timeReset;
-}
-
-void DataCenter::setTimeReset(bool timeReset)
-{
-    m_timeReset = timeReset;
-}
-
-
-
 
 
 // 线路运营时间表

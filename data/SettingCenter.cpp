@@ -23,6 +23,7 @@
 #include "BasicInfo.h"
 #include "BomParamVersionInfo.h"
 #include "TradeFileInfo.h"
+#include "CommonHead.h"
 
 SettingCenter* SettingCenter::m_pInstance = NULL;
 SettingCenter::SettingCenter(QObject *parent) : QObject(parent)
@@ -704,7 +705,7 @@ void SettingCenter::saveParamVersionInfo(QList<BomParamVersionInfo *> list, QStr
 
     rootObject.insert("versions", jsonArray);
 
-    QString filePath = QString("bom-param/%1").arg(fileName);
+    QString filePath = QString("%1/%2").arg(PARAM_FILE_PATH).arg(fileName);
     saveJsonFile(rootObject, filePath);
 }
 
@@ -773,13 +774,13 @@ void SettingCenter::saveDownloadFailedFiles(QList<QString> list)
 
     rootObject.insert("files", jsonArray);
 
-    QString filePath = QString("bom-param/failedParams.json");
+    QString filePath = QString("%1/failedParams.json").arg(PARAM_FILE_PATH);
     saveJsonFile(rootObject, filePath);
 }
 
 QList<QString> SettingCenter::getDownloadFailedFiles()
 {
-    QString filePath = QDir::currentPath() + QDir::separator() + "bom-param/failedParams.json";
+    QString filePath = QDir::currentPath() + QDir::separator() + QString(PARAM_FILE_PATH) + "/failedParams.json";
     QList<QString> list;
     QFile file(filePath);
     if(!file.open(QIODevice::ReadOnly | QIODevice::Text))

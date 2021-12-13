@@ -52,6 +52,8 @@ private slots:
     void on_pushButton_fileList_clicked();
     void showFileList(QString fileName);
 
+    void on_timeBtn_clicked();
+
 private:
     void init();
     void secEvent();

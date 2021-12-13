@@ -44,7 +44,6 @@ void AFCTaskThread::run()
 
     // 开始服务
     DataCenter::getThis()->deviceState2afc(DEV_SERVICE_ON);
-//    DataCenter::getThis()->param2afc();
 
     while(1) {
         if (!m_9002Ok && DataCenter::getThis()->getIsSamOk()) {
@@ -168,13 +167,11 @@ void AFCTaskThread::make9005Resp(uchar *body)
     QString deviceIdStr = DataCenter::getThis()->getDeviceId();
     QString versionStr = DataCenter::getThis()->getReaderVersion();
 
-    logger()->info("-----1#");
     AFC_9005_PKG_BODY_R param = {0};
     param.AppType = 0x01;         // 读卡器
     MyHelper::hexStrToByte(deviceIdStr, 4, param.PartID);  // 部件ID
     MyHelper::hexStrToByte(versionStr, 4, param.AppVer);   // 读写器版本号
 
-    logger()->info("-----2#");
     QList<AFC_9005_PKG_BODY_R> paramList;
     paramList.append(param);
 
@@ -188,10 +185,7 @@ void AFCTaskThread::make9005Resp(uchar *body)
         memmove(p + index, &paramList.at(i), paramSize);
     }
 
-    logger()->info("before [SoftVersionQuery]");
     int ret = SoftVersionQuery(p, paramNum);
-
-    logger()->info("after [SoftVersionQuery]");
 
     QByteArray paramArray;
     paramArray.append((char*)&param, sizeof(AFC_9005_PKG_BODY_R));
@@ -301,10 +295,8 @@ void AFCTaskThread::parse9001(uchar *msg)
     st.wMinute = time.minute();
     st.wSecond = time.second();
 
-    // TODO：重设置时间之后，定时器有问题，待修改
-//    SetLocalTime(&st);
+    SetLocalTime(&st);
 
-    DataCenter::getThis()->setTimeReset(true);
     // 日志记录
     QString msgStr = array.toHex().toUpper();
     logger()->info("[9001h]msg=%1, datetime=%2", msgStr, timeStr);
