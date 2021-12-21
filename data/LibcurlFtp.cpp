@@ -161,8 +161,6 @@ bool LibcurlFtp::paramFileFilter(QString fileName, QHash<int, long> fileFilterIn
     return false;
 }
 
-
-
 /* 文件下载 */
 static size_t write_callback(void *buffer, size_t size, size_t nmemb, void *stream)
 {
@@ -176,7 +174,11 @@ static size_t write_callback(void *buffer, size_t size, size_t nmemb, void *stre
         }
     }
 
-    qDebug() << "filename:" << out->filename;
+//    qDebug() << "filename:" << out->filename;
+//    qDebug() << "size=" << size;
+//    qDebug() << "nmemb=" << nmemb;
+//    NUM += nmemb;
+//    qDebug() << NUM;
     return fwrite(buffer, size, nmemb, out->stream);
 }
 

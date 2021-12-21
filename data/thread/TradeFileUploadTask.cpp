@@ -11,6 +11,7 @@
 
 TradeFileUploadTask::TradeFileUploadTask(int taskId) : m_id(taskId)
 {
+    m_result = false;
     m_fileList.clear();
     m_ftp = new LibcurlFtp();
 }
@@ -131,4 +132,9 @@ QString TradeFileUploadTask::message()
 int TradeFileUploadTask::taskId()
 {
     return m_id;
+}
+
+bool TradeFileUploadTask::result()
+{
+    return m_result;
 }

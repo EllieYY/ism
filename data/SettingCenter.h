@@ -12,6 +12,7 @@ class InterchangeInfo;
 class BasicInfo;
 class BomParamVersionInfo;
 class TradeFileInfo;
+class ReaderSoftFileInfo;
 class SettingCenter : public QObject
 {
     Q_OBJECT
@@ -55,6 +56,10 @@ public:
     // 下载失败的参数文件信息
     void saveDownloadFailedFiles(QList<QString> fileNames);
     QList<QString> getDownloadFailedFiles();
+
+    // 读写器程序文件信息
+    void saveReaderSoftInfo(ReaderSoftFileInfo* info);
+    ReaderSoftFileInfo* getReaderSoftInfo();
 
 private:
     QList<InterchangeInfo*> matchInterchangeStations(QList<InterchangeInfo*> stations, QString lineCode);

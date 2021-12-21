@@ -45,7 +45,6 @@
 #include <QDebug>
 
 #include "DeviceManager.h"
-#include "ReaderManager.h"
 #include "CompensationFareWidget.h"
 #include "CardReadWidget.h"
 
@@ -54,8 +53,9 @@ ISMFrame::ISMFrame(QWidget *parent) :
     ui(new Ui::ISMFrame)
 {
     //设置窗体标题栏隐藏
-//    this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint | Qt::WindowMinMaxButtonsHint);
-//    this->showFullScreen();
+    this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint | Qt::WindowMinMaxButtonsHint);
+    this->showFullScreen();
+//    this->showMaximized();
 //    myHelper::FormInCenter(this);
 
     ui->setupUi(this);
@@ -96,7 +96,10 @@ void ISMFrame::init()
     qDebug() << "main thread: " <<  QThread::currentThreadId();
 
     // 数据中心初始化
-    DataCenter::getThis()->init();
+    DataCenter* data = new DataCenter(this);
+//    DataCenter* data = DataCenter::getThis();
+    data->init();
+    connect(data, &DataCenter::sigSerivceOff, this, &ISMFrame::onServiceOff);
 
     // 设备初始化
     initDevice();
@@ -108,6 +111,11 @@ void ISMFrame::init()
     initTimer();
 }
 
+void ISMFrame::initShow()
+{
+    this->showMaximized();
+}
+
 void ISMFrame::initDevice()
 {
     // 设备管理器初始化
@@ -115,6 +123,7 @@ void ISMFrame::initDevice()
 
     m_deviceManager = new DeviceManager();
     connect(this, &ISMFrame::initDeviceInThread, m_deviceManager, &DeviceManager::initDevice);
+    connect(this, &ISMFrame::deviceUpdate, m_deviceManager, &DeviceManager::onDeviceUpdate);
     m_deviceManager->startDeviceTimer();
 
     m_deviceManager->moveToThread(m_deviceThread);
@@ -136,15 +145,8 @@ void ISMFrame::initTimer()
 // 时间取绝对值，考虑时间同步时，会设置早于当前时间的时间值
 void ISMFrame::onTimer()
 {
-//    bool timeRest = DataCenter::getThis()->getTimeReset();
     QDateTime time = QDateTime::currentDateTime();
     long interval = abs(m_oldtime.secsTo(time));
-
-//    QString info = QString("curTime=%1, oldTime=%2, interval=%3")
-//            .arg(time.toString("yyyy-MM-dd HH:mm:ss"))
-//            .arg(m_oldtime.toString("yyyy-MM-dd HH:mm:ss"))
-//            .arg(interval);
-//    qDebug() << "[ontimer] " << info;
 
     if (interval > 0)
     {
@@ -156,18 +158,12 @@ void ISMFrame::onTimer()
 //# 秒驱动
 void ISMFrame::secEvent()
 {
-//    qDebug() << "ISMFrame::secEvent";
-    // TODO:未签到时，这里加控制
-
     StatusBar::getThis()->secEvent();
     TitleBar::getThis()->secEvent();
 
     WidgetMng::getThis()->secEvent();    // 子窗口的秒驱动
 
     DataCenter::getThis()->secEvent();
-
-    // TODO:定时自动签退
-
 }
 
 void ISMFrame::initWgt()
@@ -255,7 +251,7 @@ void ISMFrame::initWgt()
     statusBar->show();
 
     m_loginDlg = new LoginDlg();
-    connect(m_loginDlg, &LoginDlg::loginOk, this, &ISMFrame::show);
+    connect(m_loginDlg, &LoginDlg::loginOk, this, &ISMFrame::initShow);
     m_loginDlg->hide();
 }
 
@@ -275,4 +271,29 @@ void ISMFrame::registerWidget(QHBoxLayout *layout, WidgetBase *widget, int widge
     WidgetMng::getThis()->insertWidget(widget);
 
     layout->addWidget(widget);
+}
+
+
+// 运营结束相关处理
+void ISMFrame::onServiceOff()
+{
+    qDebug() << "onServiceOff";
+    // 运营日结束时，自动签退 -- 只执行一次
+    bool isLogin = DataCenter::getThis()->getIsLogin();
+    bool isServiceOff = DataCenter::getThis()->getServiceOff();
+    if (isLogin && isServiceOff) {
+        // 自动签退
+        if (DataCenter::getThis()->autoLogout()) {
+            // 显示签到页面
+            login();
+        }
+    }
+
+    // 设备参数和程序升级并重新初始化
+    if (m_deviceManager != NULL) {
+        emit deviceUpdate();
+    }
+
+    //TODO：ISM后台数据拉取
+
 }

@@ -25,7 +25,7 @@ protected:
 // 定义一些与主线程通信的信号
 signals:
     void taskStart(const QString &message);
-    void taskDone(int taskId);
+    void taskDone(int taskId, bool success = true);
     void allTaskDone();
 
 private:
@@ -33,6 +33,7 @@ private:
     QWaitCondition taskAdded; // 任务等待条件
     QMutex mutex;             //
     CTask *EndTask;           // 结束任务
+
 
 };
 

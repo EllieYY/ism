@@ -18,6 +18,7 @@ public:
     int doWork() override;
     QString message() override;
     int taskId() override;
+    bool result() override;
 
 private:
     LibcurlFtp* m_ftp;
@@ -31,6 +32,7 @@ private:
     bool m_isForceUpdate;     // 是否是强制同步
 
     int m_id;
+    bool m_result;
 };
 
 #endif // FTPDOWNLOADTASK_H

@@ -7,6 +7,8 @@
 #include "DataCenter.h"
 #include "TicketBasicInfo.h"
 #include "TransactionInfo.h"
+#include "SettingCenter.h"
+#include "ReaderSoftFileInfo.h"
 
 #define RETRY_COUNT 3
 #define MIN_5 5*60
@@ -43,18 +45,20 @@ DeviceManager::~DeviceManager()
 void DeviceManager::initDevice()
 {
     qDebug() << "initDevice in " << QThread::currentThreadId();
-
-    BasicInfo* basicInfo = DataCenter::getThis()->getBasicInfo();
-    int bimPort = basicInfo->bimPort();
-    int f53Port = basicInfo->f53Port();
-    int brcPort = basicInfo->brcPort();
-
-    initCashbox(bimPort, brcPort, f53Port);
+    initCashbox();
 
     // 初始化读写器
-    int readerPort = basicInfo->readerPort();
-    QString deviceIdStr = DataCenter::getThis()->getDeviceId();
-    initReader(readerPort, deviceIdStr);
+    initReader();
+}
+
+// 设备更新
+void DeviceManager::onDeviceUpdate()
+{
+    // 软件版本升级
+    readerSoftUpdate();
+
+    // 参数升级
+    readerParamUpdate();
 
 }
 
@@ -74,12 +78,11 @@ void DeviceManager::startDeviceTimer()
 
 void DeviceManager::timerEvent(QTimerEvent *event)
 {
-    // 投币检测
-    if (event->timerId() == m_checkingTimerId) {
+    if (event->timerId() == m_checkingTimerId) {    // 投币检测
         cashboxChecking();
-    } else if (event->timerId() == m_readingTimerId) {
+    } else if (event->timerId() == m_readingTimerId) {   // 票卡读取
         ticketReading();
-    } else if (event->timerId() == m_hearTimerId) {
+    } else if (event->timerId() == m_hearTimerId) {  // 设备心跳
         hearChecking();
     }
 }
@@ -312,9 +315,13 @@ uchar DeviceManager::readHistoryTrade(uchar anti)
     return hisRet;
 }
 
-// 0 - 不可用   1 - 初始化成功
-void DeviceManager::initReader(int port, QString deviceIdStr)
+// 0 - 初始化成功
+void DeviceManager::initReader()
 {
+    BasicInfo* basicInfo = DataCenter::getThis()->getBasicInfo();
+    int port = basicInfo->readerPort();
+    QString deviceIdStr = DataCenter::getThis()->getDeviceId();
+
     QByteArray devByteArray = MyHelper::hexStrToByte(deviceIdStr);
     BYTE* deviceId = (BYTE*)devByteArray.data();
 
@@ -328,7 +335,7 @@ void DeviceManager::initReader(int port, QString deviceIdStr)
             BYTE producter = 0;
             initRet = readerInit(deviceId, producter);
             if (initRet == 0) {
-                m_rwState = 1;
+                m_rwState = 0;
                 readReaderVersion();
                 readSamInfo();
                 break;
@@ -342,9 +349,14 @@ void DeviceManager::initReader(int port, QString deviceIdStr)
 }
 
 
-// 0 - 不可用   1 - 初始化成功  2 - 在线
-void DeviceManager::initCashbox(int portBanknotes, int portCoin, int portBanknoteRe)
+// 0 - 初始化成功  2 - 在线
+void DeviceManager::initCashbox()
 {
+    BasicInfo* basicInfo = DataCenter::getThis()->getBasicInfo();
+    int portBanknotes = basicInfo->bimPort();
+    int portCoin = basicInfo->brcPort();
+    int portBanknoteRe = basicInfo->f53Port();
+
     int tryTime = 0;
     while (tryTime++ < RETRY_COUNT) {
         // 端口：纸币、硬币、纸币找零器
@@ -415,6 +427,45 @@ void DeviceManager::readReaderVersion()
 
     logger()->info("[getVersion]=%1, version=%2", retVersion, versionStr);
     DataCenter::getThis()->setReaderVersion(versionStr);
+}
+
+// 读写器程序升级 --- 升级完成之后会自动重启，
+void DeviceManager::readerSoftUpdate()
+{
+    // 升级之前先限制读写器功能的使用
+    DataCenter::getThis()->setReaderState(-1);
+
+    ReaderSoftFileInfo* info = SettingCenter::getThis()->getReaderSoftInfo();
+    // 无需升级
+    if (info == NULL || !info->getFileReady() || info->getHasUpdated()) {
+        DataCenter::getThis()->setReaderState(0);
+        return;
+    }
+
+    QString fileName = info->getFileName();
+    QString filePath = QDir::currentPath() + QDir::separator() + QString(SOFT_FILE_PATH) + QDir::separator() + fileName;
+
+    QByteArray nameArray = fileName.toLatin1();
+    char* nameStr = nameArray.data();
+    QByteArray pathArray = filePath.toLatin1();
+    char* pathStr = pathArray.data();
+
+    int tryTime = 0;
+    while (tryTime++ < RETRY_COUNT) {
+        int ret = fileDownload(pathStr, nameStr);
+        logger()->info("读写器程序升级[fileDownload]={%1}， filePath={%2}",
+                       ret, filePath);
+        if (ret == 0) {
+            break;
+        }
+    }
+}
+
+
+// 读写器参数更新
+void DeviceManager::readerParamUpdate()
+{
+
 }
 
 void DeviceManager::setOnReading(bool onReading, int type)

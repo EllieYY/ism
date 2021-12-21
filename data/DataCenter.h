@@ -25,6 +25,7 @@ class OperatorInfo;
 class TaskThread;
 class BomParamVersionInfo;
 class TradeFileInfo;
+class ReaderSoftFileInfo;
 
 // 各节点心跳ID
 #define HEART_NUM 5
@@ -139,8 +140,9 @@ public:
     // 签到、签退信息记录
     LoginInfo *getLoginInfo() const;
     void setLoginInfo(LoginInfo *loginInfo);
-    void setLoginData(QString user, QString pwd);
+    bool setLoginData(QString user, QString pwd);
     bool setLogoutData(QString user, QString pwd);
+    bool autoLogout();     // 自动签退
     bool localAuthentication(QString user, QString pwd);
     QString getOperatorId();
     bool isValidUser(QString userName, QString pwd);    // 使用参数文件定义内容进行鉴权
@@ -151,8 +153,8 @@ public:
     QHash<int,long> getParamFileFilter(QList<int> typeList);    // 参数文件更新筛选
 
     void uploadTradeFile(QString filePath, QString fileName, QByteArray md5Arr, int type);  // 交易文件上传:本地文件路径、文件名称、md5
-    void ftpTaskFinished(int taskId);     // 文件上传任务完成
-    void ftpAllTaskFinished();            // 文件上传任务完成
+    void taskFinished(int taskId, bool success = true);     // 任务完成
+    void allTaskFinished();            // 任务完成
 
     /* ---- 交易文件相关 ---------------------------*/
     void addTradeFileInfo(QString fileName);   // 暂存交易文件
@@ -167,6 +169,8 @@ private:
     void closeDevice();
     void initReaderErrCode();           // 票卡分析错误码
 
+    int getTaskId();
+
 public:
     // 参数文件解析
     void initParamVersion();
@@ -177,6 +181,7 @@ public:
     int parseParam1004(QString filePath);
     int parseParam2002(QString filePath);
     int parseParam2004(QString filePath);
+    int parseParam2005(QString filePath);
     void param2afc(int paramType, long oldVersion, long newVersion);     //4001 参数上报
 
 public:
@@ -196,6 +201,12 @@ public:
     BYTE getDeviceState();
 
     BasicInfo *getBasicInfo() const;
+
+    long getServiceStartTime() const;
+    long getServiceEndTime() const;
+
+    bool getIsLogin() const;
+    bool getServiceOff() const;
 
 private:
     long m_hrtCnt[HEART_NUM];                   // 心跳计数
@@ -221,9 +232,11 @@ private:
     long m_tradeDataIntervalSec;            //1001： 交易信息上传时间间隔
     long m_tradeDataCountLT;                //1001： 交易数量上传下限，超过下限即可上传
     long m_timeCount;               // 定时上传时间计数
-    QHash<int, QString> m_ticketCodeMap;    //1004：票卡类型对应关系 <code, chName>
+    QHash<int, QString> m_ticketCodeMap;    //1004： 票卡类型对应关系 <code, chName>
     int m_maxCountForLoginFail;             //2002： 连续登录失败最大次数 -- 暂时不用
     QHash<QString, OperatorInfo*> m_operatorMap;  // 2004：操作员登录信息
+    long m_serviceStartTime;                //2005： 运营开始时间：距运营日0点的秒数   -- 对应去修改m_serviceOff
+    long m_serviceEndTime;                  //2005： 运营开始时间：距运营日0点的秒数   -- 对应去修改m_serviceOff
 
     // 交易文件相关
     TradeFileInfo* m_tradeFileInfo;     // 交易文件信息记录
@@ -231,7 +244,10 @@ private:
     int m_numCount;                     // 交易文件个数计数
 
     /* ---- FTP相关 ----------------------*/
-    QUrl m_ftpUrl;                  // 文件服务器连接信息
+    QUrl m_ftpUrl;                      // 文件服务器连接信息
+
+    /* ---- 读写器程序更新 ----------------*/
+    ReaderSoftFileInfo* m_readerSoftInfo;     // 读写器程序更新信息
 
     //3001报文 设备状态
     //    0	开(1)/关(0)
@@ -245,6 +261,8 @@ private:
     bool m_isTest;      // 测试状态
     bool m_serviceOff;  // 服务状态
     bool m_isLogin;     // 是否登录
+
+    bool m_hasAutoLogout;    // 控制自动签退
 
     //2000 降级模式通知
     //0x00    Bit 0	紧急模式            1：生效，0:无效
@@ -281,6 +299,7 @@ private:
     int m_curSoftwareTaskId;        // 记录软件程序下载的任务id
 
 signals:
+    void sigSerivceOff();       // 运营结束信号
 
 };
 

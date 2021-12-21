@@ -19,3 +19,8 @@ int CEndTask::taskId()
 {
     return -1;
 }
+
+bool CEndTask::result()
+{
+    return true;
+}

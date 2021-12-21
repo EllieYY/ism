@@ -24,6 +24,7 @@
 #include "BomParamVersionInfo.h"
 #include "TradeFileInfo.h"
 #include "CommonHead.h"
+#include "ReaderSoftFileInfo.h"
 
 SettingCenter* SettingCenter::m_pInstance = NULL;
 SettingCenter::SettingCenter(QObject *parent) : QObject(parent)
@@ -816,6 +817,64 @@ QList<QString> SettingCenter::getDownloadFailedFiles()
     }
 
     return list;
+}
+
+
+// 读写器程序更新文件
+void SettingCenter::saveReaderSoftInfo(ReaderSoftFileInfo *info)
+{
+    if (info == nullptr) {
+        return;
+    }
+
+    QJsonObject rootObject;
+    rootObject.insert("fileName", info->getFileName());
+    rootObject.insert("date", info->getDateString());
+    rootObject.insert("hasUpdated", info->getHasUpdated());
+    rootObject.insert("fileReady", info->getFileReady());
+
+    QString filePath = QString("%1/updateVersion.json").arg(SOFT_FILE_PATH);
+    saveJsonFile(rootObject, filePath);
+
+}
+
+ReaderSoftFileInfo *SettingCenter::getReaderSoftInfo()
+{
+    ReaderSoftFileInfo* info = NULL;
+    QString filePath = QDir::currentPath() + QDir::separator() + QString(SOFT_FILE_PATH) + "/updateVersion.json";
+
+    QFile file(filePath);
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        qDebug() << QString("fail to open the file: %1, %2, %3")
+                    .arg(__FILE__).arg(__LINE__).arg(__FUNCTION__);
+        return info;
+    }
+    QByteArray array = file.readAll();
+    file.close();
+
+    QJsonParseError jsonParseError;
+    QJsonDocument jsonDocument(QJsonDocument::fromJson(array, &jsonParseError));
+    if(QJsonParseError::NoError != jsonParseError.error)
+    {
+        qDebug() << QString("JsonParseError: %1").arg(jsonParseError.errorString());
+        return info;
+    }
+
+    QJsonObject rootObject = jsonDocument.object();
+    if(!rootObject.contains("fileName") || !rootObject.value("fileName").isString())
+    {
+        qDebug() << "No target value";
+        qDebug() << rootObject.keys();
+        return info;
+    }
+
+    info = new ReaderSoftFileInfo(this);
+    info->setFileName(rootObject.value("fileName").toString());
+    info->setHasUpdated(rootObject.value("hasUpdated").toBool());
+    info->setFileReady(rootObject.value("fileReady").toBool());
+
+    return info;
 }
 
 

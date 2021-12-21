@@ -578,7 +578,7 @@
                   <item row="1" column="1">
                    <widget class="QLabel" name="gText2">
                     <property name="text">
-                     <string>选择票卡补登</string>
+                     <string>选择票卡更新</string>
                     </property>
                    </widget>
                   </item>
@@ -636,7 +636,7 @@
                   <item row="3" column="1">
                    <widget class="QLabel" name="gText4">
                     <property name="text">
-                     <string>选择支付方式</string>
+                     <string>选择现金支付</string>
                     </property>
                    </widget>
                   </item>
@@ -762,7 +762,7 @@
              <item>
               <widget class="QLabel" name="label_7">
                <property name="text">
-                <string>温馨提示：如需帮助，请按压“招援”按钮呼叫工作人员</string>
+                <string>温馨提示：如需帮助，请按压“一键呼叫”按钮呼叫工作人员</string>
                </property>
               </widget>
              </item>

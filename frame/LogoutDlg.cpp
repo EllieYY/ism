@@ -111,22 +111,23 @@ void LogoutDlg::onLogout()
     }
 
     // 密码校验
+    ui->logoutBtn->setDisabled(true);
     if (!DataCenter::getThis()->setLogoutData(userName, password)) {
         MyHelper::ShowMessageBoxError("用户名和密码错误，请核对后重新输入。");
+        ui->logoutBtn->setDisabled(false);
         return;
     }
 
-    // AFC 签退
-    BYTE * operatorID = reinterpret_cast<byte*>(userName.toLocal8Bit().data());
-    BYTE event = 0;          // 签退
-    BYTE operatorType = 2;   // 维护人员
-    BYTE ret = OperatorAction(operatorID, event, operatorType);
-    if (ret != 0) {
-//        MyHelper::ShowMessageBoxError(QString("签退失败[%1]，请联系工作人员。").arg(ret));
-        logger()->error("[OperatorAction] 签退失败：%1", ret);
-//        return;
-    }
-
+//    // AFC 签退
+//    BYTE * operatorID = reinterpret_cast<byte*>(userName.toLocal8Bit().data());
+//    BYTE event = 0;          // 签退
+//    BYTE operatorType = 2;   // 维护人员
+//    BYTE ret = OperatorAction(operatorID, event, operatorType);
+//    if (ret != 0) {
+////        MyHelper::ShowMessageBoxError(QString("签退失败[%1]，请联系工作人员。").arg(ret));
+//        logger()->error("[OperatorAction] 签退失败：%1", ret);
+////        return;
+//    }
 
     emit logoutOk();
     close();

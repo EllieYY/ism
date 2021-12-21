@@ -72,7 +72,7 @@ void TaskThread::run()
             // 执行任务
             task->doWork();
 //            qDebug() << "Task Done Now!";
-            emit taskDone(task->taskId());
+            emit taskDone(task->taskId(), task->result());
             // 执行完成将其删除
             delete task; task = nullptr;
 

@@ -15,6 +15,7 @@ public:
     int doWork() override;
     QString message() override;
     int taskId() override;
+    bool result() override;
 
 private:
     LibcurlFtp* m_ftp;
@@ -23,6 +24,7 @@ private:
     QString m_localPath;
     QString m_fileName;
     int m_id;
+    int m_result;
 
 };
 

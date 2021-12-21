@@ -22,6 +22,7 @@ public:
 
 public:    // slots
     void initDevice();
+    void onDeviceUpdate();
     void onCheckingCashbox(bool isOn);      // 钱箱开始检测
     void startDeviceTimer();
 
@@ -51,10 +52,12 @@ private:
     void setTestData();
 
 private:
-    void initReader(int port, QString deviceId);    // 读写器初始化
-    void initCashbox(int portBanknotes, int portCoin, int portBanknoteRe);   // 钱箱初始化
+    void initReader();    // 读写器初始化
+    void initCashbox();   // 钱箱初始化
     void readSamInfo();          // 读取SAM卡信息
     void readReaderVersion();    // 读写器版本信息获取
+    void readerSoftUpdate();    // 读写器程序升级
+    void readerParamUpdate();   // 读写器参数升级
 
 private:
     // 设备状态 0 - 不可用   1 - 初始化成功  2 - 在线

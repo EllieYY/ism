@@ -69,6 +69,7 @@ SOURCES += \
     data/LibcurlFtp.cpp \
     data/LoginInfo.cpp \
     data/OperatorInfo.cpp \
+    data/ReaderSoftFileInfo.cpp \
     data/SettingCenter.cpp \
     data/TestWidget.cpp \
     data/TicketUpdateTestDlg.cpp \
@@ -87,9 +88,9 @@ SOURCES += \
     data/line/LineStations.cpp \
     data/line/LineTimeTables.cpp \
     data/line/Station.cpp \
-    data/thread/AFCHeartTask.cpp \
     data/thread/FtpDownloadTask.cpp \
     data/thread/FtpUploadTask.cpp \
+    data/thread/HeartTask.cpp \
     data/thread/Task.cpp \
     data/thread/TaskThread.cpp \
     data/thread/TradeFileUploadTask.cpp \
@@ -98,7 +99,6 @@ SOURCES += \
     data/ticket/TicketBasicInfo.cpp \
     data/ticket/TransactionInfo.cpp \
     device/DeviceManager.cpp \
-    device/ReaderManager.cpp \
     frame/AFCTaskThread.cpp \
     frame/CustomTabWidget.cpp \
     frame/ISMFrame.cpp \
@@ -145,6 +145,7 @@ HEADERS += \
     data/LibcurlFtp.h \
     data/LoginInfo.h \
     data/OperatorInfo.h \
+    data/ReaderSoftFileInfo.h \
     data/SettingCenter.h \
     data/TestWidget.h \
     data/TicketUpdateTestDlg.h \
@@ -163,9 +164,9 @@ HEADERS += \
     data/line/LineStations.h \
     data/line/LineTimeTables.h \
     data/line/Station.h \
-    data/thread/AFCHeartTask.h \
     data/thread/FtpDownloadTask.h \
     data/thread/FtpUploadTask.h \
+    data/thread/HeartTask.h \
     data/thread/Task.h \
     data/thread/TaskThread.h \
     data/thread/TradeFileUploadTask.h \
@@ -174,7 +175,6 @@ HEADERS += \
     data/ticket/TicketBasicInfo.h \
     data/ticket/TransactionInfo.h \
     device/DeviceManager.h \
-    device/ReaderManager.h \
     frame/AFCTaskThread.h \
     frame/CustomTabWidget.h \
     frame/ISMFrame.h \

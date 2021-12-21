@@ -21,6 +21,7 @@ public:
     int doWork() override;
     QString message() override;
     int taskId() override;
+    bool result() override;
 
     void packageTradeFile(int fileCount, QSet<QString> fileNameList, QString remotePath);
 
@@ -31,6 +32,7 @@ private:
     QString m_localPath;
     QString m_fileName;
     int m_id;
+    int m_result;
 
     QList<X7000FileInfo*> m_fileList;
 

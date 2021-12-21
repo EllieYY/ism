@@ -30,15 +30,19 @@ public:
 
 signals:
     void initDeviceInThread();
+    void deviceUpdate();           // 设备更新检查并重新自检
 
 private:
     void init();
+    void initShow();
     void initDevice();
     void initTimer();
     void onTimer();
     void secEvent();
     void initWgt();
     void registerWidget(QHBoxLayout* layout, WidgetBase* widget, int widgetId, bool isMain);
+
+    void onServiceOff();     // 运营结束操作
 
 private:
     QTimer*   m_time;

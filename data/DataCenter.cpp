@@ -31,14 +31,15 @@
 #include "FtpDownloadTask.h"
 #include "TradeFileInfo.h"
 #include "TradeFileUploadTask.h"
-#include "AFCHeartTask.h"
-
+#include "HeartTask.h"
+#include "ReaderSoftFileInfo.h"
 
 
 static int HRT_NUM = 5;
 DataCenter* DataCenter::m_pInstance = NULL;
 DataCenter::DataCenter(QObject *parent) : QObject(parent)
 {
+    m_pInstance = this;
 //    init();
 }
 
@@ -76,7 +77,6 @@ DataCenter *DataCenter::getThis()
 // 心跳连接处理
 void DataCenter::secEvent()
 {    
-
     m_timeCount++;
     for (int i = 0; i < HRT_NUM; i++) {
         m_hrtCnt[i] = m_hrtCnt[i] + 1;
@@ -87,18 +87,9 @@ void DataCenter::secEvent()
 
     // AFC相关定时上传
     // AFC心跳检测 - 一分钟一次
-    if ((m_timeCount % 60) == 0) {
-//        // TODO:test code for device
-//        if( m_isReaderUsable) {
-//            m_isReaderUsable = false;
-//        } else {
-//            m_isReaderUsable = true;
-//        }
-
-
+    if ((m_timeCount % 10) == 0) {
         if (m_taskThread != NULL && m_taskThread->isRunning()) {
-            taskId++;
-            AFCHeartTask* task = new AFCHeartTask(taskId++);
+            HeartTask* task = new HeartTask(getTaskId());
             m_taskThread->addTask(task);
         }
     }
@@ -149,13 +140,13 @@ void DataCenter::init()
 
     logger()->info("基础数据更新");
     // 获取基础数据并更新数据 #7
-//    HttpTool::getThis()->requestLineBaseInfo();
-//    HttpTool::getThis()->requestLineStations();
-//    HttpTool::getThis()->requestInterchanges();
-//    HttpTool::getThis()->requestTimeTables();
-//    HttpTool::getThis()->requestStationMap();
-//    HttpTool::getThis()->requestStationPreMap();
-//    HttpTool::getThis()->requestLineMap();
+    HttpTool::getThis()->requestLineBaseInfo();
+    HttpTool::getThis()->requestLineStations();
+    HttpTool::getThis()->requestInterchanges();
+    HttpTool::getThis()->requestTimeTables();
+    HttpTool::getThis()->requestStationMap();
+    HttpTool::getThis()->requestStationPreMap();
+    HttpTool::getThis()->requestLineMap();
 
     m_stationCodeMap.clear();
     for(LineStations* line : m_lineStations) {
@@ -176,7 +167,7 @@ void DataCenter::init()
     m_taskThread = NULL;
     m_taskThread = new TaskThread();
 //    connect(m_ftpTaskThread, &TaskThread::allTaskDone, this, &DataCenter::ftpAllTaskFinished);
-    connect(m_taskThread, &TaskThread::taskDone, this, &DataCenter::ftpTaskFinished);
+    connect(m_taskThread, &TaskThread::taskDone, this, &DataCenter::taskFinished);
 
 //    initDevice();
     initReaderErrCode();
@@ -184,9 +175,13 @@ void DataCenter::init()
 
 void DataCenter::initData()
 {
-    // TODO:测试状态，硬配
-    m_isTest = true;
-    m_serviceOff = false;            // 默认服务状态， 响应报文3000来设置
+    // 测试状态，硬配 -- 正式发布后修改为false
+    m_isTest = false;
+    m_serviceOff = true;            // 默认服务状态， 响应报文3000设置、运营日时间设置
+    m_serviceStartTime = 300*60;     // 运营开始时间 - 5:00
+    m_serviceEndTime = 1410*60;      // 运营结束时间 - 23:30
+    m_isLogin = false;
+    m_hasAutoLogout = false;
 
     m_basicInfo = NULL;               // 站点基础信息
     m_loginInfo = NULL;               // 登录信息
@@ -337,6 +332,8 @@ void DataCenter::initParamVersion()
             ret = parseParam2002(filePath);
         } else if (type == 0x2004) {
             ret = parseParam2004(filePath);
+        } else if (type == 0x2005) {
+            ret = parseParam2005(filePath);
         }
 
         if (ret == 0) {
@@ -491,7 +488,7 @@ int DataCenter::parseParam1004(QString filePath)
     QFile file(filePath);
     bool isOk = file.open(QFile::ReadOnly);
     if (!isOk) {
-        logger()->error("[参数文件读取失败][%1] file open failed", filePath);
+        logger()->error("[参数文件1004读取失败][%1] file open failed", filePath);
         return -1;
     }
 
@@ -547,7 +544,7 @@ int DataCenter::parseParam2002(QString filePath)
     QFile file(filePath);
     bool isOk = file.open(QFile::ReadOnly);
     if (!isOk) {
-        logger()->error("[参数文件读取失败][%1] file open failed", filePath);
+        logger()->error("[参数文件2002读取失败][%1] file open failed", filePath);
         return -1;
     }
 
@@ -578,7 +575,7 @@ int DataCenter::parseParam2004(QString filePath)
     QFile file(filePath);
     bool isOk = file.open(QFile::ReadOnly);
     if (!isOk) {
-        logger()->error("[参数文件读取失败][%1] file open failed", filePath);
+        logger()->error("[参数文件2004读取失败][%1] file open failed", filePath);
         return -1;
     }
 
@@ -647,37 +644,64 @@ int DataCenter::parseParam2004(QString filePath)
     return 0;
 }
 
-
-// 用户鉴权：暂时只校验用户名和密码，不校验权限
-bool DataCenter::isValidUser(QString userCode, QString pwd)
+int DataCenter::parseParam2005(QString filePath)
 {
-    if (userCode == "04326688" && pwd == "123456") {
-        return true;
-    }
-    if (!m_operatorMap.contains(userCode)) {
-        return false;
+    QFile file(filePath);
+    bool isOk = file.open(QFile::ReadOnly);
+    if (!isOk) {
+        logger()->error("[参数文件2005读取失败][%1] file open failed", filePath);
+        return -1;
     }
 
-    // MD5校验值
-    QString md5Str = QCryptographicHash::hash(pwd.toLocal8Bit(), QCryptographicHash::Md5).toHex();
-    QString md5Pwd = md5Str.mid(0, 16);
-    OperatorInfo* info = m_operatorMap.value(userCode);
-    if (info->pwd().compare(md5Pwd) == 0) {
-        return true;
+    // 读文件
+    QDataStream stream(&file);
+    parseHead(stream);
+
+    // 文件内容
+    qint32 pVersion;
+    QByteArray startTime(7, Qt::Uninitialized);
+    BYTE seviceStart;
+    BYTE serviceEnd;
+
+    stream >> pVersion;
+    stream.readRawData(startTime.data(), 7);
+    stream.skipRawData(83);
+    stream.skipRawData(1);
+    stream >> serviceEnd;
+    stream >> seviceStart;
+
+    file.close();
+
+    // 运营时间解析 | 容错
+    serviceEnd = (serviceEnd % 0x60);
+    m_serviceEndTime = serviceEnd * 15 * 60;
+
+    seviceStart = (seviceStart % 0x60);
+    if (seviceStart < 0x30) {     // 开始时间应早于12:00
+        m_serviceStartTime = seviceStart * 15 * 60;
     }
-    return false;
+
+    QString sTimeStr(startTime.toHex());
+    QString body = QString("pVersion={%1}, startTime={%2}, serviceStartTime={%3}, serviceEndTime={%4}")
+            .arg(pVersion, 8, 16, QLatin1Char('0'))
+            .arg(sTimeStr)
+            .arg(m_serviceStartTime)
+            .arg(m_serviceEndTime);
+    logger()->info("[param2005]%1", body);
 }
 
 
-void DataCenter::ftpTaskFinished(int taskId)
+void DataCenter::taskFinished(int taskId, bool success)
 {
+   logger()->info("TaskId=%1,执行情况=%2", taskId, success);
+
     // 参数文件下载任务完成
     if (taskId == m_curParamTaskId) {
         m_curParamTaskId = -1;
-        logger()->info("参数下载完成。");
-
-        //参数文件更新
-        updateParamVersion();
+        if (success) {
+            //参数文件更新
+            updateParamVersion();
+        }
 
         // TODO:参数更新上报
 
@@ -685,12 +709,17 @@ void DataCenter::ftpTaskFinished(int taskId)
 
     if (taskId == m_curSoftwareTaskId) {
         m_curSoftwareTaskId = -1;
-        logger()->info("读写器软件下载完成。");
+        if (success) {
+            logger()->info("读写器软件下载完成。");
+            // 记录软件更新情况
+            m_readerSoftInfo->setFileReady(true);
+            SettingCenter::getThis()->saveReaderSoftInfo(m_readerSoftInfo);
+        }
     }
 }
 
 // 任务队列里所有任务完成，暂时不需要
-void DataCenter::ftpAllTaskFinished()
+void DataCenter::allTaskFinished()
 {
 //    qDebug() << "all task " << "done now.";
 
@@ -791,7 +820,7 @@ int DataCenter::packageTradeFile()
     int fileCount = m_tradeFileInfo->fileCount();
     QSet<QString> fileNameList = m_tradeFileInfo->fileNameSet();
     if (m_taskThread->isRunning()) {
-        TradeFileUploadTask* task = new TradeFileUploadTask(taskId++);
+        TradeFileUploadTask* task = new TradeFileUploadTask(getTaskId());
         QString serverFilePath = m_basicInfo->ftpUrl().toString() + "/Transaction/";
         task->packageTradeFile(fileCount, fileNameList, serverFilePath);
         m_taskThread->addTask(task);
@@ -971,7 +1000,6 @@ QString DataCenter::getTUStateStr(int state)
     }
 
     return typeStr;
-
 }
 
 QString DataCenter::getReaderErrorStr(BYTE errorCode)
@@ -1073,28 +1101,104 @@ void DataCenter::setLoginInfo(LoginInfo *loginInfo)
 {
     m_loginInfo = loginInfo;
 }
-void DataCenter::setLoginData(QString user, QString pwd)
+bool DataCenter::setLoginData(QString user, QString pwd)
 {
+    // 用户校验
+    if (!isValidUser(user, pwd)) {
+        return false;
+    }
+
+    // 账号信息存储
     m_loginInfo = new LoginInfo(this);
     m_loginInfo->setUserName(user);
     m_loginInfo->setPassword(pwd);
     m_loginInfo->setLoginTime(QDateTime::currentDateTime());
 
+    // 签到
+    BYTE * operatorID = reinterpret_cast<byte*>(user.toLocal8Bit().data());
+    BYTE event = 2;          // 带口令登录
+    BYTE operatorType = 2;   // 维护人员
+    BYTE ret = OperatorAction(operatorID, event, operatorType);
+    if (ret != 0) {
+//        MyHelper::ShowMessageBoxError(QString("登录失败[%1]，请联系工作人员。").arg(ret));
+        logger()->error("AFC登录失败{%1}", ret);
+//        return;
+    }
+
     setIsLogin(true);
+    return true;
 }
+
 bool DataCenter::setLogoutData(QString user, QString pwd)
 {
+    // 容错处理
     if (m_loginInfo == NULL) {
         setIsLogin(false);
         return true;
     }
-    if (user == m_loginInfo->userName() && pwd == m_loginInfo->password()) {
-        m_loginInfo->setLoginTime(QDateTime::currentDateTime());
+
+    // 签退校验
+    if (user != m_loginInfo->userName() || pwd != m_loginInfo->password()) {
+        return false;
+    }
+
+    m_loginInfo->setLoginTime(QDateTime::currentDateTime());
+
+    // AFC 签退
+    BYTE * operatorID = reinterpret_cast<byte*>(user.toLocal8Bit().data());
+    BYTE event = 0;          // 签退
+    BYTE operatorType = 2;   // 维护人员
+    BYTE ret = OperatorAction(operatorID, event, operatorType);
+    if (ret != 0) {
+        logger()->error("[OperatorAction] 签退失败：%1", ret);
+        // 此处只做日志记录，不做AFC返回结果校验
+//        return false;
+    }
+
+    setIsLogin(false);
+
+    return true;
+}
+
+bool DataCenter::autoLogout()
+{
+    if (m_loginInfo == NULL) {
         setIsLogin(false);
+        return false;
+    }
+
+    if (m_hasAutoLogout) {
+        return false;
+    }
+    logger()->info("autoLogout.");
+
+    m_hasAutoLogout = true;
+
+    setLogoutData(m_loginInfo->userName(), m_loginInfo->password());
+    return true;
+}
+
+// 用户鉴权：暂时只校验用户名和密码，不校验权限
+bool DataCenter::isValidUser(QString userCode, QString pwd)
+{
+    if (userCode == "04326688" && pwd == "123456") {
+        return true;
+    }
+    if (!m_operatorMap.contains(userCode)) {
+        return false;
+    }
+
+    // MD5校验值
+    QString md5Str = QCryptographicHash::hash(pwd.toLocal8Bit(), QCryptographicHash::Md5).toHex();
+    QString md5Pwd = md5Str.mid(0, 16);
+    OperatorInfo* info = m_operatorMap.value(userCode);
+    if (info->pwd().compare(md5Pwd) == 0) {
         return true;
     }
     return false;
 }
+
+// 用户名密码校验，不做签到签退
 bool DataCenter::localAuthentication(QString user, QString pwd)
 {
     if (m_loginInfo == NULL) {
@@ -1122,7 +1226,13 @@ void DataCenter::onSoftwareUpdate(QString fileName)
     QString localPath = QDir::currentPath() + QDir::separator() +
             SOFT_FILE_PATH + QDir::separator();
 
-    m_curSoftwareTaskId = taskId++;
+    // 记录程序文件更新情况
+    m_readerSoftInfo = new ReaderSoftFileInfo(this);
+    m_readerSoftInfo->setFileName(fileName);
+    SettingCenter::getThis()->saveReaderSoftInfo(m_readerSoftInfo);
+
+    // 下载程序文件
+    m_curSoftwareTaskId = getTaskId();
     FtpDownloadTask* task = new FtpDownloadTask(m_curSoftwareTaskId);
     task->setFileInfo(remotePath, fileName, localPath);
     m_taskThread->addTask(task);
@@ -1143,7 +1253,7 @@ void DataCenter::onParamUpdate(QList<int> typeList, int type)
     // 参数限制
     QHash<int,long> filter = getParamFileFilter(typeList);
 
-    m_curParamTaskId = taskId++;
+    m_curParamTaskId = getTaskId();
     FtpDownloadTask* task = new FtpDownloadTask(m_curParamTaskId);
     task->setFileInfo(remotePath, "fileList.txt", localPath);
 
@@ -1173,7 +1283,7 @@ QHash<int,long> DataCenter::getParamFileFilter(QList<int> typeList)
 void DataCenter::uploadTradeFile(QString localFilePath, QString fileName, QByteArray md5Arr, int type)
 {
     if (m_taskThread->isRunning()) {
-        FtpUploadTask* task = new FtpUploadTask(taskId++);
+        FtpUploadTask* task = new FtpUploadTask(getTaskId());
         QString serverFilePath = m_basicInfo->ftpUrl().toString() + "/Transaction/";
         task->setFileInfo(serverFilePath, fileName, localFilePath);
         m_taskThread->addTask(task);
@@ -1323,7 +1433,18 @@ long DataCenter::getTradeDataCountLT() const
 
 void DataCenter::setServiceOff(bool serviceOff)
 {
+    if (m_serviceOff == serviceOff) {
+        return;
+    }
+
     m_serviceOff = serviceOff;
+
+    // 每个运营时间开始之后，只一次自动签退
+    if (m_serviceOff) {
+        emit sigSerivceOff();
+    } else {
+        m_hasAutoLogout = false;
+    }
 
     // 设备状态上报
     this->deviceState2afc(DEV_SERVICE_OFF);
@@ -1331,8 +1452,11 @@ void DataCenter::setServiceOff(bool serviceOff)
 
 void DataCenter::setIsLogin(bool isLogin)
 {
-    m_isLogin = isLogin;
+    if (m_isLogin == isLogin) {
+        return;
+    }
 
+    m_isLogin = isLogin;
     // 设备状态上报
     this->deviceState2afc(DEV_LOGIN);
 }
@@ -1343,7 +1467,6 @@ BYTE DataCenter::getDeviceState()
     //     1	停止服务(1)/无故障(0)
     //     2	测试(1)/生产(0)
     // 0   3	EFO(1)/BOM(0)
-
 
     //     4	已登录(1)/签退(0)
     // 0   5	可以充值(1)/不可充值(0)
@@ -1367,6 +1490,35 @@ BYTE DataCenter::getDeviceState()
 BasicInfo *DataCenter::getBasicInfo() const
 {
     return m_basicInfo;
+}
+
+long DataCenter::getServiceStartTime() const
+{
+    return m_serviceStartTime;
+}
+
+long DataCenter::getServiceEndTime() const
+{
+    return m_serviceEndTime;
+}
+
+bool DataCenter::getIsLogin() const
+{
+    return m_isLogin;
+}
+
+bool DataCenter::getServiceOff() const
+{
+    return m_serviceOff;
+}
+
+int DataCenter::getTaskId()
+{
+    taskId++;
+    if (taskId >= 9999) {
+        taskId = 1;
+    }
+    return taskId;
 }
 
 
