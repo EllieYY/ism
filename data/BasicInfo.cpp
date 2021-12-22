@@ -214,3 +214,13 @@ void BasicInfo::setFtpUrl(const QUrl &ftpUrl)
 {
     m_ftpUrl = ftpUrl;
 }
+
+int BasicInfo::tradeFileDays() const
+{
+    return m_tradeFileDays;
+}
+
+void BasicInfo::setTradeFileDays(int tradeFileDays)
+{
+    m_tradeFileDays = tradeFileDays;
+}

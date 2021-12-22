@@ -721,13 +721,17 @@ ulong DataCenter::getDeviceTradeSerial()
 // days表示往前删除的天数
 bool DataCenter::findFileForDelete(const QString filePath, int days)
 {
-    // 最多保留90天的交易数据
+    // 本地最多保留120天的交易数据,最少保留30天数据，程序控制，避免配置文件错误配置导致数据不完整
     // 因为判断的是最后修改时间，所以天数要比传参多一天
     int deleteDays = - days + 1;
     if (days <= 0) {
         deleteDays = days + 1;
-    } else if (days > 90) {
-        deleteDays = -89;
+    } else if (days > 120) {
+        deleteDays = -119;
+    }
+
+    if (deleteDays > -30) {
+        deleteDays = -30;
     }
 
     QDir dir(filePath);
@@ -1420,7 +1424,11 @@ void DataCenter::setServiceOff(bool serviceOff)
 
     // 每个运营时间开始之后，只一次自动签退
     if (m_serviceOff) {
-//        findFileForDelete();
+
+        // 交易文件删除
+        QString path = QDir::currentPath() + QDir::separator() + TRADE_FILE_PATH;
+        int tradeFileDays = m_basicInfo->tradeFileDays();
+        findFileForDelete(path, tradeFileDays);
 
         emit sigSerivceOff();
 

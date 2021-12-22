@@ -73,11 +73,15 @@ public:
     QUrl ftpUrl() const;
     void setFtpUrl(const QUrl &ftpUrl);
 
+    int tradeFileDays() const;
+    void setTradeFileDays(int tradeFileDays);
+
 private:
     QString     m_stationName;      // 站点名称
     QString     m_stationCode;      // 站点编号
     QString     m_deviceId;         // 设备编号
     bool        m_isPayZone;        // 是否是付费区
+    int         m_tradeFileDays;    // 交易文件保留天数
 
     /* 智能客服后台信息 */
     QString     m_ismServiceIp;

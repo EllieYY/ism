@@ -628,6 +628,7 @@ BasicInfo* SettingCenter::getBasicInfo()
     info->setStationCode(rootObject.value("stationCode").toString());
     info->setDeviceId(rootObject.value("deviceId").toString());
     info->setIsPayZone(rootObject.value("isPayZone").toBool());
+    info->setTradeFileDays(rootObject.value("tradeFileDays").toInt());
 
     // ism后台连接
     if(rootObject.contains("ismService"))

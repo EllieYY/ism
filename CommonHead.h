@@ -37,9 +37,9 @@
 #include <QTableWidgetItem>
 
 
-#define PARAM_FILE_PATH "sc/parameter"
-#define SOFT_FILE_PATH "sc/soft"
-
+#define PARAM_FILE_PATH "sc\\parameter"
+#define SOFT_FILE_PATH "sc\\soft"
+#define TRADE_FILE_PATH "sc\\transcation"
 
 typedef enum
 {
