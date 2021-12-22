@@ -20,7 +20,31 @@ AFCTaskThread::AFCTaskThread(QObject *parent) : QThread(parent)
     m_9002Ok = false;
 }
 
+void AFCTaskThread::onAfcReset()
+{
+    logger()->info("[onAfcReset]网络库重连");
+
+    m_dealSeq = 0;
+    m_respSeq = 0;
+    m_9002Ok = false;
+
+    networkLibInit();
+}
+
 void AFCTaskThread::run()
+{
+    networkLibInit();
+
+    while(1) {
+        if (!m_9002Ok && DataCenter::getThis()->getIsSamOk()) {
+            pacakge9002();
+        }
+        respCheck();
+        dealCheck();
+    }
+}
+
+void AFCTaskThread::networkLibInit()
 {
     // AFC通信库初始化
     QByteArray devByteArray = MyHelper::hexStrToByte(DataCenter::getThis()->getDeviceId());
@@ -42,16 +66,8 @@ void AFCTaskThread::run()
     getLibVersion(version);
     logger()->info("[getLibVersion]AFC通讯库初始化{%2}，获取版本号={%1}", QString(version), ret);
 
-    // 开始服务
-    DataCenter::getThis()->deviceState2afc(DEV_SERVICE_ON);
-
-    while(1) {
-        if (!m_9002Ok && DataCenter::getThis()->getIsSamOk()) {
-            pacakge9002();
-        }
-        respCheck();
-        dealCheck();
-    }
+//    // 开始服务
+//    DataCenter::getThis()->deviceState2afc(DEV_SERVICE_ON);
 }
 
 void AFCTaskThread::dealCheck()

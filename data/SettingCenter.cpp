@@ -25,6 +25,7 @@
 #include "TradeFileInfo.h"
 #include "CommonHead.h"
 #include "ReaderSoftFileInfo.h"
+#include "UpdateParamInfo.h"
 
 SettingCenter* SettingCenter::m_pInstance = NULL;
 SettingCenter::SettingCenter(QObject *parent) : QObject(parent)
@@ -699,7 +700,11 @@ void SettingCenter::saveParamVersionInfo(QList<BomParamVersionInfo *> list, QStr
     for (BomParamVersionInfo* item : list) {
         branchObject.insert("type", (int)item->type());
         branchObject.insert("version", (int)item->version());
+        branchObject.insert("preVersion", (int)item->preVersion());
         branchObject.insert("fileName", item->fileName());
+        branchObject.insert("preFileName", item->preFileName());
+        branchObject.insert("isReaderUse", item->readerUsed());
+        branchObject.insert("isReaderUpdated", item->readerUpdated());
         jsonArray.append(branchObject);
         clearJsonObject(branchObject);
     }
@@ -746,12 +751,100 @@ QList<BomParamVersionInfo *> SettingCenter::getParamVersionInfo(QString filePath
 
         // 类型 | 版本号 | 文件名
         if (jsonObject.contains("type") && jsonObject.contains("version") &&
-            jsonObject.contains("fileName") && jsonObject.value("fileName").isString()) {
+                jsonObject.contains("fileName") && jsonObject.value("fileName").isString()) {
 
             BomParamVersionInfo* item = new BomParamVersionInfo();
             item->setType(jsonObject.value("type").toInt());
             item->setVersion(jsonObject.value("version").toInt());
             item->setFileName(jsonObject.value("fileName").toString());
+
+            if (jsonObject.contains("preVersion") &&
+                    jsonObject.contains("isReaderUse") && jsonObject.contains("isReaderUpdated") &&
+                    jsonObject.contains("preFileName") && jsonObject.value("preFileName").isString()) {
+                item->setPreVersion(jsonObject.value("preVersion").toInt());
+                item->setPreFileName(jsonObject.value("preFileName").toString());
+                item->setReaderUsed(jsonObject.value("isReaderUse").toBool());
+                item->setReaderUpdated(jsonObject.value("isReaderUpdated").toBool());
+            }
+
+            list.append(item);
+        }
+    }
+
+    return list;
+}
+
+void SettingCenter::saveUpdateParamInfo(QList<UpdateParamInfo *> list, QString fileName)
+{
+    if (list.size() <= 0) {
+        return;
+    }
+
+    QJsonArray jsonArray;
+    QJsonObject rootObject;
+    QJsonObject branchObject;
+    for (UpdateParamInfo* item : list) {
+        branchObject.insert("type", (int)item->type());
+        branchObject.insert("version", (int)item->version());
+        branchObject.insert("fileName", item->fileName());
+        branchObject.insert("isFileOk", item->fileOk());
+        branchObject.insert("hasUpdated", item->updated());
+        jsonArray.append(branchObject);
+        clearJsonObject(branchObject);
+    }
+
+    rootObject.insert("versions", jsonArray);
+
+    QString filePath = QString("%1/%2").arg(PARAM_FILE_PATH).arg(fileName);
+    saveJsonFile(rootObject, filePath);
+}
+
+QList<UpdateParamInfo *> SettingCenter::getUpdateParamInfo(QString filePath)
+{
+    QList<UpdateParamInfo *> list;
+    QFile file(filePath);
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        qDebug() << QString("fail to open the file: %1, %2, %3")
+                    .arg(__FILE__).arg(__LINE__).arg(__FUNCTION__);
+        return list;
+    }
+    QByteArray array = file.readAll();
+    file.close();
+
+    QJsonParseError jsonParseError;
+    QJsonDocument jsonDocument(QJsonDocument::fromJson(array, &jsonParseError));
+    if(QJsonParseError::NoError != jsonParseError.error)
+    {
+        qDebug() << QString("JsonParseError: %1").arg(jsonParseError.errorString());
+        return list;
+    }
+
+    QJsonObject rootObject = jsonDocument.object();
+    if(!rootObject.contains("versions") || !rootObject.value("versions").isArray())
+    {
+        qDebug() << "No target value";
+        qDebug() << rootObject.keys();
+        return list;
+    }
+
+    QJsonArray jsonArray = rootObject.value("versions").toArray();
+    for(auto iter = jsonArray.constBegin(); iter != jsonArray.constEnd(); ++iter)
+    {
+        QJsonObject jsonObject = (*iter).toObject();
+
+        // 类型 | 版本号 | 文件名
+        if (jsonObject.contains("type") && jsonObject.contains("version") &&
+                jsonObject.contains("isFileOk") && jsonObject.contains("hasUpdated") &&
+                jsonObject.contains("fileName") && jsonObject.value("fileName").isString()) {
+
+            UpdateParamInfo* item = new UpdateParamInfo();
+            item->setType(jsonObject.value("type").toInt());
+            item->setVersion(jsonObject.value("version").toInt());
+            item->setFileName(jsonObject.value("fileName").toString());
+
+            item->setFileOk(jsonObject.value("isFileOk").toBool());
+            item->setUpdated(jsonObject.value("hasUpdated").toBool());
 
             list.append(item);
         }

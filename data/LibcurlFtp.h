@@ -9,7 +9,7 @@
 
 typedef std::function<void(QString &localpath, QString &filename)> FileDownloadedCallBack;
 
-class BomParamVersionInfo;
+class UpdateParamInfo;
 class LibcurlFtp : public QObject
 {
     Q_OBJECT
@@ -31,7 +31,7 @@ public:
 private:
     void processLine(QString line, QString& fileName, QChar& type);
     bool paramFileFilter(QString fileName, QHash<int, long> fileFilterInfo, bool isForceUpdate,
-                         BomParamVersionInfo* info);
+                         UpdateParamInfo* info);
 
 private:
 //    QUrl m_pUrl;

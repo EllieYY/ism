@@ -13,10 +13,13 @@ class AFCTaskThread : public QThread
 public:
     explicit AFCTaskThread(QObject *parent = nullptr);
 
+    void onAfcReset();      // AFC服务复位
+
 protected:
     void run() override;
 
 private:
+    void networkLibInit();   // 网络库初始化
     void dealCheck();     // 检测要处理的报文 2000 | 3000 | 4000 | 7003 | 9001 | 9004
     void respCheck();     // 检测要回复的报文：4001 | 9005
     void afcResp(int type, uchar* body, int count);    // count是包体可变部分的个数
@@ -41,7 +44,7 @@ private:
 
 signals:
     void paramTypeUpdate(QList<int> typeList, int type);     // 要更新的参数
-    void softwareUpdate(QString fileName);         // 软件更新
+    void softwareUpdate(QString fileName);                   // 软件更新
 
 };
 

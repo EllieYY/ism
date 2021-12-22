@@ -74,6 +74,7 @@ SOURCES += \
     data/TestWidget.cpp \
     data/TicketUpdateTestDlg.cpp \
     data/TradeFileInfo.cpp \
+    data/UpdateParamInfo.cpp \
     data/X7000FileInfo.cpp \
     data/asr/ASRHttpTool.cpp \
     data/asr/AsrConfig.cpp \
@@ -150,6 +151,7 @@ HEADERS += \
     data/TestWidget.h \
     data/TicketUpdateTestDlg.h \
     data/TradeFileInfo.h \
+    data/UpdateParamInfo.h \
     data/X7000FileInfo.h \
     data/asr/ASRHttpTool.h \
     data/asr/AsrConfig.h \

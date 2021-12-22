@@ -9,6 +9,7 @@
 #include "TransactionInfo.h"
 #include "SettingCenter.h"
 #include "ReaderSoftFileInfo.h"
+#include "BomParamVersionInfo.h"
 
 #define RETRY_COUNT 3
 #define MIN_5 5*60
@@ -59,7 +60,6 @@ void DeviceManager::onDeviceUpdate()
 
     // 参数升级
     readerParamUpdate();
-
 }
 
 void DeviceManager::onCheckingCashbox(bool isOn)
@@ -127,16 +127,17 @@ void DeviceManager::cashboxChecking()
 
 void DeviceManager::hearChecking()
 {
-//    qDebug() << "device heart checking.....";
-
     // 钱箱心跳检测
     bool coin = (SimplePoll() == 0);
     bool banknotes = (BIM_Poll() == 0);
     bool banknotesRe = (F53Poll() == 0);
     DataCenter::getThis()->cashboxOnline(coin, banknotes, banknotesRe);
 
-    // TODO:读写器心跳检测
-
+    // 读写器心跳检测
+    STATUS_INFO ReaderStatus = {0};
+    BYTE ret = getStatus(&ReaderStatus);
+    bool readerOn = (ret == 0);
+    DataCenter::getThis()->readerOnline(readerOn);
 }
 
 void DeviceManager::ticketReading()
@@ -336,6 +337,7 @@ void DeviceManager::initReader()
             initRet = readerInit(deviceId, producter);
             if (initRet == 0) {
                 m_rwState = 0;
+                DataCenter::getThis()->setReaderState(m_rwState);
                 readReaderVersion();
                 readSamInfo();
                 break;
@@ -344,8 +346,6 @@ void DeviceManager::initReader()
         logger()->info("[readerComOpen]读写器open={%1}, 端口号={%2}; [readerInit]={%3}",
                        ret, port, initRet);
     }
-
-    DataCenter::getThis()->setReaderState(m_rwState);
 }
 
 
@@ -379,7 +379,7 @@ void DeviceManager::initCashbox()
         }
     }
 
-    DataCenter::getThis()->setCashboxState(m_coinState, m_banknotes, m_banknotesRe);
+    DataCenter::getThis()->setCashboxState(m_coinState, m_banknotes, m_banknotesRe, 0x07);
 }
 
 void DeviceManager::readSamInfo()
@@ -465,7 +465,42 @@ void DeviceManager::readerSoftUpdate()
 // 读写器参数更新
 void DeviceManager::readerParamUpdate()
 {
+    QString path = QDir::currentPath() + QDir::separator() + PARAM_FILE_PATH + QDir::separator();
+    QList<BomParamVersionInfo*> list = SettingCenter::getThis()->getParamVersionInfo(path + "version.json");
+    QList<BomParamVersionInfo*> newList;
+    for (BomParamVersionInfo* info: list) {
+        if (!info->readerUsed() || info->readerUpdated()) {
+            newList.append(info);
+            continue;
+        }
 
+        QString fileName = info->fileName();
+        QString filePath = path + fileName;
+
+        QByteArray nameArray = fileName.toLatin1();
+        char* nameStr = nameArray.data();
+        QByteArray pathArray = filePath.toLatin1();
+        char* pathStr = pathArray.data();
+
+        bool updated = false;
+        // 参数文件写入 -- 重试3次
+        int tryTime = 0;
+        while (tryTime++ < RETRY_COUNT) {
+            int ret = fileDownload(pathStr, nameStr);
+            logger()->info("读写器参数文件升级[fileDownload]={%1}， filePath={%2}",
+                           ret, filePath);
+            if (ret == 0) {
+                updated = true;
+                break;
+            }
+        }
+
+        info->setReaderUpdated(updated);
+        newList.append(info);
+    }
+
+    // 版本信息存储
+    SettingCenter::getThis()->saveParamVersionInfo(newList, "version.json");
 }
 
 void DeviceManager::setOnReading(bool onReading, int type)
@@ -474,6 +509,76 @@ void DeviceManager::setOnReading(bool onReading, int type)
     m_onReading = onReading;
     m_ticketInfoType = type;
     m_startTime = -1;
+}
+
+
+// 设备复位  device - [bit0]:brc [bit1]:bim [bit2]:f53
+void DeviceManager::onCashboxReset(uchar device)
+{
+    BasicInfo* basicInfo = DataCenter::getThis()->getBasicInfo();
+
+    if (device == 0x01) {    // 硬币器复位
+        int portCoin = basicInfo->brcPort();
+        int ret1 = BRC_Connect(portCoin);
+        if (ret1 != 0) {
+            logger()->error("[onCashboxReset]设备复位失败，BRC_Connect(%2)={%1}", ret1, portCoin);
+            return;
+        }
+        int ret2 = BRC_Reset();
+        if (ret2 != 0) {
+            logger()->error("[onCashboxReset]设备复位失败，BRC_Reset={%1}", ret2);
+            return;
+        }
+        int ret3 = Perform_Self_Check();
+        if (ret3 != 0) {
+            logger()->error("[onCashboxReset]设备复位失败，Perform_Self_Check={%1}", ret3);
+            return;
+        }
+        // 成功状态设置
+        DataCenter::getThis()->setCashboxState(0, 0, 0, 0x01);
+
+    } else if (device == 0x02) {   // 纸币器复位
+        int portBanknotes = basicInfo->bimPort();
+        int ret1 = BIM_Connect(portBanknotes);
+        if (ret1 != 0) {
+            logger()->error("[onCashboxReset]设备复位失败，BIM_Connect(%2)={%1}", ret1, portBanknotes);
+            return;
+        }
+        int ret2 = BIM_Reset();
+        if (ret2 != 0) {
+            logger()->error("[onCashboxReset]设备复位失败，BIM_Reset={%1}", ret2);
+            return;
+        }
+        int ret3 = BIM_Initial();
+        if (ret3 != 0) {
+            logger()->error("[onCashboxReset]设备复位失败，BIM_Initial={%1}", ret3);
+            return;
+        }
+
+        // 成功状态设置
+        DataCenter::getThis()->setCashboxState(0, 0, 0, 0x02);
+
+    } else if (device == 0x04) {   // 纸币找零器复位
+        int portBanknoteRe = basicInfo->f53Port();
+        int ret1 = F53Bill_Connect(portBanknoteRe);
+        if (ret1 != 0) {
+            logger()->error("[onCashboxReset]设备复位失败，F53Bill_Connect(%2)={%1}", ret1, portBanknoteRe);
+            return;
+        }
+        int ret2 = F53Bill_Setting(5, 10);
+        if (ret2 != 0) {
+            logger()->error("[onCashboxReset]设备复位失败，F53Bill_Setting(5, 10)={%1}", ret2);
+            return;
+        }
+
+        // 成功状态设置
+        DataCenter::getThis()->setCashboxState(0, 0, 0, 0x04);
+    }
+}
+
+void DeviceManager::onReaderReset()
+{
+    initReader();
 }
 
 void DeviceManager::setTestData()

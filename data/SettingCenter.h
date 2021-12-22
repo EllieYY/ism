@@ -13,6 +13,7 @@ class BasicInfo;
 class BomParamVersionInfo;
 class TradeFileInfo;
 class ReaderSoftFileInfo;
+class UpdateParamInfo;
 class SettingCenter : public QObject
 {
     Q_OBJECT
@@ -52,6 +53,10 @@ public:
     // 参数文件版本信息
     void saveParamVersionInfo(QList<BomParamVersionInfo*> list, QString fileName);
     QList<BomParamVersionInfo*> getParamVersionInfo(QString filePath);
+
+    // 参数更新文件版本信息
+    void saveUpdateParamInfo(QList<UpdateParamInfo*> list, QString fileName);
+    QList<UpdateParamInfo*> getUpdateParamInfo(QString filePath);
 
     // 下载失败的参数文件信息
     void saveDownloadFailedFiles(QList<QString> fileNames);

@@ -69,7 +69,6 @@ void HeartTask::serviceStateCheck()
         serviceOn = true;
     }
 
-
     bool serviceOff = serviceOn ^ type;
 
     QString info = QString("start:%1, end:%2, serviceOff:%3").arg(startSec).arg(endSec).arg(serviceOff);

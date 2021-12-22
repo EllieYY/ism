@@ -7,6 +7,8 @@
 #include <QFile>
 #include "SettingCenter.h"
 #include "BomParamVersionInfo.h"
+#include "UpdateParamInfo.h"
+
 using namespace std;
 
 
@@ -85,13 +87,12 @@ bool LibcurlFtp::ftpList(QString &remotePath, QString &listFileName, QString &lo
     }
     file.close();
 
-
     // 文件筛选 | 文件下载 | 记录要更新的文件
-    QList<BomParamVersionInfo*> updateFileList;
+    QList<UpdateParamInfo*> updateFileList;
     updateFileList.clear();
-    QList<QString> failedFile;   // 记录下载失败的文件名
+//    QList<QString> failedFile;   // 记录下载失败的文件名
     for (QString name : fileList) {
-        BomParamVersionInfo* info = new BomParamVersionInfo(this);
+        UpdateParamInfo* info = new UpdateParamInfo(this);
         if (!paramFileFilter(name, fileFilterInfo, isForceUpdate, info)) {
             delete info;
             info = nullptr;
@@ -100,18 +101,17 @@ bool LibcurlFtp::ftpList(QString &remotePath, QString &listFileName, QString &lo
 
         // 文件下载
         if (ftpDownload(remotePath, name, localPath) == 0)  {
+            info->setFileOk(true);
             updateFileList.append(info);
             logger()->info("[getFileList] download %1", name);
-        } else {
-            failedFile.append(name);
         }
     }
 
     // 将需要更新的文件名称写入文件
-    SettingCenter::getThis()->saveParamVersionInfo(updateFileList, "updateVersion.json");
+    SettingCenter::getThis()->saveUpdateParamInfo(updateFileList, "updateVersion.json");
 
-    // 将下载失败的文件名写入文件
-    SettingCenter::getThis()->saveDownloadFailedFiles(failedFile);
+//    // 将下载失败的文件名写入文件
+//    SettingCenter::getThis()->saveDownloadFailedFiles(failedFile);
 
     return ret;
 }
@@ -130,7 +130,7 @@ void LibcurlFtp::processLine(QString line, QString& fileName, QChar& type)
 
 // 文件筛选
 // QHash<int, int> fileFilterInfo : 文件类型，文件版本
-bool LibcurlFtp::paramFileFilter(QString fileName, QHash<int, long> fileFilterInfo, bool isForceUpdate, BomParamVersionInfo* info)
+bool LibcurlFtp::paramFileFilter(QString fileName, QHash<int, long> fileFilterInfo, bool isForceUpdate, UpdateParamInfo* info)
 {
     // 文件名：“PRM.”+参数类型（4位）+“.”+节点编码（4位）+“.”+文件序列号（6位）
     bool ok;

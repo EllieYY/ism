@@ -28,6 +28,10 @@ public:    // slots
 
     void setOnReading(bool onReading, int type);    // 票卡信息读取设置
 
+    // 设备重新初始化
+    void onCashboxReset(uchar device);      // 钱箱复位
+    void onReaderReset();                   // 读写器复位 [bit0]:brc [bit1]:bim [bit2]:f53
+
 signals:
     // 投币检测相关
     void receiveOk(int banknotes, int coins);    // 自动检测结束投币

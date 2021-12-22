@@ -62,6 +62,7 @@ public:
     // -1：未初始化，0：正常可用，其他值含义按接口定义来
     bool getIsReaderUsable() const;
     void setReaderState(int readerState);
+    void readerOnline(bool isOnline);    // 心跳
     QString getReaderVersion();         // 读写器版本信息查询
     void setReaderVersion(QString version);
     void setSAMInfo(BYTE* mtrSam, BYTE* octSam, BYTE* jtbSam);
@@ -71,7 +72,9 @@ public:
     long getCashboxInitRet() const;
     void setCashboxInitRet(long cashboxInitRet);
     BYTE getCashboxState();   // 钱箱状态获取 0-故障 1-硬币 2-纸币 3-硬币纸币均可
-    void setCashboxState(int coinState, int banknotes, int banknotesRe);
+
+    // [bit0]:brc [bit1]:bim [bit2]:f53
+    void setCashboxState(int coinState, int banknotes, int banknotesRe, uchar validDevice);
     void cashboxOnline(bool coin, bool banknotes, bool banknotesRe);
 
     // 站点信息
@@ -165,7 +168,6 @@ public:
 
 private:
     void initData();
-    void initDevice();
     void closeDevice();
     void initReaderErrCode();           // 票卡分析错误码
 
@@ -175,6 +177,7 @@ public:
     // 参数文件解析
     void initParamVersion();
     void updateParamVersion();    // 参数更新
+    int ismParamParse(int type, QString filePath);
     int parseHead(QDataStream &stream);     // 参数文件解析，返回版本号
     bool fileCheck(QByteArray array);       // 文件校验  -- 需改进
     int parseParam1001(QString filePath);
@@ -299,7 +302,9 @@ private:
     int m_curSoftwareTaskId;        // 记录软件程序下载的任务id
 
 signals:
-    void sigSerivceOff();       // 运营结束信号
+    void sigSerivceOff();           // 运营结束信号
+    void sigReaderReset();          // 读写器复位
+    void sigCashboxReset(uchar device);  // 钱箱复位 [bit0]:brc [bit1]:bim [bit2]:f53
 
 };
 

@@ -33,6 +33,7 @@
 #include "TradeFileUploadTask.h"
 #include "HeartTask.h"
 #include "ReaderSoftFileInfo.h"
+#include "UpdateParamInfo.h"
 
 
 static int HRT_NUM = 5;
@@ -80,9 +81,9 @@ void DataCenter::secEvent()
     m_timeCount++;
     for (int i = 0; i < HRT_NUM; i++) {
         m_hrtCnt[i] = m_hrtCnt[i] + 1;
-//        if (m_hrtCnt[i] == 600) {    // 超过10分钟未连接则掉线处理
-//            setHrtOffData(i);
-//        }
+        if (m_hrtCnt[i] >= 600) {    // 超过10分钟未连接则掉线处理
+            setHrtOffData(i);
+        }
     }
 
     // AFC相关定时上传
@@ -221,70 +222,6 @@ void DataCenter::initData()
     }
 }
 
-void DataCenter::initDevice()
-{
-    if (NULL == m_basicInfo) {
-        return;
-    }
-    // 读写器初始化
-    m_isReaderUsable = false;
-    BYTE initRet = 0;
-    int ret = (ushort)readerComOpen(m_basicInfo->readerPort());
-    if (ret == 0) {
-        QString deviceIdStr = getDeviceId();
-        QByteArray devByteArray = MyHelper::hexStrToByte(deviceIdStr);
-        BYTE* deviceId = (BYTE*)devByteArray.data();
-
-        BYTE producter = 0;
-        initRet = readerInit(deviceId, producter);
-        if (initRet == 0) {
-            m_isReaderUsable = true;
-
-            // 上传安装的SAM卡号，供ACC校验
-            samInfo2afc();
-        }
-    }
-    logger()->info("[readerComOpen]读写器open={%1}, 端口号={%2}; [readerInit]={%3}",
-                   ret, m_basicInfo->readerPort(), initRet);
-
-    // 读写器状态上传给ISM后台
-    QString readerStateStr = ((initRet == 0) ? "1" : "0");   // 1-正常 0-离线
-    HttpTool::getThis()->updateStates(readerStateStr);
-
-    // 获取读写器版本
-    VERSION_INFO version = {0};
-    int retVersion = getVersion(&version);
-    if (retVersion != 0) {
-        m_readerVersion = "00000000";
-    } else {
-        QByteArray versionArray;
-        versionArray.append((char*)version.SoftVersion, 2);
-        m_readerVersion = "0000" + versionArray.toHex().toUpper();
-    }
-
-    QByteArray str;
-    str.append((char*)&version, sizeof(VERSION_INFO));
-    QString outputStr = str.toHex();
-    logger()->info("[getVersion] = %1, output = %2", retVersion, outputStr);
-
-
-    // 钱箱初始化
-    int bimPort = m_basicInfo->bimPort();
-    int f53Port = m_basicInfo->f53Port();
-    int brcPort = m_basicInfo->brcPort();
-
-    m_isBanknotesUsable = false;
-    m_isSpecieUsable = false;
-    long retC = ConnectMachine(bimPort, brcPort, f53Port);
-
-    m_cashboxInitRet = retC;
-    m_isBanknotesUsable = ((retC & 0x0F0F) == 0);
-    m_isSpecieUsable = ((retC & 0x00F0) == 0);
-
-    logger()->info("[ConnectMachine]钱箱初始化={%1}, 端口号：bim={%2}, f53={%3}, brc={%4}, 纸币可用{%5}, 硬币可用{%6}",
-                   retC, bimPort, f53Port, brcPort, m_isBanknotesUsable, m_isSpecieUsable);
-}
-
 void DataCenter::closeDevice()
 {
     int ret1 = readerComClose();
@@ -323,19 +260,9 @@ void DataCenter::initParamVersion()
 
         QString fileName = info->fileName();
         QString filePath = path + fileName;
-        int ret = -1;
-        if (type == 0x1001) {
-            ret = parseParam1001(filePath);
-        } else if (type == 0x1004) {
-            ret = parseParam1004(filePath);
-        } else if (type == 0x2002) {
-            ret = parseParam2002(filePath);
-        } else if (type == 0x2004) {
-            ret = parseParam2004(filePath);
-        } else if (type == 0x2005) {
-            ret = parseParam2005(filePath);
-        }
+        int ret = ismParamParse(type, filePath);
 
+        // ISM不处理的参数，读写器需要
         if (ret == 0) {
             m_paramVersionMap.insert(type, info);
         }
@@ -346,44 +273,77 @@ void DataCenter::initParamVersion()
 void DataCenter::updateParamVersion()
 {
     QString path = QDir::currentPath() + QDir::separator() + PARAM_FILE_PATH + QDir::separator();
-    QList<BomParamVersionInfo*> list = SettingCenter::getThis()->getParamVersionInfo(path + "updateVersion.json");
-    QList<BomParamVersionInfo*> updateList;
-    for (BomParamVersionInfo* info: list) {
+    QList<UpdateParamInfo*> list = SettingCenter::getThis()->getUpdateParamInfo(path + "updateVersion.json");
+    QList<UpdateParamInfo*> updateFailedList;
+    for (UpdateParamInfo* info: list) {
+        if (!info->fileOk()) {
+            updateFailedList.append(info);
+            continue;
+        }
+
         long type = info->type();
 
         QString fileName = info->fileName();
         QString filePath = path + fileName;
-        int ret = -1;
-        if (type == 0x1001) {
-            ret = parseParam1001(filePath);
-        } else if (type == 0x1004) {
-            ret = parseParam1004(filePath);
-        } else if (type == 0x2002) {
-            ret = parseParam2002(filePath);
-        } else if (type == 0x2004) {
-            ret = parseParam2004(filePath);
-        }
+        int ret = ismParamParse(type, filePath);
 
         // 避免界面被阻塞
         QCoreApplication::processEvents();
 
         // 覆盖之前的旧版本
         if (ret == 0) {
-            // 参数更新上报
-            long oldVersion = m_paramVersionMap.value(type)->version();
+            info->setUpdated(true);    // 设置参数已更新
             long newVersion = info->version();
-            param2afc(type, oldVersion, newVersion);
 
-            m_paramVersionMap.insert(type, info);
+            BomParamVersionInfo* bomInfo = NULL;
+            if (m_paramVersionMap.contains(type)) {
+                bomInfo = m_paramVersionMap.value(type);
+
+                // 更新版本内容
+                long oldVersion = m_paramVersionMap.value(type)->version();
+                bomInfo->setPreVersion(oldVersion);
+                bomInfo->setPreFileName(bomInfo->fileName());
+                bomInfo->setVersion(newVersion);
+                bomInfo->setFileName(fileName);
+
+                // 参数更新上报
+                param2afc(type, oldVersion, newVersion);
+
+            } else {
+                bomInfo = new BomParamVersionInfo();
+                bomInfo->setFileName(fileName);
+                bomInfo->setType(type);
+                bomInfo->setVersion(newVersion);
+            }
+
+            m_paramVersionMap.insert(type, bomInfo);
         } else {
-            updateList.append(info);
+            updateFailedList.append(info);
         }
     }
 
     // 版本信息存储
     SettingCenter::getThis()->saveParamVersionInfo(m_paramVersionMap.values(), "version.json");
     // 更新失败的参数文件存储
-    SettingCenter::getThis()->saveParamVersionInfo(updateList, "updateFailedVersion.json");
+    SettingCenter::getThis()->saveUpdateParamInfo(updateFailedList, "updateFailedVersion.json");
+}
+
+int DataCenter::ismParamParse(int type, QString filePath)
+{
+    int ret = 0;
+    if (type == 0x1001) {
+        ret = parseParam1001(filePath);
+    } else if (type == 0x1004) {
+        ret = parseParam1004(filePath);
+    } else if (type == 0x2002) {
+        ret = parseParam2002(filePath);
+    } else if (type == 0x2004) {
+        ret = parseParam2004(filePath);
+    } else if (type == 0x2005) {
+        ret = parseParam2005(filePath);
+    }
+
+    return ret;
 }
 
 // 文件校验：只计算md5
@@ -430,7 +390,6 @@ int DataCenter::parseHead(QDataStream &stream)
     logger()->info("param head : %1", head);
 
     return count;
-
 }
 
 /*
@@ -762,13 +721,13 @@ ulong DataCenter::getDeviceTradeSerial()
 // days表示往前删除的天数
 bool DataCenter::findFileForDelete(const QString filePath, int days)
 {
-    // 最多保留30天的交易数据
+    // 最多保留90天的交易数据
     // 因为判断的是最后修改时间，所以天数要比传参多一天
     int deleteDays = - days + 1;
     if (days <= 0) {
         deleteDays = days + 1;
-    } else if (days > 30) {
-        deleteDays = -29;
+    } else if (days > 90) {
+        deleteDays = -89;
     }
 
     QDir dir(filePath);
@@ -1250,7 +1209,7 @@ void DataCenter::onParamUpdate(QList<int> typeList, int type)
     QString remotePath = m_basicInfo->ftpUrl().toString() + "/Parameter/Cur/";
     QString localPath = QDir::currentPath() + QDir::separator() + PARAM_FILE_PATH + QDir::separator();
 
-    // 参数限制
+    // 参数限制 -- 只获取ISM和读写器需要的参数
     QHash<int,long> filter = getParamFileFilter(typeList);
 
     m_curParamTaskId = getTaskId();
@@ -1260,9 +1219,6 @@ void DataCenter::onParamUpdate(QList<int> typeList, int type)
     bool isForceUpdate = (type == 0 ? false : true);
     task->setFilter(filter, isForceUpdate);
     m_taskThread->addTask(task);
-
-    // TODO:通知进行参数更新，参数上报, taskId用起来
-    // 更新参数版本记录文件
 }
 
 // 参数类型码，同步类型
@@ -1332,26 +1288,49 @@ void DataCenter::samInfo2afc()
 
 void DataCenter::setHrtOffData(int idx)
 {
+    m_hrtCnt[idx] = 0;
+
+    QString node = QString::number(idx);
+
     switch(idx)
     {
     case AFC_HRT: // AFC
-//        init_param34(m_v34);
+        node = "AFC";
         m_afcNetState = 1;
+        // 网络库重连
+        if (m_afcTaskThread != NULL && m_afcTaskThread->isRunning()) {
+            m_afcTaskThread->onAfcReset();
+        }
+
         WidgetMng::notify(AFC_ONLINE_STATE_ID);
         break;
     case READER_HRT: // 读写器
-//        init_param28(m_v28);
+        node = "reader-读写器";
+        setReaderState(-1);             // 读写器可用状态
+        emit sigReaderReset();
         WidgetMng::notify(READER_STATE);
         break;
     case BIM_HRT: // 纸币
+        node = "bim-纸币模块";
+        m_isSpecieUsable = false;
+        emit sigCashboxReset(0x02);    // [bit0]:brc [bit1]:bim [bit2]:f53
+        WidgetMng::notify(PAPER_MONEY_STATE);
         break;
     case F53_HRT: // 纸币找零
+        node = "f53-纸币找零模块";
+        emit sigCashboxReset(0x04);    // [bit0]:brc [bit1]:bim [bit2]:f53
         break;
     case BRC_HRT: // 硬币
+        node = "f53-硬币模块";
+        m_isBanknotesUsable = false;
+        emit sigCashboxReset(0x01);    // [bit0]:brc [bit1]:bim [bit2]:f53
+        WidgetMng::notify(COINS_STATE);
         break;
     default:
         break;
     }
+
+    logger()->error("节点掉线:[%1]", node);
 }
 
 void DataCenter::afcHeart(bool onlineFlag)
@@ -1441,7 +1420,10 @@ void DataCenter::setServiceOff(bool serviceOff)
 
     // 每个运营时间开始之后，只一次自动签退
     if (m_serviceOff) {
+//        findFileForDelete();
+
         emit sigSerivceOff();
+
     } else {
         m_hasAutoLogout = false;
     }
@@ -1649,10 +1631,16 @@ BYTE DataCenter::getCashboxState()
     return (bim + brc);
 }
 
-void DataCenter::setCashboxState(int coinState, int banknotes, int banknotesRe)
+// [bit0]:brc [bit1]:bim [bit2]:f53
+void DataCenter::setCashboxState(int coinState, int banknotes, int banknotesRe, uchar validDevice)
 {
-    m_isSpecieUsable = (coinState == 0);              // 硬币模块可用状态
-    m_isBanknotesUsable = (banknotes == 0);           // 纸币模块可用状态
+    if (validDevice & 0x01) {
+        m_isSpecieUsable = (coinState == 0);              // 硬币模块可用状态
+    }
+
+    if (validDevice & 0x02) {
+        m_isBanknotesUsable = (banknotes == 0);           // 纸币模块可用状态
+    }
 }
 
 void DataCenter::cashboxOnline(bool coin, bool banknotes, bool banknotesRe)
@@ -1692,6 +1680,13 @@ void DataCenter::setReaderState(int readerState)
     // 读写器状态上传给ISM后台
     QString readerStateStr = ((readerState == 0) ? "1" : "0");   // 1-正常 0-离线
     HttpTool::getThis()->updateStates(readerStateStr);
+}
+
+void DataCenter::readerOnline(bool isOnline)
+{
+    if (isOnline) {
+        m_hrtCnt[READER_HRT] = 0;
+    }
 }
 
 
