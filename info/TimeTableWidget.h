@@ -8,6 +8,7 @@ namespace Ui {
 class TimeTableWidget;
 }
 
+class LineStationTimetables;
 class TimeTableWidget : public WidgetBase
 {
     Q_OBJECT
@@ -18,6 +19,8 @@ public:
 
 private:
     bool showData();
+    void showLineTimetables(int line);
+
     void setStyle();
 
     void init();
@@ -25,6 +28,7 @@ private:
 
 private:
     bool m_initOk;
+    QMap<int, LineStationTimetables*> m_lineTimes;
 
 private:
     Ui::TimeTableWidget *ui;

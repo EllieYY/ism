@@ -22,6 +22,12 @@ AFCTaskThread::AFCTaskThread(QObject *parent) : QThread(parent)
 
 void AFCTaskThread::onAfcReset()
 {
+//    qDebug() << "onAfcReset 运行线程：" << QThread::currentThreadId() << ", " << QDateTime::currentSecsSinceEpoch();
+
+//    for (long i = 0; i < 1000000; i++) {
+//        int a = i;
+//    }
+
     logger()->info("[onAfcReset]网络库重连");
 
     m_dealSeq = 0;
@@ -29,6 +35,8 @@ void AFCTaskThread::onAfcReset()
     m_9002Ok = false;
 
     networkLibInit();
+
+//    qDebug() << "onAfcReset 结束：" << QDateTime::currentSecsSinceEpoch();
 }
 
 void AFCTaskThread::run()

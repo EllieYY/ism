@@ -55,6 +55,10 @@ void DeviceManager::initDevice()
 // 设备更新
 void DeviceManager::onDeviceUpdate()
 {
+    qDebug() << "onDeviceUpdate: " << QThread::currentThreadId();
+    return;
+
+
     // 软件版本升级
     readerSoftUpdate();
 

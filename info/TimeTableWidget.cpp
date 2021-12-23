@@ -24,6 +24,76 @@ TimeTableWidget::~TimeTableWidget()
     delete ui;
 }
 
+//bool TimeTableWidget::showData()
+//{
+//    // 默认显示4号线
+//    showLineTimetables(4);
+//    return true;
+//}
+
+void TimeTableWidget::showLineTimetables(int line)
+{
+
+}
+
+void TimeTableWidget::init()
+{
+    //TODO： 线路时刻信息获取
+
+
+    m_initOk = false;
+    setStyle();
+}
+
+
+void TimeTableWidget::setStyle()
+{
+    ui->tableWidget->setColumnWidth(0, 200);
+    ui->tableWidget->setColumnWidth(1, 700);
+    ui->tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
+    ui->tableWidget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+    ui->tableWidget->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
+//    ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
+
+    ui->tableWidget->verticalHeader()->setVisible(false);
+    ui->tableWidget->verticalHeader()->setDefaultSectionSize(60);
+//    ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableWidget->setFrameShape(QFrame::NoFrame);
+
+    ui->tableWidget->verticalHeader()->setVisible(false);                 // 列表头不可见
+    ui->tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);  // 表格不可编辑
+    ui->tableWidget->setSelectionMode(QAbstractItemView::NoSelection); //设置只能选择一行，不能多行选中
+
+
+    ui->tableWidget->setFocusPolicy(Qt::NoFocus);    // 虚线框取消
+
+    ui->tableWidget->setAlternatingRowColors(true);
+}
+
+void TimeTableWidget::setTestData()
+{
+    QList<LineTimeTables*> lineList;
+    // 测试数据
+    LineTimeTables* line1 = new LineTimeTables("1号线", "", "images/info/line1.png", "#F01C4B");
+    line1->addTimeTable(new ISMTimeTable("瑶湖西", "双港", "06:00", "22:00"));
+    line1->addTimeTable(new ISMTimeTable("双港", "瑶湖西", "06:00", "22:00"));
+
+    LineTimeTables* line2 = new LineTimeTables("2号线", "", "images/info/line2.png", "#FFC931");
+    line2->addTimeTable(new ISMTimeTable("南路", "辛家庵", "06:00", "22:00"));
+    line2->addTimeTable(new ISMTimeTable("辛家庵", "南路", "06:00", "22:00"));
+
+    LineTimeTables* line3 = new LineTimeTables("3号线", "", "images/info/line3.png", "#1E5789");
+    line3->addTimeTable(new ISMTimeTable("银三角北", "京东大道", "06:00", "22:30"));
+    line3->addTimeTable(new ISMTimeTable("京东大道", "银三角北", "06:00", "22:30"));
+
+    lineList.append(line1);
+    lineList.append(line2);
+    lineList.append(line3);
+
+    DataCenter::getThis()->setLineTimeTables(lineList);
+}
+
+
 bool TimeTableWidget::showData()
 {
     if (m_initOk) {
@@ -72,64 +142,5 @@ bool TimeTableWidget::showData()
             row++;
         }
     }
-
-
     return true;
-}
-
-
-
-void TimeTableWidget::init()
-{
-    m_initOk = false;
-    setStyle();
-}
-
-
-void TimeTableWidget::setStyle()
-{
-
-    ui->tableWidget->setColumnWidth(0, 200);
-    ui->tableWidget->setColumnWidth(1, 700);
-    ui->tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
-    ui->tableWidget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
-    ui->tableWidget->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
-//    ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
-
-    ui->tableWidget->verticalHeader()->setVisible(false);
-    ui->tableWidget->verticalHeader()->setDefaultSectionSize(60);
-//    ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->tableWidget->setFrameShape(QFrame::NoFrame);
-
-    ui->tableWidget->verticalHeader()->setVisible(false);                 // 列表头不可见
-    ui->tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);  // 表格不可编辑
-    ui->tableWidget->setSelectionMode(QAbstractItemView::NoSelection); //设置只能选择一行，不能多行选中
-
-
-    ui->tableWidget->setFocusPolicy(Qt::NoFocus);    // 虚线框取消
-
-    ui->tableWidget->setAlternatingRowColors(true);
-}
-
-void TimeTableWidget::setTestData()
-{
-    QList<LineTimeTables*> lineList;
-    // 测试数据
-    LineTimeTables* line1 = new LineTimeTables("1号线", "", "images/info/line1.png", "#F01C4B");
-    line1->addTimeTable(new ISMTimeTable("瑶湖西", "双港", "06:00", "22:00"));
-    line1->addTimeTable(new ISMTimeTable("双港", "瑶湖西", "06:00", "22:00"));
-
-    LineTimeTables* line2 = new LineTimeTables("2号线", "", "images/info/line2.png", "#FFC931");
-    line2->addTimeTable(new ISMTimeTable("南路", "辛家庵", "06:00", "22:00"));
-    line2->addTimeTable(new ISMTimeTable("辛家庵", "南路", "06:00", "22:00"));
-
-    LineTimeTables* line3 = new LineTimeTables("3号线", "", "images/info/line3.png", "#1E5789");
-    line3->addTimeTable(new ISMTimeTable("银三角北", "京东大道", "06:00", "22:30"));
-    line3->addTimeTable(new ISMTimeTable("京东大道", "银三角北", "06:00", "22:30"));
-
-    lineList.append(line1);
-    lineList.append(line2);
-    lineList.append(line3);
-
-    DataCenter::getThis()->setLineTimeTables(lineList);
 }

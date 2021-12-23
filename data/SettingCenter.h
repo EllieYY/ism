@@ -14,6 +14,7 @@ class BomParamVersionInfo;
 class TradeFileInfo;
 class ReaderSoftFileInfo;
 class UpdateParamInfo;
+class LineStationTimetables;
 class SettingCenter : public QObject
 {
     Q_OBJECT
@@ -65,6 +66,10 @@ public:
     // 读写器程序文件信息
     void saveReaderSoftInfo(ReaderSoftFileInfo* info);
     ReaderSoftFileInfo* getReaderSoftInfo();
+
+    // 线路站点信息 - 配置文件版本
+    QMap<int, LineStationTimetables*> getLineStationTimetables();
+    void saveLineStationTimetables(QList<LineStationTimetables*> info);
 
 private:
     QList<InterchangeInfo*> matchInterchangeStations(QList<InterchangeInfo*> stations, QString lineCode);

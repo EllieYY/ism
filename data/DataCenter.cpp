@@ -77,7 +77,18 @@ DataCenter *DataCenter::getThis()
 
 // 心跳连接处理
 void DataCenter::secEvent()
-{    
+{
+//    qDebug() << "DataCenter::secEvent 运行线程" << QThread::currentThreadId();
+
+//    emit sigAfcReset();
+////    if (m_afcTaskThread != NULL && m_afcTaskThread->isRunning()) {
+////        m_afcTaskThread->onAfcReset();
+////    }
+
+//    qDebug() << "time " << QDateTime::currentSecsSinceEpoch();
+
+//    return;
+
     m_timeCount++;
     for (int i = 0; i < HRT_NUM; i++) {
         m_hrtCnt[i] = m_hrtCnt[i] + 1;
@@ -162,6 +173,7 @@ void DataCenter::init()
     m_afcTaskThread = new AFCTaskThread();
     connect(m_afcTaskThread, &AFCTaskThread::paramTypeUpdate, this, &DataCenter::onParamUpdate, Qt::DirectConnection);
     connect(m_afcTaskThread, &AFCTaskThread::softwareUpdate, this, &DataCenter::onSoftwareUpdate, Qt::DirectConnection);
+    connect(this, &DataCenter::sigAfcReset, m_afcTaskThread, &AFCTaskThread::onAfcReset);
     m_afcTaskThread->start();
 
 
@@ -789,7 +801,6 @@ int DataCenter::packageTradeFile()
         m_taskThread->addTask(task);
     }
 
-    // TODO:
     m_tradeFileInfo->reset();
     SettingCenter::getThis()->saveTradeFileInfo(m_tradeFileInfo);
 
@@ -1425,10 +1436,10 @@ void DataCenter::setServiceOff(bool serviceOff)
     // 每个运营时间开始之后，只一次自动签退
     if (m_serviceOff) {
 
-        // 交易文件删除
-        QString path = QDir::currentPath() + QDir::separator() + TRADE_FILE_PATH;
-        int tradeFileDays = m_basicInfo->tradeFileDays();
-        findFileForDelete(path, tradeFileDays);
+//        // 交易文件删除
+//        QString path = QDir::currentPath() + QDir::separator() + TRADE_FILE_PATH;
+//        int tradeFileDays = m_basicInfo->tradeFileDays();
+//        findFileForDelete(path, tradeFileDays);
 
         emit sigSerivceOff();
 

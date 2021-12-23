@@ -49,6 +49,8 @@ private:
     void parse(QJsonObject data);
     void parseLineMaps(QJsonObject data);
 
+    void reloadStyleSheet();
+
 private:
     QNetworkAccessManager* m_manager;
     QString m_servIp;

@@ -55,7 +55,7 @@ ISMFrame::ISMFrame(QWidget *parent) :
     //设置窗体标题栏隐藏
     this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint | Qt::WindowMinMaxButtonsHint);
     this->showFullScreen();
-//    this->showMaximized();
+    this->showMaximized();
 //    myHelper::FormInCenter(this);
 
     ui->setupUi(this);
@@ -277,7 +277,7 @@ void ISMFrame::registerWidget(QHBoxLayout *layout, WidgetBase *widget, int widge
 // 运营结束相关处理
 void ISMFrame::onServiceOff()
 {
-    qDebug() << "onServiceOff";
+    qDebug() << "onServiceOff: " << QThread::currentThreadId();
     // 运营日结束时，自动签退 -- 只执行一次
     bool isLogin = DataCenter::getThis()->getIsLogin();
     bool isServiceOff = DataCenter::getThis()->getServiceOff();
@@ -293,7 +293,4 @@ void ISMFrame::onServiceOff()
     if (m_deviceManager != NULL) {
         emit deviceUpdate();
     }
-
-    //TODO：ISM后台数据拉取
-
 }

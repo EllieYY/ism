@@ -49,7 +49,7 @@
        </spacer>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="0,1,0">
         <item>
          <spacer name="horizontalSpacer_2">
           <property name="orientation">

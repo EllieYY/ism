@@ -4,6 +4,7 @@
 #include <QtCore>
 #include <QtGui>
 #include <QDesktopWidget>
+#include <QApplication>
 #include <QTextCodec>
 #include "ISMMessageBox.h"
 
@@ -37,14 +38,16 @@ public:
     }
 
 //    // 样式生效
-//    static void SetStyle(const QString &styleName)
+//    static void realodStyle()
 //    {
+//        QString styleName = "style";
 //        QFile file(QString(":/image/%1.css").arg(styleName));
 //        file.open(QFile::ReadOnly);
 //        QString qss = QLatin1String(file.readAll());
-//        qApp->setStyleSheet(qss);
-//        qApp->setPalette(QPalette(QColor("#F0F0F0")));
+//        qApp->setStyleSheet(styleSheet);
+////        qApp->setPalette(QPalette(QColor("#F0F0F0")));
 //    }
+
 
     // 中文设置
     static void SetChinese()

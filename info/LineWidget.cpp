@@ -76,7 +76,7 @@ void LineWidget::onReadLines()
 
 void LineWidget::onLineChange(int id)
 {
-    QString styleStr = "border-image: url(images/info/lineAll.jpg);";
+    QString styleStr = "border-image: url(images/info/line00.jpg);";
     if (id == LINE_ALL_ID) {
         ui->nameLabel->setText("南昌轨道交通运营线路图");
         ui->lineFrame3->setStyleSheet(styleStr);

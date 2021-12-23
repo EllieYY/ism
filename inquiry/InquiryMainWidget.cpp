@@ -20,7 +20,7 @@ InquiryMainWidget::InquiryMainWidget(QWidget *parent) :
     init();
 
 #if IS_TEST_MODE
-//    setTestData();
+    setTestData();
 #endif
 }
 
@@ -61,6 +61,7 @@ void InquiryMainWidget::init()
     connect(HttpTool::getThis(), &HttpTool::hotIssuesReceived, this, &InquiryMainWidget::onHotIssuesShow);
     connect(HttpTool::getThis(), &HttpTool::answerReceived, this, &InquiryMainWidget::onAnswerShow);
     connect(ASRHttpTool::getThis(), &ASRHttpTool::asrResultOk, this, &InquiryMainWidget::onAsrResultShow);
+
 }
 
 

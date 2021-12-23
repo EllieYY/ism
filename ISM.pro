@@ -1,6 +1,6 @@
 QT       += core gui multimedia network
 
-#greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
 
@@ -86,9 +86,11 @@ SOURCES += \
     data/line/InterchangeStation.cpp \
     data/line/LineInfo.cpp \
     data/line/LineInterchangeInfo.cpp \
+    data/line/LineStationTimetables.cpp \
     data/line/LineStations.cpp \
     data/line/LineTimeTables.cpp \
     data/line/Station.cpp \
+    data/line/StationTime.cpp \
     data/thread/FtpDownloadTask.cpp \
     data/thread/FtpUploadTask.cpp \
     data/thread/HeartTask.cpp \
@@ -118,6 +120,7 @@ SOURCES += \
     info/MapWidget.cpp \
     info/MetroInterchangeWidget.cpp \
     info/MetroPeripheralWidget.cpp \
+    info/RbTableHeaderView.cpp \
     info/TicketPriceWidget.cpp \
     info/TimeTableWidget.cpp \
     inquiry/InquiryMainWidget.cpp \
@@ -163,9 +166,11 @@ HEADERS += \
     data/line/InterchangeStation.h \
     data/line/LineInfo.h \
     data/line/LineInterchangeInfo.h \
+    data/line/LineStationTimetables.h \
     data/line/LineStations.h \
     data/line/LineTimeTables.h \
     data/line/Station.h \
+    data/line/StationTime.h \
     data/thread/FtpDownloadTask.h \
     data/thread/FtpUploadTask.h \
     data/thread/HeartTask.h \
@@ -197,6 +202,7 @@ HEADERS += \
     info/MapWidget.h \
     info/MetroInterchangeWidget.h \
     info/MetroPeripheralWidget.h \
+    info/RbTableHeaderView.h \
     info/TicketPriceWidget.h \
     info/TimeTableWidget.h \
     inquiry/InquiryMainWidget.h \

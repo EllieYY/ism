@@ -290,6 +290,8 @@ void HttpTool::parse(QJsonObject data)
                 "images/info/map.png";
 
         image.save(filePath, "png", 100);
+
+        reloadStyleSheet();
         return;
     }
 
@@ -305,6 +307,7 @@ void HttpTool::parse(QJsonObject data)
         QString filePath = QDir::currentPath() + QDir::separator() + "images/info/metroPer.png";
 
         image.save(filePath, "png", 100);
+        reloadStyleSheet();
         return;
     }
 
@@ -375,4 +378,15 @@ void HttpTool::parseLineMaps(QJsonObject data)
 
         return;
     }
+
+    reloadStyleSheet();
+}
+
+void HttpTool::reloadStyleSheet()
+{
+    QString styleName = "style";
+    QFile file(QString("%1.css").arg(styleName));
+    file.open(QFile::ReadOnly);
+    QString qss = QLatin1String(file.readAll());
+    qApp->setStyleSheet(qss);
 }

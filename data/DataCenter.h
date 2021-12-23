@@ -303,6 +303,7 @@ private:
 
 signals:
     void sigSerivceOff();           // 运营结束信号
+    void sigAfcReset();
     void sigReaderReset();          // 读写器复位
     void sigCashboxReset(uchar device);  // 钱箱复位 [bit0]:brc [bit1]:bim [bit2]:f53
 

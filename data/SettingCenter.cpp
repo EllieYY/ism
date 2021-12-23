@@ -26,6 +26,8 @@
 #include "CommonHead.h"
 #include "ReaderSoftFileInfo.h"
 #include "UpdateParamInfo.h"
+#include "LineStationTimetables.h"
+#include "StationTime.h"
 
 SettingCenter* SettingCenter::m_pInstance = NULL;
 SettingCenter::SettingCenter(QObject *parent) : QObject(parent)
@@ -969,6 +971,91 @@ ReaderSoftFileInfo *SettingCenter::getReaderSoftInfo()
     info->setFileReady(rootObject.value("fileReady").toBool());
 
     return info;
+}
+
+QMap<int, LineStationTimetables *> SettingCenter::getLineStationTimetables()
+{
+    QMap<int, LineStationTimetables *> lines;
+    QJsonDocument jsonDocument = readJsonFile("lineStationTimes.json");
+    if (jsonDocument.isNull() || jsonDocument.isEmpty()) {
+        return lines;
+    }
+//    QJsonObject rootObject = jsonDocument.object();
+//    if(!rootObject.contains("lineTimeTables") || !rootObject.value("lineTimeTables").isArray())
+//    {
+//        qDebug() << "No target value";
+//        qDebug() << rootObject.keys();
+//        return lines;
+//    }
+
+//    QJsonArray jsonArray = rootObject.value("lineTimeTables").toArray();
+//    for(auto iter = jsonArray.constBegin(); iter != jsonArray.constEnd(); ++iter)
+//    {
+//        QJsonObject jsonObject = (*iter).toObject();
+
+//        // 线路名称
+//        if (!jsonObject.contains("lineName") || !jsonObject.value("lineName").isString()) {
+//            continue;
+//        }
+//        QString lineName = jsonObject.value("lineName").toString();
+//        LineTimeTables* line = new LineTimeTables(lineName, "", "", "");
+
+//        // 线路运营时间表
+//        if (!jsonObject.contains("timeTable") || !jsonObject.value("timeTable").isArray()) {
+//            lines.append(line);
+//            continue;
+//        }
+//        QJsonArray subJsonArray = jsonObject.value( "timeTable" ).toArray();
+//        for(auto subIter = subJsonArray.constBegin(); subIter != subJsonArray.constEnd(); ++subIter)
+//        {
+//            QJsonObject subJsonObject = (*subIter).toObject();
+//            if (subJsonObject.contains("startStation") && subJsonObject.value("startStation").isString() &&
+//                subJsonObject.contains("endStation") && subJsonObject.value("endStation").isString() &&
+//                subJsonObject.contains("startTime") && subJsonObject.value("startTime").isString() &&
+//                subJsonObject.contains("endTime") && subJsonObject.value("endTime").isString()) {
+//                ISMTimeTable* timeTable = new ISMTimeTable(subJsonObject.value("startStation").toString(),
+//                                                           subJsonObject.value("endStation").toString(),
+//                                                           subJsonObject.value("startTime").toString(),
+//                                                           subJsonObject.value("endTime").toString());
+//                line->addTimeTable(timeTable);
+//            }
+//        }
+//        lines.append(line);
+//    }
+    return lines;
+
+}
+
+void SettingCenter::saveLineStationTimetables(QList<LineStationTimetables *> lines)
+{
+    QJsonArray jsonArray;
+    QJsonObject rootObject;
+    QJsonObject branchObject;
+    QJsonObject leafObject;
+    for (LineStationTimetables* line:lines) {
+        QJsonArray subJsonArray;
+        QList<StationTime*> timeTables = line->stationTimes();
+        for (StationTime* timeTable:timeTables) {
+            leafObject.insert("name", timeTable->stationName());
+            leafObject.insert("endTimeA", timeTable->aEndTime());
+            leafObject.insert("endTimeB", timeTable->bEndTime());
+            leafObject.insert("startTimeA", timeTable->aStartTime());
+            leafObject.insert("startTimeB", timeTable->bStartTime());
+            subJsonArray.append(leafObject);
+        }
+
+        branchObject.insert("lineCode", line->lineCode());
+        branchObject.insert("dirA", line->dirA());
+        branchObject.insert("dirB", line->dirB());
+        branchObject.insert("stations", subJsonArray);
+        jsonArray.append(branchObject);
+
+        clearJsonObject(leafObject);
+        clearJsonObject(branchObject);
+    }
+
+    rootObject.insert("lineTimeTables", jsonArray);
+    saveJsonFile(rootObject, "lineStationTimes.json");
 }
 
 

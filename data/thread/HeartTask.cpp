@@ -55,7 +55,7 @@ void HeartTask::serviceStateCheck()
 
 //    // TODO:test code
 //    startSec = 14 * 3600 + 41 * 60;
-//    endSec = 14 * 3600 + 45 * 60;
+//    endSec = 22 * 3600 + 15 * 60;
 
     // 交集为反
     bool type = true;
@@ -71,8 +71,8 @@ void HeartTask::serviceStateCheck()
 
     bool serviceOff = serviceOn ^ type;
 
-    QString info = QString("start:%1, end:%2, serviceOff:%3").arg(startSec).arg(endSec).arg(serviceOff);
-    qDebug() << "serviceStateCheck = " << info;
+//    QString info = QString("start:%1, end:%2, serviceOff:%3").arg(startSec).arg(endSec).arg(serviceOff);
+//    qDebug() << "serviceStateCheck = " << info;
 
     DataCenter::getThis()->setServiceOff(serviceOff);
 }
