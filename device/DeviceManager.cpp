@@ -1,4 +1,4 @@
-#include "DeviceManager.h"
+﻿#include "DeviceManager.h"
 #include "NC_ReaderLib.h"
 #include "BIM2020.h"
 #include "NCNetwork_Lib.h"
@@ -215,7 +215,7 @@ int DeviceManager::readBasicInfo()
     // 票卡信息获取
     int ret = readTicketInfo(anti);
 
-//    // TODO: 使用测试数据
+    // TODO: 使用测试数据
 //    ret = 0;
 //    setTestData();
 

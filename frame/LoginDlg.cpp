@@ -1,4 +1,4 @@
-#include "LoginDlg.h"
+﻿#include "LoginDlg.h"
 #include "ui_LoginDlg.h"
 #include <QScreen>
 #include <QAction>
@@ -22,12 +22,12 @@ LoginDlg::~LoginDlg()
 
 void LoginDlg::initShow()
 {
-//    ui->userLineEdit->setText("");
-//    ui->pwdLineEdit->setText("");
+    ui->userLineEdit->setText("");
+    ui->pwdLineEdit->setText("");
 
     // TODO:测试数据
-    ui->userLineEdit->setText("04326688");
-    ui->pwdLineEdit->setText("123456");
+//    ui->userLineEdit->setText("04326688");
+//    ui->pwdLineEdit->setText("123456");
     show();
 }
 

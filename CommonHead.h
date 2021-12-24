@@ -40,6 +40,7 @@
 #define PARAM_FILE_PATH "sc\\parameter"
 #define SOFT_FILE_PATH "sc\\soft"
 #define TRADE_FILE_PATH "sc\\transcation"
+#define CASHBOX_FILE_PATH "sc\\cashbox"
 
 
 // 低频周期任务ID，固定使用

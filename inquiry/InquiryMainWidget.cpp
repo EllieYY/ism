@@ -1,4 +1,4 @@
-#include "InquiryMainWidget.h"
+﻿#include "InquiryMainWidget.h"
 #include "ui_InquiryMainWidget.h"
 
 #include "SettingCenter.h"
@@ -36,7 +36,7 @@ bool InquiryMainWidget::showData()
     ui->msgListWidget->clear();
     showMsg("请问有什么可以帮您？", QNChatMessage::User_She);
 
-    m_sessionId = DataCenter::getThis()->getDeviceId() + QDateTime::currentSecsSinceEpoch();
+    m_sessionId = DataCenter::getThis()->getDeviceId() + QString::number(QDateTime::currentSecsSinceEpoch());
     HttpTool::getThis()->requestHotIssues();
     return true;
 }

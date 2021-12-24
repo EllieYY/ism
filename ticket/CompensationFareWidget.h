@@ -1,4 +1,4 @@
-#ifndef COMPENSATIONFAREWIDGET_H
+﻿#ifndef COMPENSATIONFAREWIDGET_H
 #define COMPENSATIONFAREWIDGET_H
 
 #include <QWidget>
@@ -41,10 +41,15 @@ private:
 
     void deviceStateShow();                         // 设备在线状态显示
     void showInfo(QString info);                    // 操作信息显示
+
+    void logForCashbox(QString line);      // 钱箱日志
+
 private:
     /* 操作参数 */
     int        m_difference;            // 需补足的差额
     int        m_income;                // 投币金额
+    int        m_inCoins;               // 投入硬币
+    int        m_inBanknotes;           // 投入纸币
 
     bool       m_isNeedReturn;          // 是否需要退币
     int        m_payingState;           // -1:初始状态  0：开始投币  1：继续投币  2：停止投币

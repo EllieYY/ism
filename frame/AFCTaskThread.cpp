@@ -1,4 +1,4 @@
-/*
+﻿/*
  * AFC相关业务监听线程
 */
 #include "AFCTaskThread.h"
@@ -22,12 +22,6 @@ AFCTaskThread::AFCTaskThread(QObject *parent) : QThread(parent)
 
 void AFCTaskThread::onAfcReset()
 {
-//    qDebug() << "onAfcReset 运行线程：" << QThread::currentThreadId() << ", " << QDateTime::currentSecsSinceEpoch();
-
-//    for (long i = 0; i < 1000000; i++) {
-//        int a = i;
-//    }
-
     logger()->info("[onAfcReset]网络库重连");
 
     m_dealSeq = 0;
@@ -189,12 +183,13 @@ void AFCTaskThread::make9005Resp(uchar *body)
     logger()->info("[9005h]msg=%1", msgStr);
 
     QString deviceIdStr = DataCenter::getThis()->getDeviceId();
-    QString versionStr = DataCenter::getThis()->getReaderVersion();
+//    QString versionStr = DataCenter::getThis()->getReaderVersion();
+    QString versionStr = DataCenter::getThis()->getIsmVersion();
 
     AFC_9005_PKG_BODY_R param = {0};
-    param.AppType = 0x01;         // 读卡器
+    param.AppType = 0x09;         // BOM , 读写器0x01
     MyHelper::hexStrToByte(deviceIdStr, 4, param.PartID);  // 部件ID
-    MyHelper::hexStrToByte(versionStr, 4, param.AppVer);   // 读写器版本号
+    MyHelper::hexStrToByte(versionStr, 4, param.AppVer);   // 读版本号
 
     QList<AFC_9005_PKG_BODY_R> paramList;
     paramList.append(param);

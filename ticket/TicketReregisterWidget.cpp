@@ -302,10 +302,9 @@ void TicketReregisterWidget::onCalcFare()
 
     BYTE ret = calcFare(&calFareIn, &calFareOut);
 
-//    // TODO:test code
+    // TODO:test code
 //    ret = 0;
 //    calFareOut.intAmount = 300;
-
 
     if (ret != 0) {
         MyHelper::ShowMessageBoxError(QString("无法计算更新所需费用{%1}，请重试或联系人工客服。").arg(ret));
@@ -430,7 +429,7 @@ void TicketReregisterWidget::setStyle()
     ui->lineEdit3->setDisabled(true);
     ui->lineEdit4->setDisabled(true);
     ui->lineEdit5->setDisabled(true);
-//    ui->lineEdit6->setDisabled(true);
+    ui->lineEdit6->setDisabled(true);
 
     ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
     ui->tableWidget->verticalHeader()->setVisible(false);

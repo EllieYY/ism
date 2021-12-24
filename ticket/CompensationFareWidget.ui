@@ -77,7 +77,7 @@
            <property name="frameShadow">
             <enum>QFrame::Raised</enum>
            </property>
-           <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,0,0,0,1">
+           <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,0,0,1">
             <property name="spacing">
              <number>20</number>
             </property>
@@ -111,13 +111,6 @@
              <widget class="QRadioButton" name="bimRadioBtn">
               <property name="text">
                <string>纸币模块</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QRadioButton" name="f53RadioBtn">
-              <property name="text">
-               <string>纸币找零</string>
               </property>
              </widget>
             </item>

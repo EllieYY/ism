@@ -1,4 +1,4 @@
-#include "LogoutDlg.h"
+﻿#include "LogoutDlg.h"
 #include "ui_LogoutDlg.h"
 #include <QAction>
 #include "DataCenter.h"
@@ -7,6 +7,7 @@
 #include "NCNetwork_Lib.h"
 #include <QAbstractSlider>
 #include "BIM2020.h"
+#include "TicketBasicInfo.h"
 
 LogoutDlg::LogoutDlg(QWidget *parent) :
     QWidget(parent),
@@ -19,6 +20,7 @@ LogoutDlg::LogoutDlg(QWidget *parent) :
     connect(ui->logoutBtn, &QPushButton::clicked, this, &LogoutDlg::onLogout);
 
     // 显示控制按钮
+    ui->f53SetBtn->hide();
     connect(ui->f53SetBtn, &QPushButton::clicked, this, &LogoutDlg::showF53Set);
     connect(ui->brcSetBtn, &QPushButton::clicked, this, &LogoutDlg::showBrcSet);
     connect(ui->hideBtn, &QPushButton::clicked, this, &LogoutDlg::hideSetFrame);
@@ -187,10 +189,13 @@ void LogoutDlg::brcSetOk()
     QString info = QString("修改找零器中硬币数量Modify_Hopper_Balance(%1) = %2").arg(num).arg(ret);
     MyHelper::ShowMessageBoxInfo(info);
 
-//    if (ret != 0) {
-//        MyHelper::ShowMessageBoxError("设置失败，请重试。");
-//        return;
-//    }
+    if (ret != 0) {
+        MyHelper::ShowMessageBoxError("设置失败，请重试。");
+        return;
+    }
+
+    // 钱箱日志
+    logForCashbox(QString("修改找零器中硬币数量为：%1元").arg(num));
 
     // 参数数值生效，用户提醒
     ui->frame->hide();
@@ -213,10 +218,12 @@ void LogoutDlg::f53SetOk()
     QString info = QString("设置纸钞找零模块参数F53Bill_Setting([钱箱1]%1, [钱箱2]%2) = %3").arg(denomination1).arg(denomination2).arg(ret);
     MyHelper::ShowMessageBoxInfo(info);
 
-//    if (ret != 0) {
-//        MyHelper::ShowMessageBoxError("设置失败，请重试。");
-//        return;
-//    }
+    if (ret != 0) {
+        MyHelper::ShowMessageBoxError("设置失败，请重试。");
+        return;
+    }
+
+//    logForCashbox(QString("修改找零器中硬币数量为：%1元").arg(num));
 
     // 参数数值生效，用户提醒
     ui->frame->hide();
@@ -299,4 +306,37 @@ int LogoutDlg::getDenomination(int index)
     }
 
     return denom;
+}
+
+void LogoutDlg::logForCashbox(QString line)
+{
+    int amount2 = Request_Hopper_Balance();   // 检查找找零器中的硬币余额
+    int amount3 = Request_Cashbox_Counter();   //查询钱箱中的硬币数量
+
+    QDateTime curTime = QDateTime::currentDateTime();
+    QString operatorId = ui->userLineEdit->text();
+    QString prefixInfo = QString("%1  [操作员编号%2]%3, 硬币找零器余额%4元，硬币钱箱余额%5元")
+            .arg(curTime.toString("yyyy-MM-dd HH:mm:ss"))
+            .arg(operatorId)
+            .arg(line)
+            .arg(amount2).arg(amount3);
+
+    QDate curDay = QDate::currentDate();
+    QString fileName = QString("cashboxLog_%1.log").arg(curDay.toString("yyyyMMdd"));
+    QString filePath = QDir::currentPath() + QDir::separator() + QString(CASHBOX_FILE_PATH) +
+            QDir::separator() + fileName;
+
+    logger()->info("[%1]%2", filePath, prefixInfo);
+    QFile file(filePath);
+    if(!file.open(QIODevice::ReadWrite | QIODevice::Append | QIODevice::Text)) {
+
+        logger()->info("%1日志文件打开失败", filePath);
+//        logger()->info("[%1]%2", filePath, prefixInfo);
+        return;
+    }
+
+    QTextStream in(&file);
+    in << prefixInfo << "\n";
+    file.close();
+
 }

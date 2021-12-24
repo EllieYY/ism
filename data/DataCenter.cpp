@@ -126,7 +126,8 @@ void DataCenter::secEvent()
 
 void DataCenter::init()
 {
-    logger()->info("ISM version:%1", "20211224-1624");
+    m_ismVersion = "00000004";
+    logger()->info("ISM version:%1", "20211224-2332-%1", m_ismVersion);
     initData();    // 默认数据
 
     /* 基础信息 */
@@ -1492,6 +1493,11 @@ bool DataCenter::getIsLogin() const
 bool DataCenter::getServiceOff() const
 {
     return m_serviceOff;
+}
+
+QString DataCenter::getIsmVersion() const
+{
+    return m_ismVersion;
 }
 
 int DataCenter::getTaskId()

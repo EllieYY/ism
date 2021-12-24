@@ -56,7 +56,6 @@ ISMFrame::ISMFrame(QWidget *parent) :
     this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint | Qt::WindowMinMaxButtonsHint);
     this->showFullScreen();
     this->showMaximized();
-//    myHelper::FormInCenter(this);
 
     ui->setupUi(this);
     init();
@@ -88,6 +87,7 @@ void ISMFrame::logout()
     // 签退
     LogoutDlg* dlg = new LogoutDlg(this);
     connect(dlg, &LogoutDlg::logoutOk, this, &ISMFrame::login);
+    MyHelper::FormInCenter(dlg);
     dlg->show();
 }
 

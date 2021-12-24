@@ -215,6 +215,8 @@ public:
     bool getIsLogin() const;
     bool getServiceOff() const;
 
+    QString getIsmVersion() const;
+
 private:
     long m_hrtCnt[HEART_NUM];                   // 心跳计数
     int m_afcNetState;                          // AFC网络状态 0-在线 1-离线
@@ -304,6 +306,9 @@ private:
     int taskId;                     // 任务Id
     int m_curParamTaskId;           // 用来记录参数文件下载的任务Id
     int m_curSoftwareTaskId;        // 记录软件程序下载的任务id
+
+    // ISM版本号
+    QString m_ismVersion;
 
 signals:
     void sigSerivceOff();           // 运营结束信号

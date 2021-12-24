@@ -1,8 +1,8 @@
-#include "BasicInfo.h"
+﻿#include "BasicInfo.h"
 
 BasicInfo::BasicInfo(QObject *parent) : QObject(parent)
 {
-
+    m_tradeFileDays = 30;   // 默认值
 }
 
 QString BasicInfo::stationName() const

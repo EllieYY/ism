@@ -1,4 +1,4 @@
-#ifndef LOGOUTDLG_H
+﻿#ifndef LOGOUTDLG_H
 #define LOGOUTDLG_H
 
 #include <QWidget>
@@ -44,6 +44,8 @@ private:
     void setF2Value(int val);
 
     int getDenomination(int index);
+
+    void logForCashbox(QString line);      // 钱箱日志
 
 private:
     Ui::LogoutDlg *ui;
