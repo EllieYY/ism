@@ -1,4 +1,4 @@
-#include "CompensationFareWidget.h"
+﻿#include "CompensationFareWidget.h"
 #include "ui_CompensationFareWidget.h"
 #include "BIM2020.h"
 #include "CommonHead.h"
@@ -60,14 +60,13 @@ void CompensationFareWidget::initShow(int difference, uchar devState)
     showInfo(info2);
 
 
-    // TODO:打开限制
-//    // 设备状态检查，限制功能使用
-//    if (devState == 0x00) {
-//        MyHelper::ShowMessageBoxError("硬件设备故障，无法投币，请联系工作人员。");
-//        supplementaryOk(false);
-//        close();
-//        return;
-//    }
+    // 设备状态检查，限制功能使用
+    if (devState == 0x00) {
+        MyHelper::ShowMessageBoxError("硬件设备故障，无法投币，请联系工作人员。");
+        supplementaryOk(false);
+        close();
+        return;
+    }
 
     deviceStateShow();
     ui->infoLabel->setText(QString("请投币%1元。").arg(m_difference));

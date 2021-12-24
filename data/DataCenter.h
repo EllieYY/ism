@@ -175,6 +175,8 @@ private:
     void serviceStateCheck();      // 运营时间结束检测
     void serviceOffHandle();       // 运营结束处理
 
+    void testTask();
+
 public:
     // 参数文件解析
     void initParamVersion();

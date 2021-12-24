@@ -29,12 +29,19 @@ TaskThread::~TaskThread()
 
 void TaskThread::addTask(CTask *task)
 {
-    qDebug() << "addTask";
     // 必须加锁访问任务队列，防止并发访问发生冲突
     QMutexLocker locker(&mutex);
-    qDebug() << "addTask ok:" << task->taskId();
     taskQueue.enqueue(task); // 添加任务
-    qDebug() << "add taskQueue size :" << taskQueue.size();
+
+    // TODO：出现task阻塞的情况下，要怎么处理
+    if (taskQueue.size() > 1000) {
+        for (int i = 0; i < 1000; i++) {
+            CTask* task1 = taskQueue.dequeue();
+            delete task1; task1 = nullptr;
+        }
+    }
+//    qDebug() << "addTask ok, id=:" << task->taskId()
+//             << ", taskQueue size :" << taskQueue.size();
     taskAdded.wakeOne();
 }
 
@@ -52,10 +59,8 @@ void TaskThread::run()
 
     forever {
         {
-            qDebug() << "TaskThread.";
             QMutexLocker locker(&mutex);
 
-            qDebug() << "taskQueue size=" << taskQueue.size();
             if (taskQueue.isEmpty()) {
                 // 任务队列为空，等待有任务时唤醒
                 taskAdded.wait(&mutex);
@@ -73,7 +78,7 @@ void TaskThread::run()
 
         if (task) {
             // 发送任务开始执行信号
-            emit taskStart(task->message());
+            qDebug() << task->message();
 
             // 执行任务
             task->doWork();

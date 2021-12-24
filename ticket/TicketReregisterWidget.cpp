@@ -1,4 +1,4 @@
-#include "TicketReregisterWidget.h"
+﻿#include "TicketReregisterWidget.h"
 #include "ui_TicketReregisterWidget.h"
 #include "CommonHead.h"
 #include "DataCenter.h"
@@ -333,7 +333,6 @@ void TicketReregisterWidget::onCalcFare()
         ui->cashPollBtn->setDisabled(false);
         m_payType = 0x01;      // 余额不足时，现金支付
     }
-
 }
 
 void TicketReregisterWidget::onSupplementaryOk(bool result)

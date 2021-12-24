@@ -80,7 +80,6 @@ DataCenter *DataCenter::getThis()
 // 心跳连接处理
 void DataCenter::secEvent()
 {
-    qDebug() << "secEvent";
     // 运营日结束检测
     serviceStateCheck();
 
@@ -113,7 +112,7 @@ void DataCenter::secEvent()
 
     // 交易文件定时上传
     bool fileTriggered = false;
-    if ((m_timeCount % m_tradeDataIntervalSec) == m_tradeDataIntervalSec || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
+    if ((m_timeCount % m_tradeDataIntervalSec) == 0 || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
         fileTriggered = true;
         logger()->info("交易文件定时上送：%1, %2", m_timeCount, m_tradeDataIntervalSec);
         AFCTimerTask* task = new AFCTimerTask(TRADE_FILE);
@@ -195,7 +194,6 @@ void DataCenter::initData()
     m_isSpecieUsable = false;         // 硬币模块可用状态
     m_isBanknotesUsable = false;      // 纸币模块可用状态
     m_isSamOk = false;
-
 
     // AFC网络状态 - 默认在线
     m_afcNetState = 0;
@@ -725,22 +723,19 @@ bool DataCenter::findFileForDelete(const QString filePath, int days)
 {
     // 本地最多保留120天的交易数据,最少保留30天数据，程序控制，避免配置文件错误配置导致数据不完整
     // 因为判断的是最后修改时间，所以天数要比传参多一天
-    int deleteDays = - days + 1;
-    if (days <= 0) {
-        deleteDays = days + 1;
-    } else if (days > 120) {
-        deleteDays = -119;
-    }
+    int deleteDays = std::abs(days);
+//    deleteDays = (deleteDays < 10) ? 10 : deleteDays;
+    deleteDays = (deleteDays < 30) ? 30 : deleteDays;
+    deleteDays = (deleteDays > 120) ? 120 : deleteDays;
 
-    if (deleteDays > -30) {
-        deleteDays = -30;
-    }
+    deleteDays = - deleteDays + 1;
 
     QDir dir(filePath);
     if (!dir.exists())
         return false;
     dir.setFilter(QDir::Dirs | QDir::Files);
     dir.setSorting(QDir::DirsFirst);
+
     QFileInfoList list = dir.entryInfoList();
     int i = 0;
     do {
@@ -752,10 +747,12 @@ bool DataCenter::findFileForDelete(const QString filePath, int days)
         }
         bool bisDir = fileInfo.isDir();
         if(bisDir) {   // 不对子目录下的文件进行删除操作
+            i++;
             continue;
         } else {
             // 跳过json文件（配置文件）
             if (fileInfo.fileName().contains(".json")) {
+                i++;
                 continue;
             }
             //如果是文件，判断文件日期。
@@ -764,12 +761,12 @@ bool DataCenter::findFileForDelete(const QString filePath, int days)
             if (nSecs < 0) {
                 qDebug() << qPrintable(QString("%1 %2 %3").arg(fileInfo.size(), 10)
                                                     .arg(fileInfo.fileName(),10).arg(fileInfo.path()))<<endl;
-                //删除30天前的文件
+                //删除文件
                 fileInfo.dir().remove(fileInfo.fileName());
             }
         }
         i++;
-    } while(i<list.size());
+    } while(i < list.size());
     return true;
 }
 
@@ -1518,7 +1515,7 @@ void DataCenter::serviceStateCheck()
 
 //    // TODO:test code
 //    startSec = 14 * 3600 + 41 * 60;
-    endSec = 16 * 3600 + 36 * 60;
+    endSec = 19 * 3600 + 32 * 60;
 
     // 交集为反
     bool type = true;
@@ -1542,7 +1539,12 @@ void DataCenter::serviceOffHandle()
 {
     logger()->info("运营日结束。");
     // 数据复位 -- 是否需要重新读取配置文件
+    // 数据会自动循环，或者按文件规则来，无需额外复位。
 
+    // ISM后台数据拉取
+    logger()->info("ISM后台数据拉取");
+    ISMHttpTask* ismTask = new ISMHttpTask();
+    m_taskThread->addTask(ismTask);
 
     // 交易文件删除 -- 任务
     QString path = QDir::currentPath() + QDir::separator() + TRADE_FILE_PATH;
@@ -1550,11 +1552,17 @@ void DataCenter::serviceOffHandle()
     logger()->info("交易文件删除：path=%1, days=%2", path, tradeFileDays);
     FileDeleteTask* task = new FileDeleteTask(path, tradeFileDays);
     m_taskThread->addTask(task);
+}
 
-    // ISM后台数据拉取
-    logger()->info("ISM后台数据拉取");
-    ISMHttpTask* ismTask = new ISMHttpTask();
-    m_taskThread->addTask(ismTask);
+void DataCenter::testTask()
+{
+    QDateTime now = QDateTime::currentDateTime();
+    if ((now.time().second() % 20) == 0) {
+        qDebug() << "test task.";
+//        HeartTask* task = new HeartTask();
+        ISMHttpTask* task = new ISMHttpTask();
+        m_taskThread->addTask(task);
+    }
 }
 
 

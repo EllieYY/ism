@@ -11,7 +11,10 @@ FileDeleteTask::FileDeleteTask(QString filePath, int days)
 
 int FileDeleteTask::doWork()
 {
+    qDebug() << "start";
     DataCenter::getThis()->findFileForDelete(m_filePath, m_days);
+
+    qDebug() << "end";
     return 0;
 }
 
