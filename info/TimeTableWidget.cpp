@@ -4,6 +4,10 @@
 #include "DataCenter.h"
 #include "LineTimeTables.h"
 #include "ISMTimeTable.h"
+#include "SettingCenter.h"
+#include "RbTableHeaderView.h"
+#include "LineStationTimetables.h"
+#include "StationTime.h"
 
 
 TimeTableWidget::TimeTableWidget(QWidget *parent) :
@@ -31,15 +35,89 @@ TimeTableWidget::~TimeTableWidget()
 //    return true;
 //}
 
-void TimeTableWidget::showLineTimetables(int line)
+void TimeTableWidget::showLineTimetables(QTableView* view, LineStationTimetables* lineInfo)
 {
+//    ui->tableView->clear();
+    if (lineInfo == NULL) {
+        return;
+    }
 
+    QString dirAStr = QString("往%1方向").arg(lineInfo->dirA());
+    QString dirBStr = QString("往%1方向").arg(lineInfo->dirB());
+    RbTableHeaderView* hHead = new RbTableHeaderView(Qt::Horizontal,2,5);
+    QAbstractItemModel* hModel = hHead->model();
+    QStandardItemModel* dataModel = new QStandardItemModel;
+
+    hHead->setSpan(0,0,2,0);
+    hHead->setSpan(0,1,0,2);
+    hHead->setSpan(0,3,0,2);
+    hModel->setData(hModel->index(0,0),QString("车站"),Qt::DisplayRole);
+    hModel->setData(hModel->index(0,1),QString("首班车"),Qt::DisplayRole);
+    hModel->setData(hModel->index(0,3),QString("末班车"),Qt::DisplayRole);
+    hModel->setData(hModel->index(1,1),QString(dirAStr),Qt::DisplayRole);
+    hModel->setData(hModel->index(1,2),QString(dirBStr),Qt::DisplayRole);
+    hModel->setData(hModel->index(1,3),QString(dirAStr),Qt::DisplayRole);
+    hModel->setData(hModel->index(1,4),QString(dirBStr),Qt::DisplayRole);
+
+    hHead->setRowHeight(0,30);
+    hHead->setRowHeight(1,30);
+
+//    hHead->setCellBackgroundColor(hModel->index(0,0), 0xcfcfcf);
+//    hHead->setCellBackgroundColor(hModel->index(0,1), 0xcfcfcf);
+
+    QList<StationTime*> stationList = lineInfo->stationTimes();
+    for (StationTime* item : stationList) {
+        QList<QStandardItem*> items;
+        items.append(new QStandardItem(item->stationName()));
+        items.append(new QStandardItem(item->aStartTime()));
+        items.append(new QStandardItem(item->bStartTime()));
+        items.append(new QStandardItem(item->aEndTime()));
+        items.append(new QStandardItem(item->bEndTime()));
+
+        dataModel->appendRow(items);
+    }
+
+    // 此处调用顺序，setHorizontalHeader务必在后
+    view->setModel(dataModel);
+    view->setHorizontalHeader(hHead);
+}
+
+void TimeTableWidget::onBtn(int id)
+{
+    QTableView* view = m_lineViewMap.key(id);
+    view->show();
 }
 
 void TimeTableWidget::init()
 {
-    //TODO： 线路时刻信息获取
+    //线路时刻信息获取
+    this->m_lineTimes.insert(SettingCenter::getThis()->getLineStationTimetables());
+    QList<int> keys = m_lineTimes.keys();
+    std::sort(keys.begin(), keys.end());
 
+
+    QVBoxLayout* viewLayout = new QVBoxLayout;
+    QHBoxLayout* btnLayout = new QHBoxLayout;
+
+    QButtonGroup* buttonGroup = new QButtonGroup(this);
+    for (int key:keys) {
+        QPushButton* btn = new QPushButton(this);
+        QTableView* view = new QTableView(this);
+        LineStationTimetables* info = m_lineTimes.value(key);
+        showLineTimetables(view, info);
+
+        buttonGroup->addButton(btn, key);
+        m_lineViewMap.insert(key, view);
+
+        viewLayout->addWidget(view);
+        btnLayout->addWidget(btn);
+        view->hide();
+    }
+
+    connect(buttonGroup, &QButtonGroup::idClicked, this, &TimeTableWidget::onBtn);
+
+    ui->viewFrame->setLayout(viewLayout);
+    ui->btnFrame->setLayout(btnLayout);
 
     m_initOk = false;
     setStyle();
@@ -48,22 +126,23 @@ void TimeTableWidget::init()
 
 void TimeTableWidget::setStyle()
 {
+
+
     ui->tableWidget->setColumnWidth(0, 200);
     ui->tableWidget->setColumnWidth(1, 700);
     ui->tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
     ui->tableWidget->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
     ui->tableWidget->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
-//    ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
+    ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
 
-    ui->tableWidget->verticalHeader()->setVisible(false);
+    ui->tableWidget->horizontalHeader()->setVisible(true);
     ui->tableWidget->verticalHeader()->setDefaultSectionSize(60);
-//    ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->tableWidget->setFrameShape(QFrame::NoFrame);
 
     ui->tableWidget->verticalHeader()->setVisible(false);                 // 列表头不可见
     ui->tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);  // 表格不可编辑
     ui->tableWidget->setSelectionMode(QAbstractItemView::NoSelection); //设置只能选择一行，不能多行选中
-
 
     ui->tableWidget->setFocusPolicy(Qt::NoFocus);    // 虚线框取消
 

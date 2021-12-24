@@ -980,50 +980,57 @@ QMap<int, LineStationTimetables *> SettingCenter::getLineStationTimetables()
     if (jsonDocument.isNull() || jsonDocument.isEmpty()) {
         return lines;
     }
-//    QJsonObject rootObject = jsonDocument.object();
-//    if(!rootObject.contains("lineTimeTables") || !rootObject.value("lineTimeTables").isArray())
-//    {
-//        qDebug() << "No target value";
-//        qDebug() << rootObject.keys();
-//        return lines;
-//    }
+    QJsonObject rootObject = jsonDocument.object();
+    if(!rootObject.contains("lineTimeTables") || !rootObject.value("lineTimeTables").isArray())
+    {
+        qDebug() << "No target value";
+        qDebug() << rootObject.keys();
+        return lines;
+    }
 
-//    QJsonArray jsonArray = rootObject.value("lineTimeTables").toArray();
-//    for(auto iter = jsonArray.constBegin(); iter != jsonArray.constEnd(); ++iter)
-//    {
-//        QJsonObject jsonObject = (*iter).toObject();
+    QJsonArray jsonArray = rootObject.value("lineTimeTables").toArray();
+    for(auto iter = jsonArray.constBegin(); iter != jsonArray.constEnd(); ++iter)
+    {
+        QJsonObject jsonObject = (*iter).toObject();
 
-//        // 线路名称
-//        if (!jsonObject.contains("lineName") || !jsonObject.value("lineName").isString()) {
-//            continue;
-//        }
-//        QString lineName = jsonObject.value("lineName").toString();
-//        LineTimeTables* line = new LineTimeTables(lineName, "", "", "");
+        // 线路编号
+        if (!jsonObject.contains("lineCode")) {
+            continue;
+        }
+        int code = jsonObject.value("lineCode").toInt();
+        LineStationTimetables* line = new LineStationTimetables(this);
+        line->setLineCode(code);
+        line->setDirA(jsonObject.value("dirA").toString());
+        line->setDirB(jsonObject.value("dirB").toString());
 
-//        // 线路运营时间表
-//        if (!jsonObject.contains("timeTable") || !jsonObject.value("timeTable").isArray()) {
-//            lines.append(line);
-//            continue;
-//        }
-//        QJsonArray subJsonArray = jsonObject.value( "timeTable" ).toArray();
-//        for(auto subIter = subJsonArray.constBegin(); subIter != subJsonArray.constEnd(); ++subIter)
-//        {
-//            QJsonObject subJsonObject = (*subIter).toObject();
-//            if (subJsonObject.contains("startStation") && subJsonObject.value("startStation").isString() &&
-//                subJsonObject.contains("endStation") && subJsonObject.value("endStation").isString() &&
-//                subJsonObject.contains("startTime") && subJsonObject.value("startTime").isString() &&
-//                subJsonObject.contains("endTime") && subJsonObject.value("endTime").isString()) {
-//                ISMTimeTable* timeTable = new ISMTimeTable(subJsonObject.value("startStation").toString(),
-//                                                           subJsonObject.value("endStation").toString(),
-//                                                           subJsonObject.value("startTime").toString(),
-//                                                           subJsonObject.value("endTime").toString());
-//                line->addTimeTable(timeTable);
-//            }
-//        }
-//        lines.append(line);
-//    }
+        // 线路运营时间表
+        if (!jsonObject.contains("stations") || !jsonObject.value("stations").isArray()) {
+            lines.insert(code, line);
+            continue;
+        }
+        QJsonArray subJsonArray = jsonObject.value( "stations" ).toArray();
+        for(auto subIter = subJsonArray.constBegin(); subIter != subJsonArray.constEnd(); ++subIter)
+        {
+            QJsonObject subJsonObject = (*subIter).toObject();
+            if (subJsonObject.contains("name") && subJsonObject.value("name").isString() &&
+                subJsonObject.contains("endTimeA") && subJsonObject.value("endTimeA").isString() &&
+                subJsonObject.contains("endTimeB") && subJsonObject.value("endTimeB").isString() &&
+                subJsonObject.contains("startTimeA") && subJsonObject.value("startTimeA").isString() &&
+                subJsonObject.contains("startTimeB") && subJsonObject.value("startTimeB").isString()) {
+
+                StationTime* station = new StationTime(this);
+                station->setStationName(subJsonObject.value("name").toString());
+                station->setAEndTime(subJsonObject.value("endTimeA").toString());
+                station->setBEndTime(subJsonObject.value("endTimeB").toString());
+                station->setAStartTime(subJsonObject.value("startTimeA").toString());
+                station->setBStartTime(subJsonObject.value("startTimeB").toString());
+
+                line->addStationTime(station);
+            }
+        }
+        lines.insert(code, line);
+    }
     return lines;
-
 }
 
 void SettingCenter::saveLineStationTimetables(QList<LineStationTimetables *> lines)

@@ -23,6 +23,7 @@ HttpTool *HttpTool::getThis()
 // 响应处理
 void HttpTool::replyFinished(QNetworkReply *reply)
 {
+    logger()->info("[replyFinished]");
     // 获取http状态码
     QVariant statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
     if(statusCode.isValid())
@@ -38,6 +39,7 @@ void HttpTool::replyFinished(QNetworkReply *reply)
         return;
     }
 
+    logger()->info("befor QJson parse.");
 
     // 获取返回内容
     QJsonParseError jsonParseError;
@@ -50,6 +52,8 @@ void HttpTool::replyFinished(QNetworkReply *reply)
         logger()->error("No content.");
         return;
     }
+
+    logger()->info("---------#1");
 
     // 根节点 -- json格式和错误码判断
     QJsonObject rootObject = doc.object();
@@ -65,12 +69,14 @@ void HttpTool::replyFinished(QNetworkReply *reply)
         return;
     }
 
+    logger()->info("---------#2");
     // 根节点 -- 返回数据
     if(!rootObject.contains("data")) {
 //        logger()->error("Invalid json format.");
         return;
     }
 
+    logger()->info("---------#3");
     parse(rootObject.value("data").toObject());
 
 }
@@ -246,9 +252,43 @@ QByteArray HttpTool::stationParam()
 // ism后台返回结果解析
 void HttpTool::parse(QJsonObject data)
 {
+
 //    logger()->info("data: " + QJsonDocument(data).toJson(QJsonDocument::Compact));
 
     if(data.isEmpty()) {
+        return;
+    }
+
+    // 智能问答
+    if (data.contains("answer") && data.value("answer").isString()) {
+        QString answer = data.value("answer").toString();
+        logger()->info("answer: %1", answer);
+
+        emit answerReceived(answer);
+        return;
+    }
+
+    // 热点问题
+    if (data.contains("hotIssues") && data.value("hotIssues").isArray()) {
+        QJsonArray jsonArray = data.value("hotIssues").toArray();
+        QList<QString> hotIssues;
+        int count = 1;
+        for(auto iter = jsonArray.constBegin(); iter != jsonArray.constEnd(); ++iter)
+        {
+            QString issue = (*iter).toString();
+            hotIssues.append(issue);
+            if (count++ >= 5) {
+                break;
+            }
+        }
+        emit hotIssuesReceived(hotIssues);
+        return;
+    }
+
+    // 票价查询
+    if (data.contains("price") && data.value("price").isString()) {
+        double price = data.value("price").toString().toDouble();
+        emit priceReceived(price);
         return;
     }
 
@@ -298,6 +338,7 @@ void HttpTool::parse(QJsonObject data)
     // 线路图
     parseLineMaps(data);
 
+
     // 站点周边
     if (data.contains("stationPreMapBase") && data.value("stationPreMapBase").isString()) {
         QString base64Str = data.value("stationPreMapBase").toString();
@@ -308,37 +349,6 @@ void HttpTool::parse(QJsonObject data)
 
         image.save(filePath, "png", 100);
         reloadStyleSheet();
-        return;
-    }
-
-    // 票价查询
-    if (data.contains("price") && data.value("price").isString()) {
-        double price = data.value("price").toString().toDouble();
-        emit priceReceived(price);
-        return;
-    }
-
-    // 热点问题
-    if (data.contains("hotIssues") && data.value("hotIssues").isArray()) {
-        QJsonArray jsonArray = data.value("hotIssues").toArray();
-        QList<QString> hotIssues;
-        int count = 1;
-        for(auto iter = jsonArray.constBegin(); iter != jsonArray.constEnd(); ++iter)
-        {
-            QString issue = (*iter).toString();
-            hotIssues.append(issue);
-            if (count++ >= 5) {
-                break;
-            }
-        }
-        emit hotIssuesReceived(hotIssues);
-        return;
-    }
-
-    // 智能问答
-    if (data.contains("answer") && data.value("answer").isString()) {
-        QString answer = data.value("answer").toString();
-        emit answerReceived(answer);
         return;
     }
 
@@ -375,11 +385,10 @@ void HttpTool::parseLineMaps(QJsonObject data)
         }
 
         SettingCenter::getThis()->saveLineBasicInfo(DataCenter::getThis()->getLineList());
+        reloadStyleSheet();
 
         return;
     }
-
-    reloadStyleSheet();
 }
 
 void HttpTool::reloadStyleSheet()

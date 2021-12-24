@@ -99,7 +99,7 @@ void DataCenter::secEvent()
 
     // AFC相关定时上传
     // AFC心跳检测 - 一分钟一次
-    if ((m_timeCount % 10) == 0) {
+    if ((m_timeCount % 60) == 0) {
         if (m_taskThread != NULL && m_taskThread->isRunning()) {
             HeartTask* task = new HeartTask(getTaskId());
             m_taskThread->addTask(task);
@@ -152,13 +152,13 @@ void DataCenter::init()
 
     logger()->info("基础数据更新");
     // 获取基础数据并更新数据 #7
-    HttpTool::getThis()->requestLineBaseInfo();
-    HttpTool::getThis()->requestLineStations();
-    HttpTool::getThis()->requestInterchanges();
-    HttpTool::getThis()->requestTimeTables();
-    HttpTool::getThis()->requestStationMap();
-    HttpTool::getThis()->requestStationPreMap();
-    HttpTool::getThis()->requestLineMap();
+//    HttpTool::getThis()->requestLineBaseInfo();
+//    HttpTool::getThis()->requestLineStations();
+//    HttpTool::getThis()->requestInterchanges();
+//    HttpTool::getThis()->requestTimeTables();
+//    HttpTool::getThis()->requestStationMap();
+//    HttpTool::getThis()->requestStationPreMap();
+//    HttpTool::getThis()->requestLineMap();
 
     m_stationCodeMap.clear();
     for(LineStations* line : m_lineStations) {
@@ -224,6 +224,8 @@ void DataCenter::initData()
 
     // 站点模式
     m_stationMode = 0;
+
+
 
     // 参数版本信息获取
     initParamVersion();

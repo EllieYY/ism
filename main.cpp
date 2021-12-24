@@ -33,8 +33,8 @@ int main(int argc, char *argv[])
 //    a.setPalette(QPalette(QColor("#F0F0F0")));
 
     ISMFrame* w = new ISMFrame();
-//    w->login();
-    w->show();
+    w->login();
+//    w->show();
 
     int ret = a.exec();
 //    Singleton<LogHandler>::getInstance().uninstallMessageHandler();

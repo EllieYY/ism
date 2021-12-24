@@ -3,7 +3,7 @@
 
 LineStationTimetables::LineStationTimetables(QObject *parent) : QObject(parent)
 {
-
+    m_stationTimes.clear();
 }
 
 int LineStationTimetables::lineCode() const
@@ -44,4 +44,9 @@ QList<StationTime *> LineStationTimetables::stationTimes() const
 void LineStationTimetables::setStationTimes(const QList<StationTime *> &stationTimes)
 {
     m_stationTimes = stationTimes;
+}
+
+void LineStationTimetables::addStationTime(StationTime *station)
+{
+    m_stationTimes.append(station);
 }

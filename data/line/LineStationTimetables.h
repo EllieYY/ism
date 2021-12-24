@@ -24,6 +24,7 @@ public:
 
     QList<StationTime *> stationTimes() const;
     void setStationTimes(const QList<StationTime *> &stationTimes);
+    void addStationTime(StationTime* station);
 
 signals:
 
