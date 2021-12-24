@@ -1,4 +1,4 @@
-/* DataCenter
+﻿/* DataCenter
  *
  *
 */
@@ -34,9 +34,10 @@
 #include "HeartTask.h"
 #include "ReaderSoftFileInfo.h"
 #include "UpdateParamInfo.h"
+#include "AFCTimerTask.h"
+#include "FileDeleteTask.h"
+#include "ISMHttpTask.h"
 
-
-static int HRT_NUM = 5;
 DataCenter* DataCenter::m_pInstance = NULL;
 DataCenter::DataCenter(QObject *parent) : QObject(parent)
 {
@@ -72,55 +73,51 @@ DataCenter *DataCenter::getThis()
 {
     if (m_pInstance == NULL)
         m_pInstance = new DataCenter();
+
     return m_pInstance;
 }
 
 // 心跳连接处理
 void DataCenter::secEvent()
 {
-//    qDebug() << "DataCenter::secEvent 运行线程" << QThread::currentThreadId();
+    qDebug() << "secEvent";
+    // 运营日结束检测
+    serviceStateCheck();
 
-//    emit sigAfcReset();
-////    if (m_afcTaskThread != NULL && m_afcTaskThread->isRunning()) {
-////        m_afcTaskThread->onAfcReset();
-////    }
-
-//    qDebug() << "time " << QDateTime::currentSecsSinceEpoch();
-
-//    return;
-
+    // 节点掉线检测
     m_timeCount++;
-    for (int i = 0; i < HRT_NUM; i++) {
+    for (int i = 0; i < HEART_NUM; i++) {
         m_hrtCnt[i] = m_hrtCnt[i] + 1;
         if (m_hrtCnt[i] >= 600) {    // 超过10分钟未连接则掉线处理
             setHrtOffData(i);
         }
     }
 
-    // AFC相关定时上传
-    // AFC心跳检测 - 一分钟一次
+    // 心跳检测 - 一分钟一次
     if ((m_timeCount % 60) == 0) {
         if (m_taskThread != NULL && m_taskThread->isRunning()) {
-            HeartTask* task = new HeartTask(getTaskId());
+            HeartTask* task = new HeartTask();
             m_taskThread->addTask(task);
         }
     }
 
+    // AFC相关定时上传 -- 线程中执行
     // 设备状态定时长传
     bool devTriggerd = false;
     if ((m_timeCount % m_deviceStateIntervalSec) == 0) {
         devTriggerd = true;
         logger()->info("设备状态定时上送：%1, %2", m_timeCount, m_deviceStateIntervalSec);
-        this->deviceState2afc(DEV_OK);
+        AFCTimerTask* task = new AFCTimerTask(DEV_STATE);
+        m_taskThread->addTask(task);
     }
 
     // 交易文件定时上传
     bool fileTriggered = false;
-    // TODO:修改使用配置参数中的时间间隔
-    if ((m_timeCount % 10) == m_tradeDataIntervalSec || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
+    if ((m_timeCount % m_tradeDataIntervalSec) == m_tradeDataIntervalSec || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
         fileTriggered = true;
         logger()->info("交易文件定时上送：%1, %2", m_timeCount, m_tradeDataIntervalSec);
-        packageTradeFile();
+        AFCTimerTask* task = new AFCTimerTask(TRADE_FILE);
+        m_taskThread->addTask(task);
     }
 
     if (devTriggerd && fileTriggered) {
@@ -130,6 +127,7 @@ void DataCenter::secEvent()
 
 void DataCenter::init()
 {
+    logger()->info("ISM version:%1", "20211224-1624");
     initData();    // 默认数据
 
     /* 基础信息 */
@@ -144,7 +142,8 @@ void DataCenter::init()
     ASRHttpTool::getThis()->setPort(m_basicInfo->asrServicePort());
 
     logger()->info("配置文件读取。");
-    m_lineStations.append(SettingCenter::getThis()->getLineStations());
+//    m_lineStations.append(SettingCenter::getThis()->getLineStations());
+    setLineStations(SettingCenter::getThis()->getLineStations());
     m_lineTimeTables.append(SettingCenter::getThis()->getLineTimeTables());
     m_lineInterchanges.append(SettingCenter::getThis()->getLineInterchanes());
     m_lineList.append(SettingCenter::getThis()->getLineBasicInfo());
@@ -152,21 +151,13 @@ void DataCenter::init()
 
     logger()->info("基础数据更新");
     // 获取基础数据并更新数据 #7
-//    HttpTool::getThis()->requestLineBaseInfo();
-//    HttpTool::getThis()->requestLineStations();
-//    HttpTool::getThis()->requestInterchanges();
-//    HttpTool::getThis()->requestTimeTables();
-//    HttpTool::getThis()->requestStationMap();
-//    HttpTool::getThis()->requestStationPreMap();
-//    HttpTool::getThis()->requestLineMap();
-
-    m_stationCodeMap.clear();
-    for(LineStations* line : m_lineStations) {
-        QList<Station*> stations = line->stationList();
-        for (Station* station : stations) {
-            m_stationCodeMap.insert(station->code(), station->name());
-        }
-    }
+    HttpTool::getThis()->requestLineBaseInfo();
+    HttpTool::getThis()->requestLineStations();
+    HttpTool::getThis()->requestInterchanges();
+    HttpTool::getThis()->requestTimeTables();
+    HttpTool::getThis()->requestStationMap();
+    HttpTool::getThis()->requestStationPreMap();
+    HttpTool::getThis()->requestLineMap();
 
     // AFC监听线程
     m_afcTaskThread = NULL;
@@ -175,7 +166,6 @@ void DataCenter::init()
     connect(m_afcTaskThread, &AFCTaskThread::softwareUpdate, this, &DataCenter::onSoftwareUpdate, Qt::DirectConnection);
     connect(this, &DataCenter::sigAfcReset, m_afcTaskThread, &AFCTaskThread::onAfcReset);
     m_afcTaskThread->start();
-
 
     m_taskThread = NULL;
     m_taskThread = new TaskThread();
@@ -225,13 +215,11 @@ void DataCenter::initData()
     // 站点模式
     m_stationMode = 0;
 
-
-
     // 参数版本信息获取
     initParamVersion();
 
     // 心跳
-    for (int i = 0; i < HRT_NUM; i++) {
+    for (int i = 0; i < HEART_NUM; i++) {
         m_hrtCnt[i] = 0;
     }
 }
@@ -1437,20 +1425,14 @@ void DataCenter::setServiceOff(bool serviceOff)
 
     // 每个运营时间开始之后，只一次自动签退
     if (m_serviceOff) {
+        serviceOffHandle();
 
-//        // 交易文件删除
-//        QString path = QDir::currentPath() + QDir::separator() + TRADE_FILE_PATH;
-//        int tradeFileDays = m_basicInfo->tradeFileDays();
-//        findFileForDelete(path, tradeFileDays);
-
+        // 通知主页面 - 自动签退 - 设备升级
         emit sigSerivceOff();
 
     } else {
         m_hasAutoLogout = false;
     }
-
-    // 设备状态上报
-    this->deviceState2afc(DEV_SERVICE_OFF);
 }
 
 void DataCenter::setIsLogin(bool isLogin)
@@ -1519,9 +1501,60 @@ int DataCenter::getTaskId()
 {
     taskId++;
     if (taskId >= 9999) {
-        taskId = 1;
+        taskId = 200;
     }
     return taskId;
+}
+
+void DataCenter::serviceStateCheck()
+{
+    QDateTime dayStart = QDate::currentDate().startOfDay();
+    QDateTime now = QDateTime::currentDateTime();
+
+    long nowSec = dayStart.secsTo(now);
+
+    long startSec = DataCenter::getThis()->getServiceStartTime();
+    long endSec = DataCenter::getThis()->getServiceEndTime();
+
+//    // TODO:test code
+//    startSec = 14 * 3600 + 41 * 60;
+    endSec = 16 * 3600 + 36 * 60;
+
+    // 交集为反
+    bool type = true;
+    if (endSec < startSec) {
+        type = false;
+    }
+
+    // 运营结束
+    bool serviceOn = false;
+    if (nowSec >= qMin(startSec, endSec) && nowSec < qMax(startSec, endSec)) {
+        serviceOn = true;
+    }
+
+    bool serviceOff = serviceOn ^ type;
+
+    setServiceOff(serviceOff);
+}
+
+// 运营结束之后的复位处理
+void DataCenter::serviceOffHandle()
+{
+    logger()->info("运营日结束。");
+    // 数据复位 -- 是否需要重新读取配置文件
+
+
+    // 交易文件删除 -- 任务
+    QString path = QDir::currentPath() + QDir::separator() + TRADE_FILE_PATH;
+    int tradeFileDays = m_basicInfo->tradeFileDays();
+    logger()->info("交易文件删除：path=%1, days=%2", path, tradeFileDays);
+    FileDeleteTask* task = new FileDeleteTask(path, tradeFileDays);
+    m_taskThread->addTask(task);
+
+    // ISM后台数据拉取
+    logger()->info("ISM后台数据拉取");
+    ISMHttpTask* ismTask = new ISMHttpTask();
+    m_taskThread->addTask(ismTask);
 }
 
 
@@ -1547,6 +1580,13 @@ QList<LineStations *> DataCenter::getLineStations() const
 void DataCenter::setLineStations(const QList<LineStations *> &lineStations)
 {
     m_lineStations = lineStations;
+    m_stationCodeMap.clear();
+    for(LineStations* line : m_lineStations) {
+        QList<Station*> stations = line->stationList();
+        for (Station* station : stations) {
+            m_stationCodeMap.insert(station->code(), station->name());
+        }
+    }
     WidgetMng::notify(LINE_STATION_LIST);
     SettingCenter::getThis()->saveLineStations(lineStations);
 }

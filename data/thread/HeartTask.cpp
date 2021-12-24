@@ -1,11 +1,11 @@
-#include "HeartTask.h"
+﻿#include "HeartTask.h"
 #include "NCNetwork_Lib.h"
 #include "DataCenter.h"
 #include <QDate>
 #include <QDateTime>
 
 
-HeartTask::HeartTask(int taskId): m_id(taskId)
+HeartTask::HeartTask()
 {
     m_result = false;
 }
@@ -17,7 +17,7 @@ HeartTask::~HeartTask()
 
 int HeartTask::doWork()
 {
-    serviceStateCheck();
+//    serviceStateCheck();
 
     // AFC 心跳
     int afcHeartRet = TcpLinkTest();
@@ -33,7 +33,7 @@ QString HeartTask::message()
 
 int HeartTask::taskId()
 {
-    return m_id;
+    return HEART_TASK_ID;
 }
 
 bool HeartTask::result()

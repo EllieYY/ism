@@ -1,4 +1,4 @@
-#include "HttpTool.h"
+﻿#include "HttpTool.h"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -23,7 +23,7 @@ HttpTool *HttpTool::getThis()
 // 响应处理
 void HttpTool::replyFinished(QNetworkReply *reply)
 {
-    logger()->info("[replyFinished]");
+//    logger()->info("[replyFinished]");
     // 获取http状态码
     QVariant statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
     if(statusCode.isValid())
@@ -39,7 +39,7 @@ void HttpTool::replyFinished(QNetworkReply *reply)
         return;
     }
 
-    logger()->info("befor QJson parse.");
+//    logger()->info("befor QJson parse.");
 
     // 获取返回内容
     QJsonParseError jsonParseError;
@@ -53,7 +53,6 @@ void HttpTool::replyFinished(QNetworkReply *reply)
         return;
     }
 
-    logger()->info("---------#1");
 
     // 根节点 -- json格式和错误码判断
     QJsonObject rootObject = doc.object();
@@ -69,14 +68,12 @@ void HttpTool::replyFinished(QNetworkReply *reply)
         return;
     }
 
-    logger()->info("---------#2");
     // 根节点 -- 返回数据
     if(!rootObject.contains("data")) {
 //        logger()->error("Invalid json format.");
         return;
     }
 
-    logger()->info("---------#3");
     parse(rootObject.value("data").toObject());
 
 }
@@ -84,6 +81,7 @@ void HttpTool::replyFinished(QNetworkReply *reply)
 // post -- 线路基础信息
 void HttpTool::requestLineBaseInfo()
 {
+    qDebug() << "post ok";
     QByteArray param = defaultParam();
     post(param, "lineBaseInfo");
 }
@@ -379,7 +377,7 @@ void HttpTool::parseLineMaps(QJsonObject data)
             QString filePath = QDir::currentPath() + QDir::separator() +
                     "images/info/" + picName;
 
-            image.save(filePath, "png", 100);
+            image.save(filePath, "jpg", 100);
 
             logger()->info(filePath);
         }

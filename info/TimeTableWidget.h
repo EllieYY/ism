@@ -1,4 +1,4 @@
-#ifndef TIMETABLEWIDGET_H
+﻿#ifndef TIMETABLEWIDGET_H
 #define TIMETABLEWIDGET_H
 
 #include <QWidget>
@@ -10,7 +10,8 @@ class TimeTableWidget;
 
 typedef struct {
     int btnId;
-    QTableView* view;
+    QPushButton* btn;
+    QTableWidget* view;
 }LINE_VIEW;
 
 class LineStationTimetables;
@@ -27,6 +28,7 @@ private:
     void showLineTimetables(QTableView* view, LineStationTimetables* lineInfo);
     void onBtn(int id);
 
+    void setViewStyle(QTableView* view);
     void setStyle();
 
     void init();
@@ -35,8 +37,10 @@ private:
 private:
     bool m_initOk;
     QMap<int, LineStationTimetables*> m_lineTimes;
-    QMap<int, QTableView*> m_lineViewMap;
-    QTableView* m_tableView;
+    QMap<int, LINE_VIEW> m_lineViewMap;
+    QTableView* m_preTableView;
+    QTableWidget* m_preTableWidget;
+    LINE_VIEW m_preLineView;
 
 private:
     Ui::TimeTableWidget *ui;

@@ -1,4 +1,4 @@
-#ifndef DATACENTER_H
+﻿#ifndef DATACENTER_H
 #define DATACENTER_H
 
 #include <QObject>
@@ -172,6 +172,8 @@ private:
     void initReaderErrCode();           // 票卡分析错误码
 
     int getTaskId();
+    void serviceStateCheck();      // 运营时间结束检测
+    void serviceOffHandle();       // 运营结束处理
 
 public:
     // 参数文件解析

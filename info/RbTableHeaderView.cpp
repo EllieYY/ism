@@ -1,4 +1,4 @@
-/* Copyright 2016 Lee Cho Kang.
+﻿/* Copyright 2016 Lee Cho Kang.
 * email: pzesseto@gmail.com
 * This file is part of the RbTableHeaderView.
 *
@@ -190,9 +190,13 @@ RbTableHeaderView::RbTableHeaderView(Qt::Orientation orientation, int rows, int 
 	RbTableHeaderModel* headerModel = new RbTableHeaderModel(rows,columns);
 
 	// set default size of item
-	for (int row=0;row<rows;++row)
-		for (int col=0;col<columns;++col)
+    for (int row=0;row<rows;++row) {
+        for (int col=0;col<columns;++col) {
 			headerModel->setData(headerModel->index(row,col),baseSectionSize,Qt::SizeHintRole);
+            headerModel->setData(headerModel->index(row,col),0x009944,Qt::BackgroundRole);
+            headerModel->setData(headerModel->index(row,col),0xFFFFFF,Qt::ForegroundRole);
+        }
+    }
 
 	setModel(headerModel);
 

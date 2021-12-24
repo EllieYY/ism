@@ -1,4 +1,4 @@
-#include "TaskThread.h"
+﻿#include "TaskThread.h"
 #include <QMutexLocker>
 #include "Task.h"
 #include <QDebug>
@@ -29,9 +29,12 @@ TaskThread::~TaskThread()
 
 void TaskThread::addTask(CTask *task)
 {
+    qDebug() << "addTask";
     // 必须加锁访问任务队列，防止并发访问发生冲突
     QMutexLocker locker(&mutex);
+    qDebug() << "addTask ok:" << task->taskId();
     taskQueue.enqueue(task); // 添加任务
+    qDebug() << "add taskQueue size :" << taskQueue.size();
     taskAdded.wakeOne();
 }
 
@@ -49,7 +52,10 @@ void TaskThread::run()
 
     forever {
         {
+            qDebug() << "TaskThread.";
             QMutexLocker locker(&mutex);
+
+            qDebug() << "taskQueue size=" << taskQueue.size();
             if (taskQueue.isEmpty()) {
                 // 任务队列为空，等待有任务时唤醒
                 taskAdded.wait(&mutex);

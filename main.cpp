@@ -1,4 +1,4 @@
-#include "ISMFrame.h"
+﻿#include "ISMFrame.h"
 #include <QFile>
 
 #include "LogHandler.h"
@@ -35,6 +35,7 @@ int main(int argc, char *argv[])
     ISMFrame* w = new ISMFrame();
     w->login();
 //    w->show();
+//    w->showMaximized();
 
     int ret = a.exec();
 //    Singleton<LogHandler>::getInstance().uninstallMessageHandler();

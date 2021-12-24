@@ -1,4 +1,4 @@
-#ifndef COMMONHEAD_H
+﻿#ifndef COMMONHEAD_H
 #define COMMONHEAD_H
 
 #define IS_TEST_MODE		1
@@ -40,6 +40,21 @@
 #define PARAM_FILE_PATH "sc\\parameter"
 #define SOFT_FILE_PATH "sc\\soft"
 #define TRADE_FILE_PATH "sc\\transcation"
+
+
+// 低频周期任务ID，固定使用
+typedef enum
+{
+    HEART_TASK_ID            = 2,                    //# 心跳
+    AFC_TIMER_TASK_ID        = 3,
+    FILE_DELET_TASK          = 4,                    //# 文件删除
+    ISM_HTTP_TASK            = 5,                    //# ISM后台数据拉取
+//    FARE_EN              = 3,                    //# 进站更新（付费区）
+//    OVER_TRIP            = 4,                    //# 超程更新
+//    OVER_TIME            = 5,                    //# 超时更新
+    RESERVED       = 32                          //# 预留
+}TASK_ID;
+
 
 typedef enum
 {

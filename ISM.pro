@@ -91,9 +91,12 @@ SOURCES += \
     data/line/LineTimeTables.cpp \
     data/line/Station.cpp \
     data/line/StationTime.cpp \
+    data/thread/AFCTimerTask.cpp \
+    data/thread/FileDeleteTask.cpp \
     data/thread/FtpDownloadTask.cpp \
     data/thread/FtpUploadTask.cpp \
     data/thread/HeartTask.cpp \
+    data/thread/ISMHttpTask.cpp \
     data/thread/Task.cpp \
     data/thread/TaskThread.cpp \
     data/thread/TradeFileUploadTask.cpp \
@@ -121,6 +124,7 @@ SOURCES += \
     info/MetroInterchangeWidget.cpp \
     info/MetroPeripheralWidget.cpp \
     info/RbTableHeaderView.cpp \
+    info/TDMSummaryTableWgt.cpp \
     info/TicketPriceWidget.cpp \
     info/TimeTableWidget.cpp \
     inquiry/InquiryMainWidget.cpp \
@@ -171,9 +175,12 @@ HEADERS += \
     data/line/LineTimeTables.h \
     data/line/Station.h \
     data/line/StationTime.h \
+    data/thread/AFCTimerTask.h \
+    data/thread/FileDeleteTask.h \
     data/thread/FtpDownloadTask.h \
     data/thread/FtpUploadTask.h \
     data/thread/HeartTask.h \
+    data/thread/ISMHttpTask.h \
     data/thread/Task.h \
     data/thread/TaskThread.h \
     data/thread/TradeFileUploadTask.h \
@@ -203,6 +210,7 @@ HEADERS += \
     info/MetroInterchangeWidget.h \
     info/MetroPeripheralWidget.h \
     info/RbTableHeaderView.h \
+    info/TDMSummaryTableWgt.h \
     info/TicketPriceWidget.h \
     info/TimeTableWidget.h \
     inquiry/InquiryMainWidget.h \
