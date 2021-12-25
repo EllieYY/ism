@@ -25,6 +25,7 @@ CompensationFareWidget::~CompensationFareWidget()
 
 void CompensationFareWidget::initShow(int difference, uchar devState)
 {
+    emit stopReading(false, 1);
     ui->listWidget->clear();
 
     //TODO: test code
@@ -41,12 +42,14 @@ void CompensationFareWidget::initShow(int difference, uchar devState)
         MyHelper::ShowMessageBoxInfo("无需投币");
         logger()->info("投币金额为%1，无需投币。", difference);
         emit supplementaryOk(true);
+
+        emit stopReading(true, 1);
         close();
         return;
     }
 
     // 数值初始化
-    m_isNeedReturn = false;
+    setNeedReturn(false);
     m_difference = difference;
     m_income = 0;
     m_inCoins = 0;
@@ -112,20 +115,24 @@ void CompensationFareWidget::startPaying()
     QString info3 = QString("StartPutCoin(%1)=%2").arg(m_difference).arg(ret);
     showInfo(info3);
 
-    if (ret == 3) {
-        logger()->error("[StartPutCoin]开始投币={%1}", ret);
-        MyHelper::ShowMessageBoxError("投币模块故障，暂时无法使用，请联系工作人员解决。");
-        DataCenter::getThis()->setCashboxState(-1, -1, 0, 0x03);
-        logForCashbox(QString("阀门打开故障[%1]，投币结束。").arg(ret));
-        emit supplementaryOk(false);
-        close();
-        return;
-    } else if (ret == 1) {
+    // TODO:
+//    ret = 0;
+
+    if (ret == 1) {
         QString amountStr = ui->infoLabel->text();
         ui->infoLabel->setText(amountStr + "当前只支持投入硬币");
     } else if (ret == 2) {
         QString amountStr = ui->infoLabel->text();
         ui->infoLabel->setText(amountStr + "当前只支持投入纸币");
+    } else if (ret != 0) {
+        logger()->error("[StartPutCoin]开始投币={%1}", ret);
+        MyHelper::ShowMessageBoxError("投币模块故障，暂时无法使用，请联系工作人员解决。");
+        DataCenter::getThis()->setCashboxState(-1, -1, 0, 0x03);
+        logForCashbox(QString("阀门打开故障[%1]，投币结束。").arg(ret));
+        emit supplementaryOk(false);
+        emit stopReading(true, 1);
+        close();
+        return;
     }
 
     emit startChecking(true);
@@ -203,11 +210,9 @@ void CompensationFareWidget::onAmountConfirm(int banknotes, int coins)
     showInfo(info1);
 
     if (m_income <= 0) {
-        m_isNeedReturn = false;
-        ui->returnCashBtn->setText("关闭");
+        setNeedReturn(false);
     } else {
-        m_isNeedReturn = true;
-        ui->returnCashBtn->setText("退币");
+        setNeedReturn(true);
     }
     ui->returnCashBtn->setDisabled(false);
 
@@ -232,16 +237,14 @@ void CompensationFareWidget::onAmountConfirm(int banknotes, int coins)
     ui->continueBtn->setDisabled(true);
     ui->endBtn->setDisabled(true);
 
-    // 金额提示及找零
+    // 投币金额及找零金额，用户确认
     int changeAmount = m_income > m_difference ? (m_income - m_difference) : 0;
     QString info = QString("已投入纸币%1元，投入硬币%2元，无需找零，点击确认按钮完成投币！").arg(banknotes).arg(coins);
     if (changeAmount > 0) {
         info = QString("已投入纸币%1元，投入硬币%2元，应找零%3元，点击确认按钮开始找零！\n对金额有疑问，请手动退币或联系工作人员。")
                 .arg(banknotes).arg(coins).arg(changeAmount);
     }
-
     showInfo(info);
-
     int ret = MyHelper::ShowMessageBoxQuesion(info);
     if (ret != 1) {
         qDebug() << "用户对金额有疑问，";
@@ -256,12 +259,20 @@ void CompensationFareWidget::onAmountConfirm(int banknotes, int coins)
         showInfo("开始找零");
         int changeRet = ChanceCoin(changeAmount, &billMoney, &coinMoney);
 
-        QString info2 = QString("ChanceCoin([找零金额]%1, [纸币]%2, [硬币]%3) = %4")
+//        // TODO:test code
+//        changeRet = 0;
+//        billMoney = 0;
+//        coinMoney = 3;
+
+        QString info2 = QString("钱箱找零：[找零金额]%1, [纸币]%2, [硬币]%3，[结果]%4")
                 .arg(changeAmount).arg(billMoney).arg(coinMoney).arg(changeRet);
-
         showInfo(info2);
+        logForCashbox(info2);
 
-        logForCashbox(QString("找零金额：纸币%1元，硬币%2元。").arg(coinMoney).arg(billMoney));
+        // 一旦找零了，就不能退币
+        if ((billMoney + coinMoney) != 0) {
+            setNeedReturn(false);
+        }
 
         if (changeRet != 0) {
             QString changeInfo = QString("钱箱余额不足，无法找零。用户投入金额%1元，已找零硬币%2元，纸币%3元。\n%4")
@@ -273,45 +284,40 @@ void CompensationFareWidget::onAmountConfirm(int banknotes, int coins)
             return;
         }
 
-        int ret1 = MyHelper::ShowMessageBoxQuesion(info2);
-        if (ret1 != 1) {
-            qDebug() << "找零提问";
+        inCashboxInfo = QString("%1已找零金额%2元，找零硬币%3元，找零纸币%4元").arg(inCashboxInfo)
+                .arg(changeAmount).arg(coinMoney).arg(billMoney);
+        int ret2 = MyHelper::ShowMessageBoxQuesion(QString("%1请确认。").arg(inCashboxInfo));
+        if (ret2 != 1) {
+    //        qDebug() << "钱进钱箱提问";
             return;
         }
-
-        inCashboxInfo = QString("%1已找零金额%2元，找零纸币%3元，找零硬币%4元").arg(inCashboxInfo)
-                .arg(changeAmount).arg(coinMoney).arg(billMoney);
     }
 
-
-    int ret2 = MyHelper::ShowMessageBoxQuesion(QString("%1请确认。").arg(inCashboxInfo));
-    if (ret2 != 1) {
-        qDebug() << "钱进钱箱提问";
-        return;
-    }
-
+    emit sigCashboxIn();
     showInfo("钱进钱箱");
-    // 钱箱收钱
-    int retR = ResultOperate(1);
-    QString info3 = QString("ResultOperate(1) = %1").arg(retR);
-    showInfo(info3);
+    logForCashbox(QString("钱进钱箱"));
 
-    if (retR == 0) {
-        logForCashbox(QString("钱进钱箱成功，%1").arg(inCashboxInfo));
-    } else {
-        DataCenter::getThis()->setCashboxState(0, -1, 0, 0x03);    // 默认是纸币故障
-        logForCashbox(QString("钱进钱箱失败。%1").arg(inCashboxInfo));
-    }
+//    // 钱箱收钱
+//    int retR = ResultOperate(1);
+//    QString info3 = QString("ResultOperate(1) = %1").arg(retR);
+//    showInfo(info3);
 
-    m_isNeedReturn = false;
+//    if (retR == 0) {
+//        logForCashbox(QString("钱进钱箱成功，%1").arg(inCashboxInfo));
+//    } else {
+//        DataCenter::getThis()->setCashboxState(0, -1, 0, 0x03);    // 默认是纸币故障
+//        logForCashbox(QString("钱进钱箱失败。%1").arg(inCashboxInfo));
+//    }
 
-    // TODO:用来测试
-//    emit supplementaryOk(true);
-//    close();
+    setNeedReturn(false);
+
+    emit supplementaryOk(true);
+    emit stopReading(true, 1);
+    close();
 }
 
 
-// 退币
+// 关闭 | 退币：手动点此按钮时，都视为现金支付失败
 void CompensationFareWidget::onReturnMoney()
 {
     if (m_isNeedReturn) {
@@ -324,20 +330,25 @@ void CompensationFareWidget::onReturnMoney()
             QString info = QString("退币失败{%1}，用户已投入%2元").arg(ret).arg(m_income);
             logger()->error(info);
             logForCashbox(info);
-            return;
+
+            //TDOO:控制可以退出页面
+//            return;
         }
+
+        setNeedReturn(false);
 
         logForCashbox("退币成功。");
     }
 
     emit supplementaryOk(false);
+    emit stopReading(true, 1);
     close();
 }
 
 
 void CompensationFareWidget::init()
 {
-    m_isNeedReturn = false;
+    setNeedReturn(false);
     setStyle();
 
     // 设置非互斥
@@ -371,6 +382,17 @@ void CompensationFareWidget::showInfo(QString info)
     ui->listWidget->insertItem(0, timeStr + "  " +info);
 
     logger()->info(info);
+}
+
+void CompensationFareWidget::setNeedReturn(bool needReturn)
+{
+    m_isNeedReturn = needReturn;
+    if (!m_isNeedReturn) {
+        ui->returnCashBtn->setText("关闭");
+    } else {
+        ui->returnCashBtn->setText("退币");
+    }
+
 }
 
 void CompensationFareWidget::logForCashbox(QString line)

@@ -178,6 +178,8 @@ void ISMFrame::initWgt()
     // 现金缴费窗口：窗口生成线程要跟设备管理线程属于同一个，否则信号槽连接不通
     m_fareWidget = new CompensationFareWidget();
     connect(m_fareWidget, &CompensationFareWidget::startChecking, m_deviceManager, &DeviceManager::onCheckingCashbox);
+    connect(m_fareWidget, &CompensationFareWidget::stopReading, m_deviceManager, &DeviceManager::setOnReading);
+    connect(m_fareWidget, &CompensationFareWidget::sigCashboxIn, m_deviceManager, &DeviceManager::onCashboxIn);
     connect(m_deviceManager, &DeviceManager::receiveOk, m_fareWidget, &CompensationFareWidget::onAutoStopPaying);
     connect(m_deviceManager, &DeviceManager::timeoutChecking, m_fareWidget, &CompensationFareWidget::onStopPaying);
     connect(m_deviceManager, &DeviceManager::checkState, m_fareWidget, &CompensationFareWidget::showCheckState);

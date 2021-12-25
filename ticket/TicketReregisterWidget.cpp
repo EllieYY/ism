@@ -34,6 +34,12 @@ void TicketReregisterWidget::setDeviceManager(DeviceManager *devManager)
 
 bool TicketReregisterWidget::showData()
 {
+    // 更新锁定状态
+    if (m_updateLock) {
+        return true;
+    }
+
+
     ui->calcFareBtn->hide();
     ui->cashPollBtn->setDisabled(true);
     ui->tUpdateBtn->setDisabled(true);
@@ -67,8 +73,13 @@ bool TicketReregisterWidget::showData()
         ui->tableWidget->setItem(0, index++, item);
     }
     // 进站时间 | 出站时间 | 更新原因 | 应收费用
-    ui->lineEdit1->setText(info->enTime().toString("yyyy-MM-dd HH:mm:ss"));
-    ui->lineEdit3->setText(info->exTime().toString("yyyy-MM-dd HH:mm:ss"));
+    if (info->enTime().toSecsSinceEpoch() > 1000) {
+        ui->lineEdit1->setText(info->enTime().toString("yyyy-MM-dd HH:mm:ss"));
+    }
+
+    if (info->exTime().toSecsSinceEpoch() > 1000) {
+        ui->lineEdit3->setText(info->exTime().toString("yyyy-MM-dd HH:mm:ss"));
+    }
     ui->lineEdit6->setText(QString::number(info->updateAmount()));
     ui->textTips->setText("");
 
@@ -102,7 +113,7 @@ bool TicketReregisterWidget::showData()
         return true;
     }
 
-    bool fareOk = false;
+    bool fareOk = true;
     // 进站更新（付费区）
     m_enStationCode = "";
     if (m_updateType == FARE_EN) {
@@ -147,11 +158,11 @@ bool TicketReregisterWidget::showData()
             ui->tUpdateBtn->setDisabled(false);
         } else if (m_difference > 0) {
             m_payType = 0x01;      // 余额不足时，现金支付
-            ui->calcFareBtn->setDisabled(false);
+            ui->cashPollBtn->setDisabled(false);
             ui->tUpdateBtn->setDisabled(true);
         }
     } else {
-        ui->calcFareBtn->setDisabled(true);
+        ui->cashPollBtn->setDisabled(true);
         ui->tUpdateBtn->setDisabled(true);
     }
 
@@ -160,6 +171,7 @@ bool TicketReregisterWidget::showData()
 
 void TicketReregisterWidget::init()
 {
+    m_updateLock = false;
     setStyle();
 
     m_curBtn = 0;
@@ -202,6 +214,7 @@ void TicketReregisterWidget::onStationSelected(QString lineName, QString station
 
 void TicketReregisterWidget::onUpdateTicket()
 {
+    m_updateLock = true;
     BYTE anti = DataCenter::getThis()->getAntiNo();
     UPDATE_CARD_IN updateIn = {0};
     UPDATE_RESP updateTradeData = {0};
@@ -263,6 +276,8 @@ void TicketReregisterWidget::onUpdateTicket()
     ui->tUpdateBtn->setDisabled(true);
     ui->cashPollBtn->setDisabled(true);
 //    close();
+
+    m_updateLock = false;
 }
 
 
@@ -340,6 +355,7 @@ void TicketReregisterWidget::onSupplementaryOk(bool result)
 //    ui->tUpdateBtn->setDisabled(false);
 
     if (result) {
+        m_updateLock = true;
         ui->textTips->setText("现金支付成功，请点击更新按钮进行更新。");
         ui->cashPollBtn->setDisabled(true);
         ui->tUpdateBtn->setDisabled(false);

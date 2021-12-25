@@ -1,4 +1,4 @@
-#ifndef DEVICEMANAGER_H
+﻿#ifndef DEVICEMANAGER_H
 #define DEVICEMANAGER_H
 
 /* 硬件设备的封装：读写器和钱箱
@@ -24,6 +24,7 @@ public:    // slots
     void initDevice();
     void onDeviceUpdate();
     void onCheckingCashbox(bool isOn);      // 钱箱开始检测
+    void onCashboxIn();                     // 钱进钱箱
     void startDeviceTimer();
 
     void setOnReading(bool onReading, int type);    // 票卡信息读取设置
@@ -77,6 +78,7 @@ private:
     // 票卡信息读取
     bool m_onReading;      // 读卡状态开启
     int m_ticketInfoType;  // 读取票卡内容： 0-历史交易信息  1-票卡更新信息
+    long m_readStartTime;      // 投币时间控制
 
     // 定时器id
     int m_checkingTimerId;    // 投币检测定时器

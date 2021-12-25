@@ -27,6 +27,8 @@ public:
 signals:
     void supplementaryOk(bool);     // 补缴结束
     void startChecking(bool);       // 控制投币开始与结束
+    void sigCashboxIn();            // 钱箱收钱
+    void stopReading(bool onReading, int type);   // 控制读写器读卡
 
 private:
     void init();
@@ -41,6 +43,8 @@ private:
 
     void deviceStateShow();                         // 设备在线状态显示
     void showInfo(QString info);                    // 操作信息显示
+
+    void setNeedReturn(bool);    // 设置是否需要退币
 
     void logForCashbox(QString line);      // 钱箱日志
 

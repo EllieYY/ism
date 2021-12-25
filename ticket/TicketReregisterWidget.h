@@ -1,4 +1,4 @@
-#ifndef TICKETREREGISTERWIDGET_H
+﻿#ifndef TICKETREREGISTERWIDGET_H
 #define TICKETREREGISTERWIDGET_H
 
 #include <QWidget>
@@ -63,6 +63,7 @@ private:
     BYTE m_payType;             // 支付方式
 
     DeviceManager* m_deviceManager;
+    bool m_updateLock;       // 更新锁定状态：现金支付之后，不刷新界面数据
 
 signals:
     void selectStation();    // 选择车站

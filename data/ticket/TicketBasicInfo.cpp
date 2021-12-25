@@ -1,4 +1,4 @@
-#include "TicketBasicInfo.h"
+﻿#include "TicketBasicInfo.h"
 
 TicketBasicInfo::TicketBasicInfo(int type, QString typeStr, QString number, QString createTime, QString validDate,
                        int cardState, int tripState, long balance, QObject *parent) : QObject(parent)

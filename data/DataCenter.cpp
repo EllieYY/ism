@@ -126,8 +126,8 @@ void DataCenter::secEvent()
 
 void DataCenter::init()
 {
-    m_ismVersion = "00000004";
-    logger()->info("ISM version:%1", "20211224-2332-%1", m_ismVersion);
+    m_ismVersion = "00000005";
+    logger()->info("ISM version:%1", "20211225-2033-%1", m_ismVersion);
     initData();    // 默认数据
 
     /* 基础信息 */
