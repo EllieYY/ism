@@ -543,6 +543,19 @@ void DeviceManager::setOnReading(bool onReading, int type)
 }
 
 
+// 退币硬币器中所有硬币
+void DeviceManager::onReturnAllCoins()
+{
+    int ret = Dispense_Hopper_All();
+    if (ret == 0) {
+        // 每200MS调用一次：Request_Hopper_Balance
+    } else {
+        emit sigReturnCoinsState(bool isOk, int balance);
+    }
+
+}
+
+
 // 设备复位  device - [bit0]:brc [bit1]:bim [bit2]:f53
 void DeviceManager::onCashboxReset(uchar device)
 {

@@ -31,14 +31,20 @@ private:
 
     void onSupplementaryOk(bool isOk);
 
+    void onAddCoins();        // 加币
+    void onReturnAllCoins();   // 退出所有硬币
+
+    // 显示控制
     void showBrcSet();
     void showF53Set();
     void hideSetFrame();
 
+    // 设置按钮
     bool userInfoCheck();
     void brcSetOk();
     void f53SetOk();
 
+    // 数量控制
     void brcAdd();
     void brcSub();
     void f1Add();
@@ -48,9 +54,9 @@ private:
     void setBrcValue(int val);
     void setF1Value(int val);
     void setF2Value(int val);
-
     int getDenomination(int index);
 
+    // 钱箱日志
     void logForCashbox(QString line);      // 钱箱日志
 
 private:

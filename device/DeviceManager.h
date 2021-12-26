@@ -29,6 +29,9 @@ public:    // slots
 
     void setOnReading(bool onReading, int type);    // 票卡信息读取设置
 
+    // 硬币器操作 - 全部退币
+    void onReturnAllCoins();
+
     // 设备重新初始化
     void onCashboxReset(uchar device);      // 钱箱复位
     void onReaderReset();                   // 读写器复位 [bit0]:brc [bit1]:bim [bit2]:f53
@@ -39,6 +42,8 @@ signals:
     void timeoutChecking();                      // 投币检测超时
     void checkState(int, int, int);
     void ticketRead(int ret);             // 票卡信息读取结果反馈
+
+    void sigReturnCoinsState(bool isOk, int balance);   // isOk:全部退币操作是否完成  balance:找零器中余额，值为-41表示无法退币
 
 protected:
     void timerEvent(QTimerEvent* event);

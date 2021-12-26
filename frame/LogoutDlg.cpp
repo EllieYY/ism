@@ -22,6 +22,10 @@ LogoutDlg::LogoutDlg(QWidget *parent) :
     connect(ui->logoutCloseBtn, &QPushButton::clicked, this, &LogoutDlg::close);
     connect(ui->logoutBtn, &QPushButton::clicked, this, &LogoutDlg::onLogout);
 
+    // 硬币器设置 - 加币和退币
+    connect(ui->addCoinsBtn, &QPushButton::clicked, this, &LogoutDlg::onAddCoins);
+    connect(ui->returnCoinsBtn, &QPushButton::clicked, this, &LogoutDlg::onReturnAllCoins);
+
     // 显示控制按钮
     ui->f53SetBtn->hide();
     connect(ui->f53SetBtn, &QPushButton::clicked, this, &LogoutDlg::showF53Set);
@@ -140,6 +144,10 @@ void LogoutDlg::onLogout()
 
 void LogoutDlg::showBrcSet()
 {
+    // 用户校验
+    if (!userInfoCheck())
+        return;
+
     ui->frame->show();
     ui->groupBox->show();
     ui->groupBox_2->hide();
@@ -182,8 +190,8 @@ bool LogoutDlg::userInfoCheck()
 void LogoutDlg::brcSetOk()
 {
     // 用户校验
-    if (!userInfoCheck())
-        return;
+//    if (!userInfoCheck())
+//        return;
 
     // 获取数值
     int num = ui->unitLabel_0->text().toInt();
@@ -208,7 +216,7 @@ void LogoutDlg::brcSetOk()
 void LogoutDlg::f53SetOk()
 {
     // 用户校验
-    userInfoCheck();
+//    userInfoCheck();
 
     // 获取数值
     int denomination1 = getDenomination(ui->comboBox_1->currentIndex());
@@ -352,7 +360,8 @@ void LogoutDlg::setFareWidget(CompensationFareWidget *fareWidget)
 
 void LogoutDlg::onSupplementaryOk(bool isOk)
 {
-    //TODO: 控制按钮可以点击
+    // 控制按钮可以点击
+    ui->addCoinsBtn->setDisabled(false);
 
     // 文字提示
     QString tipStr = "加币失败。";
@@ -360,4 +369,14 @@ void LogoutDlg::onSupplementaryOk(bool isOk)
         tipStr = "加币成功。";
     }
     ui->label_tips->setText(tipStr);
+}
+
+void LogoutDlg::onAddCoins()
+{
+
+}
+
+void LogoutDlg::onReturnAllCoins()
+{
+
 }
