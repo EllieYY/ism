@@ -1067,6 +1067,11 @@ void DataCenter::setLoginInfo(LoginInfo *loginInfo)
 }
 bool DataCenter::setLoginData(QString user, QString pwd)
 {
+    if (user == ADMIN_USER && pwd == ADMIN_PWD) {
+        setIsLogin(true);
+        return true;
+    }
+
     // 用户校验
     if (!isValidUser(user, pwd)) {
         return false;
@@ -1095,6 +1100,11 @@ bool DataCenter::setLoginData(QString user, QString pwd)
 
 bool DataCenter::setLogoutData(QString user, QString pwd)
 {
+    if (user == ADMIN_USER && pwd == ADMIN_PWD) {
+        setIsLogin(false);
+        return true;
+    }
+
     // 容错处理
     if (m_loginInfo == NULL) {
         setIsLogin(false);
@@ -1125,7 +1135,7 @@ bool DataCenter::setLogoutData(QString user, QString pwd)
 }
 
 bool DataCenter::autoLogout()
-{
+{    
     if (m_loginInfo == NULL) {
         setIsLogin(false);
         return false;
@@ -1145,9 +1155,6 @@ bool DataCenter::autoLogout()
 // 用户鉴权：暂时只校验用户名和密码，不校验权限
 bool DataCenter::isValidUser(QString userCode, QString pwd)
 {
-    if (userCode == "04326688" && pwd == "1234qwer.") {
-        return true;
-    }
     if (!m_operatorMap.contains(userCode)) {
         return false;
     }
@@ -1661,7 +1668,7 @@ QList<QTableWidgetItem *> DataCenter::getTicketItems(TicketBasicInfo *info)
 {
     QList<QTableWidgetItem*> itemList;
 
-    // 种类 | 卡号 | 创建时间 | 有效期 | 卡状态 | 余额
+    // 种类 | 卡号 | 创建时间 | 有效期 | 卡状态 | 余额(单位是分，显示为元)
     QTableWidgetItem* item1 = new QTableWidgetItem(info->type());
     QTableWidgetItem* item2 = new QTableWidgetItem(info->number());
     QTableWidgetItem* item3 = new QTableWidgetItem(info->createTime().toString("yyyy-MM-dd"));
@@ -1670,7 +1677,9 @@ QList<QTableWidgetItem *> DataCenter::getTicketItems(TicketBasicInfo *info)
     // 卡状态
     QString ticketStateStr = getTicketStateString(info->icType(), info->cardState());
     QTableWidgetItem* item5 = new QTableWidgetItem(ticketStateStr);
-    QTableWidgetItem* item6 = new QTableWidgetItem(QString("%1").arg(info->balance(), 0, 'f', 1));
+
+    float balance = 0.01 * info->balance();
+    QTableWidgetItem* item6 = new QTableWidgetItem(QString("%1").arg(balance, 0, 'f', 1));
 
 //    QTableWidgetItem* item5 = new QTableWidgetItem(getTicketStateString(info->cardState()));
 //    QTableWidgetItem* item6 = new QTableWidgetItem(QString("%1").arg(info->tripState()));

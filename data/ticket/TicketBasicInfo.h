@@ -1,4 +1,4 @@
-#ifndef TICKETBASICINFO_H
+﻿#ifndef TICKETBASICINFO_H
 #define TICKETBASICINFO_H
 
 #include <QObject>
@@ -32,8 +32,8 @@ public:
     int tripState() const;
     void setTripState(int tripState);
 
-    float balance() const;
-    void setBalance(float balance);
+    long balance() const;
+    void setBalance(long balance);
 
     int typeNum() const;
     void setTypeNum(int typeNum);
@@ -75,7 +75,7 @@ private:
     QDate       m_validDate;    // 有效期
     int         m_cardState;    // 卡状态
     int         m_tripState;    // 旅程状态
-    float       m_balance;      // 余额
+    long        m_balance;      // 余额（单位：分）
     int         m_typeNum;      // ticketType
     int         m_icType;
 
@@ -86,7 +86,7 @@ private:
     QString     m_exStationCode;  // 出站车站编号
     QDateTime   m_enTime;         // 进站时间
     QDateTime   m_exTime;         // 出站时间
-    uint        m_updateAmount;   // 票卡更新应收罚金
+    uint        m_updateAmount;   // 票卡更新应收罚金（单位是分）
 
     int   m_errorCode;    // 票卡分析错误码
 

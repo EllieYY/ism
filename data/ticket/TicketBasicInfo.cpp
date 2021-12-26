@@ -10,7 +10,7 @@ TicketBasicInfo::TicketBasicInfo(int type, QString typeStr, QString number, QStr
     m_validDate = QDate::fromString(validDate, "yyyyMMdd");
     m_cardState = cardState;
     m_tripState = tripState;
-    m_balance = balance * 0.01;
+    m_balance = balance;
 }
 
 QString TicketBasicInfo::type() const
@@ -73,12 +73,12 @@ void TicketBasicInfo::setTripState(int tripState)
     m_tripState = tripState;
 }
 
-float TicketBasicInfo::balance() const
+long TicketBasicInfo::balance() const
 {
     return m_balance;
 }
 
-void TicketBasicInfo::setBalance(float balance)
+void TicketBasicInfo::setBalance(long balance)
 {
     m_balance = balance;
 }

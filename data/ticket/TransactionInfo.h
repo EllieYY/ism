@@ -1,4 +1,4 @@
-#ifndef TRANSACTIONINFO_H
+﻿#ifndef TRANSACTIONINFO_H
 #define TRANSACTIONINFO_H
 
 #include <QObject>
@@ -20,8 +20,8 @@ public:
     int type() const;
     void setType(int type);
 
-    float amount() const;
-    void setAmount(float amount);
+    long amount() const;
+    void setAmount(long amount);
 
     QString samNum() const;
     void setSamNum(const QString &samNum);
@@ -29,7 +29,7 @@ public:
 private:
     QDateTime m_createTime;     // 交易时间
     int m_type;                 // 交易类型
-    float m_amount;             // 交易金额
+    long m_amount;             // 交易金额(分)
 //    int m_consumptionCount;     // 消费次数
 //    float m_balance;            // 余额
 //    int m_validCount;           // 剩余次数

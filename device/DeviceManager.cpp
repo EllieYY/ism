@@ -261,7 +261,7 @@ uchar DeviceManager::readTicketInfo(uchar anti)
 //    logger()->info("[cardAnalyse] %1", resStr);
 
     /* 字段解析 ------------*/
-    // 卡类型 | 逻辑卡号 | 发卡时间 | 有效期 | 卡状态 | 旅程状态 | 余额
+    // 卡类型 | 逻辑卡号 | 发卡时间 | 有效期 | 卡状态 | 旅程状态 | 余额（分）
     int typeNum = analyseInfo.ticketType;
     QString type = DataCenter::getThis()->getTicketTypeString(typeNum);
     QString number = QByteArray((char*)analyseInfo.logicID, 10).toHex().toUpper();
@@ -280,11 +280,11 @@ uchar DeviceManager::readTicketInfo(uchar anti)
         return 0;
     }
 
-    // 允许更新 | 卡扣更新 | 更新类型 | 应收费用
+    // 允许更新 | 卡扣更新 | 更新类型 | 应收费用（分）
     bool isAllowUpdate = analyseInfo.isAllowUpdate;
     bool isAllowOctPay = analyseInfo.isAllowOctPay;
     int updateType = analyseInfo.UpdateType;
-    uint amount = 0.01 * analyseInfo.UpdateAmount;
+    uint amount = analyseInfo.UpdateAmount;   // 单位是分
 
     // 进站车站 | 进站时间 | 出站车站 | 出站时间
     QString enStation = QByteArray((char*)analyseInfo.lastEnrtyStation, 2).toHex().toUpper();
@@ -296,7 +296,6 @@ uchar DeviceManager::readTicketInfo(uchar anti)
     QByteArray resArr = QByteArray((char*)&analyseInfo, sizeof(ANALYSECARD_RESP));
     QString resStr = resArr.toHex();
     logger()->info("[cardAnalyse] %1", resStr);
-
 
     TicketBasicInfo* ticket = new TicketBasicInfo(
                 typeNum, type, number, startDate, validDate, state, tripState, balance);
@@ -626,9 +625,9 @@ void DeviceManager::setTestData()
     ticket->setEnTime("20211115212305");
     ticket->setExStationCode("0306");
     ticket->setExTime("20211115212606");
-    ticket->setUpdateAmount(7);
+    ticket->setUpdateAmount(700);
     ticket->setIcType(UL_CARD);
-    ticket->setBalance(2);
+    ticket->setBalance(200);
 
     DataCenter::getThis()->setTicketBasicInfo(ticket);
 }

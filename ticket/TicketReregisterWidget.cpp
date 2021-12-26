@@ -39,7 +39,6 @@ bool TicketReregisterWidget::showData()
         return true;
     }
 
-
     ui->calcFareBtn->hide();
     ui->cashPollBtn->setDisabled(true);
     ui->tUpdateBtn->setDisabled(true);
@@ -80,7 +79,9 @@ bool TicketReregisterWidget::showData()
     if (info->exTime().toSecsSinceEpoch() > 1000) {
         ui->lineEdit3->setText(info->exTime().toString("yyyy-MM-dd HH:mm:ss"));
     }
-    ui->lineEdit6->setText(QString::number(info->updateAmount()));
+
+    float updateAmount = 0.01 * info->updateAmount();
+    ui->lineEdit6->setText(QString::number(updateAmount));
     ui->textTips->setText("");
 
     int errorCode = info->errorCode();
@@ -230,7 +231,11 @@ void TicketReregisterWidget::onUpdateTicket()
     MyHelper::intToBigEndianByte(stationMode, 2, updateIn.StationMode);
     updateIn.CardType = m_ticketType;
     updateIn.PayType = m_payType;
+
+//    int updateAmount = m_difference * 100;    // 单位是分
+//    qDebug() << "updateAmount=" << updateAmount;
     MyHelper::intToBigEndianByte(m_difference, 4, updateIn.Amount);
+
     updateIn.UpdateType = m_updateType;
     QString operatorIdStr = DataCenter::getThis()->getOperatorId();
     MyHelper::hexStrToByte(operatorIdStr, 4, updateIn.OperatorID);
@@ -285,12 +290,15 @@ void TicketReregisterWidget::onUpdateTicket()
 void TicketReregisterWidget::cashSupplementary()
 {
     //TODO:test code
-    m_difference = ui->lineEdit6->text().toInt();
+    //    m_difference = ui->lineEdit6->text().toInt();
+
+    float amount = ui->lineEdit6->text().toFloat();
+    int iAmount = qCeil(amount);
+    m_difference = 100 * iAmount;
 
     if (m_difference > 0) {
-        m_difference = qCeil(m_difference);
         BYTE state = DataCenter::getThis()->getCashboxState();
-        m_fareWidget->initShow(m_difference, state);
+        m_fareWidget->initShow(iAmount, state);
     } else {
         MyHelper::ShowMessageBoxInfo("无需现金缴费，请直接更新。");
         ui->cashPollBtn->setDisabled(true);

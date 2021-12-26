@@ -19,7 +19,7 @@ public:
     explicit CompensationFareWidget(QWidget *parent = nullptr);
     ~CompensationFareWidget();
 
-    void initShow(int difference, uchar devState);
+    void initShow(long difference, uchar devState);  // 投币金额，单位是元！
     void onAutoStopPaying(int bankNoteCount, int coinCount);      // 自动停止投币-检测到金额足够
     void onStopPaying();
     void showCheckState(int state, int bankNoteCount, int coinCount);

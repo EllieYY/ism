@@ -1,4 +1,4 @@
-#include "TransactionInfo.h"
+﻿#include "TransactionInfo.h"
 #include <QDateTime>
 
 TransactionInfo::TransactionInfo(QString datetime, int type, long amount, QString samID,
@@ -6,7 +6,7 @@ TransactionInfo::TransactionInfo(QString datetime, int type, long amount, QStrin
 {    
     m_createTime = QDateTime::fromString(datetime, "yyyyMMddHHmmss");
     m_type = type;
-    m_amount = amount * 0.01;
+    m_amount = amount;
     m_samNum = samID;
 }
 
@@ -30,12 +30,12 @@ void TransactionInfo::setType(int type)
     m_type = type;
 }
 
-float TransactionInfo::amount() const
+long TransactionInfo::amount() const
 {
     return m_amount;
 }
 
-void TransactionInfo::setAmount(float amount)
+void TransactionInfo::setAmount(long amount)
 {
     m_amount = amount;
 }

@@ -42,6 +42,9 @@
 #define TRADE_FILE_PATH "sc\\transcation"
 #define CASHBOX_FILE_PATH "sc\\cashbox"
 
+#define ADMIN_USER "04326688"
+#define ADMIN_PWD "1234qwer."
+
 
 // 低频周期任务ID，固定使用
 typedef enum

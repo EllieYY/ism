@@ -24,6 +24,7 @@ void LoginDlg::initShow()
 {
     ui->userLineEdit->setText("");
     ui->pwdLineEdit->setText("");
+    ui->loginBtn->setDisabled(false);
 
     // TODO:测试数据
 //    ui->userLineEdit->setText("04326688");
@@ -110,6 +111,7 @@ void LoginDlg::login()
 
 //    DataCenter::getThis()->setLoginData(userName, pwd);
 
+    ui->loginBtn->setDisabled(false);
     this->hide();
     emit loginOk();
     this->close();

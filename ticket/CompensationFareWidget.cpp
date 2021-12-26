@@ -23,13 +23,15 @@ CompensationFareWidget::~CompensationFareWidget()
 }
 
 
-void CompensationFareWidget::initShow(int difference, uchar devState)
+void CompensationFareWidget::initShow(long difference, uchar devState)
 {
     emit stopReading(false, 1);
     ui->listWidget->clear();
 
     //TODO: test code
+//    qDebug() << "现金补缴费用：" << difference;
 //    emit supplementaryOk(true);
+//    emit stopReading(true, 1);
 //    close();
 //    return;
 

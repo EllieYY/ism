@@ -54,7 +54,7 @@ private:
     int m_updateType;           // 更新类型
     int m_ticketType;           // 票卡类型
     CompensationFareWidget* m_fareWidget;       // 补差额窗口
-    double  m_difference;       // 待补差价
+    uint  m_difference;       // 待补差价
 
     QString  m_enStationCode;   // 进站站点编号
     QString  m_exStationCode;   // 出站站点编号
