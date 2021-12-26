@@ -418,19 +418,19 @@ void TicketReregisterWidget::writeTradeFile(BYTE icType, BYTE *data)
 
 int TicketReregisterWidget::getTradeDataLength(int icType)
 {
-    int length = sizeof(MTRCARD_TRADE_INFO);
+    int length = sizeof(MTR_UPDATE_RESP);
     switch(icType) {
     case UL_CARD:
         length = sizeof(MTRCARD_TRADE_INFO);
         break;
     case METRO_CARD:
-        length = sizeof(MTRCARD_TRADE_INFO);
+        length = sizeof(MTR_UPDATE_RESP);
         break;
     case OCT_CARD:
-        length = sizeof(OCTCARD_TRADE_INFO);
+        length = sizeof(OCT_UPDATE_RESP);
         break;
     case TU_CARD:
-        length = sizeof(TUCARD_TRADE_INFO);
+        length = sizeof(TU_UPDATE_RESP);
         break;
     default:
         break;
