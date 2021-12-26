@@ -445,7 +445,7 @@ void TicketReregisterWidget::setStyle()
     ui->lineEdit3->setDisabled(true);
     ui->lineEdit4->setDisabled(true);
     ui->lineEdit5->setDisabled(true);
-    ui->lineEdit6->setDisabled(true);
+    ui->lineEdit6->setDisabled(true);   // TODO:放开限制
 
     ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
     ui->tableWidget->verticalHeader()->setVisible(false);

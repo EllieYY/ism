@@ -110,6 +110,8 @@ void DataCenter::secEvent()
         m_taskThread->addTask(task);
     }
 
+    // TODO:放开限制，删除代码bool fileTriggered = true;
+//    bool fileTriggered = true;
     // 交易文件定时上传
     bool fileTriggered = false;
     if ((m_timeCount % m_tradeDataIntervalSec) == 0 || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
@@ -126,8 +128,8 @@ void DataCenter::secEvent()
 
 void DataCenter::init()
 {
-    m_ismVersion = "00000005";
-    logger()->info("ISM version:%1", "20211225-2033-%1", m_ismVersion);
+    m_ismVersion = "00000006";
+    logger()->info("ISM version:%1", "20211226-1156-%1", m_ismVersion);
     initData();    // 默认数据
 
     /* 基础信息 */
@@ -886,21 +888,21 @@ QString DataCenter::getULStateStr(int state) {
     //22超时更新，32超时超程更新，42出站票
     if (state == 0) {
         typeStr = "初始化";
-    } else if (state == 1) {
+    } else if (state == 0x01) {
         typeStr = "售票";
-    } else if (state == 2) {
+    } else if (state == 0x02) {
         typeStr = "进站";
-    } else if (state == 3) {
+    } else if (state == 0x03) {
         typeStr = "出站";
-    } else if (state == 5) {
+    } else if (state == 0x05) {
         typeStr = "注销";
-    } else if (state == 12) {
+    } else if (state == 0x12) {
         typeStr = "超程更新";
-    } else if (state == 22) {
+    } else if (state == 0x22) {
         typeStr = "超时更新";
-    } else if (state == 32) {
+    } else if (state == 0x32) {
         typeStr = "超时超程更新";
-    } else if (state == 42) {
+    } else if (state == 0x42) {
         typeStr = "出站票";
     }
 
@@ -929,15 +931,15 @@ QString DataCenter::getOCTStateStr(int state) {
     QString typeStr = "未定义卡";
 
     // 太长不看版：00出站，01进站，03超程更新，05超时更新，07超程超时更新
-    if (state == 00) {
+    if (state == 0x00) {
         typeStr = "出站";
-    } else if (state == 1) {
+    } else if (state == 0x01) {
         typeStr = "进站";
-    } else if (state == 3) {
+    } else if (state == 0x03) {
         typeStr = "超程更新";
-    }else if (state == 5) {
+    }else if (state == 0x05) {
         typeStr = "超时更新";
-    } else if (state == 7) {
+    } else if (state == 0x07) {
         typeStr = "超程超时更新";
     }
 
@@ -949,15 +951,15 @@ QString DataCenter::getTUStateStr(int state)
     QString typeStr = "未定义卡";
 
     // //00：初始状态; 01：进站; 02：出站; 03：进站更新; 04：出站更新
-    if (state == 1) {
+    if (state == 0x01) {
         typeStr = "出站";
-    } else if (state == 2) {
+    } else if (state == 0x02) {
         typeStr = "进站";
-    } else if (state == 3) {
+    } else if (state == 0x03) {
         typeStr = "进站更新";
-    }else if (state == 4) {
+    }else if (state == 0x04) {
         typeStr = "出站更新";
-    } else if (state == 0) {
+    } else if (state == 0x00) {
         typeStr = "初始状态";
     }
 
@@ -1143,7 +1145,7 @@ bool DataCenter::autoLogout()
 // 用户鉴权：暂时只校验用户名和密码，不校验权限
 bool DataCenter::isValidUser(QString userCode, QString pwd)
 {
-    if (userCode == "04326688" && pwd == "123456") {
+    if (userCode == "04326688" && pwd == "1234qwer.") {
         return true;
     }
     if (!m_operatorMap.contains(userCode)) {
