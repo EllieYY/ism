@@ -86,6 +86,7 @@ void ISMFrame::logout()
 {
     // 签退
     LogoutDlg* dlg = new LogoutDlg(this);
+    dlg->setFareWidget(m_fareWidget);
     connect(dlg, &LogoutDlg::logoutOk, this, &ISMFrame::login);
     MyHelper::FormInCenter(dlg);
     dlg->show();
@@ -280,6 +281,8 @@ void ISMFrame::registerWidget(QHBoxLayout *layout, WidgetBase *widget, int widge
 void ISMFrame::onServiceOff()
 {
     qDebug() << "onServiceOff: " << QThread::currentThreadId();
+
+    // TODO:关闭自动签退 -- 20211226
     // 运营日结束时，自动签退 -- 只执行一次
     bool isLogin = DataCenter::getThis()->getIsLogin();
     bool isServiceOff = DataCenter::getThis()->getServiceOff();

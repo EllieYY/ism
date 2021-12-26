@@ -1067,10 +1067,6 @@ void DataCenter::setLoginInfo(LoginInfo *loginInfo)
 }
 bool DataCenter::setLoginData(QString user, QString pwd)
 {
-    if (user == ADMIN_USER && pwd == ADMIN_PWD) {
-        setIsLogin(true);
-        return true;
-    }
 
     // 用户校验
     if (!isValidUser(user, pwd)) {
@@ -1100,11 +1096,6 @@ bool DataCenter::setLoginData(QString user, QString pwd)
 
 bool DataCenter::setLogoutData(QString user, QString pwd)
 {
-    if (user == ADMIN_USER && pwd == ADMIN_PWD) {
-        setIsLogin(false);
-        return true;
-    }
-
     // 容错处理
     if (m_loginInfo == NULL) {
         setIsLogin(false);
@@ -1155,6 +1146,11 @@ bool DataCenter::autoLogout()
 // 用户鉴权：暂时只校验用户名和密码，不校验权限
 bool DataCenter::isValidUser(QString userCode, QString pwd)
 {
+    if (userCode == ADMIN_USER && pwd == ADMIN_PWD) {
+//        setIsLogin(false);
+        return true;
+    }
+
     if (!m_operatorMap.contains(userCode)) {
         return false;
     }

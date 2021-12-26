@@ -8,6 +8,7 @@
 #include <QAbstractSlider>
 #include "BIM2020.h"
 #include "TicketBasicInfo.h"
+#include "CompensationFareWidget.h"
 
 LogoutDlg::LogoutDlg(QWidget *parent) :
     QWidget(parent),
@@ -15,6 +16,8 @@ LogoutDlg::LogoutDlg(QWidget *parent) :
 {
     ui->setupUi(this);
     initStyle();
+
+    m_fareWidget = NULL;
 
     connect(ui->logoutCloseBtn, &QPushButton::clicked, this, &LogoutDlg::close);
     connect(ui->logoutBtn, &QPushButton::clicked, this, &LogoutDlg::onLogout);
@@ -339,4 +342,22 @@ void LogoutDlg::logForCashbox(QString line)
     in << prefixInfo << "\n";
     file.close();
 
+}
+
+void LogoutDlg::setFareWidget(CompensationFareWidget *fareWidget)
+{
+    m_fareWidget = fareWidget;
+    connect(m_fareWidget, &CompensationFareWidget::supplementaryOk, this, &LogoutDlg::onSupplementaryOk);
+}
+
+void LogoutDlg::onSupplementaryOk(bool isOk)
+{
+    //TODO: 控制按钮可以点击
+
+    // 文字提示
+    QString tipStr = "加币失败。";
+    if (isOk) {
+        tipStr = "加币成功。";
+    }
+    ui->label_tips->setText(tipStr);
 }

@@ -9,6 +9,7 @@ namespace Ui {
 class LogoutDlg;
 }
 
+class CompensationFareWidget;
 class LogoutDlg : public QWidget
 {
     Q_OBJECT
@@ -18,12 +19,17 @@ public:
     explicit LogoutDlg(QWidget *parent = nullptr);
     ~LogoutDlg();
 
+    void setFareWidget(CompensationFareWidget *fareWidget);
+
+
 signals:
     void logoutOk();
 
 private:
     void initStyle();
     void onLogout();
+
+    void onSupplementaryOk(bool isOk);
 
     void showBrcSet();
     void showF53Set();
@@ -46,6 +52,9 @@ private:
     int getDenomination(int index);
 
     void logForCashbox(QString line);      // 钱箱日志
+
+private:
+    CompensationFareWidget* m_fareWidget;    // 投币窗口
 
 private:
     Ui::LogoutDlg *ui;
