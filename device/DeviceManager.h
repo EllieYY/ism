@@ -43,7 +43,9 @@ signals:
     void checkState(int, int, int);
     void ticketRead(int ret);             // 票卡信息读取结果反馈
 
-    void sigReturnCoinsState(bool isOk, int balance);   // isOk:全部退币操作是否完成  balance:找零器中余额，值为-41表示无法退币
+    // 硬币维护相关
+    void sigReturnCoinValid(int ret);    // 是否可以退币  0:可用， 其他：不可用
+    void sigReturnCoinsState(bool isOk, int balance);   // isOk:全部退币操作是否完成  balance:找零器中余额
 
 protected:
     void timerEvent(QTimerEvent* event);
@@ -84,6 +86,10 @@ private:
     bool m_onReading;      // 读卡状态开启
     int m_ticketInfoType;  // 读取票卡内容： 0-历史交易信息  1-票卡更新信息
     long m_readStartTime;      // 投币时间控制
+
+    // 硬币退币
+    bool m_onReturnCoins;   // 开始退币
+//    long m_start
 
     // 定时器id
     int m_checkingTimerId;    // 投币检测定时器

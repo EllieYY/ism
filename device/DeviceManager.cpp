@@ -547,10 +547,13 @@ void DeviceManager::setOnReading(bool onReading, int type)
 void DeviceManager::onReturnAllCoins()
 {
     int ret = Dispense_Hopper_All();
+    logger()->info("退出所有硬币[Dispense_Hopper_All]=%1", ret);
+    emit sigReturnCoinValid(ret);
+
     if (ret == 0) {
+        emit sigReturnCoinValid(true);    // 是否可以退币
+
         // 每200MS调用一次：Request_Hopper_Balance
-    } else {
-        emit sigReturnCoinsState(bool isOk, int balance);
     }
 
 }
