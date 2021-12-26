@@ -635,13 +635,13 @@ int DataCenter::parseParam2005(QString filePath)
     file.close();
 
     // 运营时间解析 | 容错
-    serviceEnd = (serviceEnd % 0x60);
+//    serviceEnd = (serviceEnd % 0x60);
     m_serviceEndTime = serviceEnd * 15 * 60;
 
-    seviceStart = (seviceStart % 0x60);
-    if (seviceStart < 0x30) {     // 开始时间应早于12:00
+//    seviceStart = (seviceStart % 0x60);
+//    if (seviceStart < 0x30) {     // 开始时间应早于12:00
         m_serviceStartTime = seviceStart * 15 * 60;
-    }
+//    }
 
     QString sTimeStr(startTime.toHex());
     QString body = QString("pVersion={%1}, startTime={%2}, serviceStartTime={%3}, serviceEndTime={%4}")
@@ -664,9 +664,6 @@ void DataCenter::taskFinished(int taskId, bool success)
             //参数文件更新
             updateParamVersion();
         }
-
-        // TODO:参数更新上报
-
     }
 
     if (taskId == m_curSoftwareTaskId) {
