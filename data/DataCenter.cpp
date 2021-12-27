@@ -87,7 +87,7 @@ void DataCenter::secEvent()
     m_timeCount++;
     for (int i = 0; i < HEART_NUM; i++) {
         m_hrtCnt[i] = m_hrtCnt[i] + 1;
-        if (m_hrtCnt[i] >= 600) {    // 超过10分钟未连接则掉线处理
+        if (m_hrtCnt[i] >= 60) {    // 超过10分钟未连接则掉线处理
             setHrtOffData(i);
         }
     }
@@ -639,6 +639,10 @@ int DataCenter::parseParam2005(QString filePath)
     // 运营时间解析 | 容错
 //    serviceEnd = (serviceEnd % 0x60);
     m_serviceEndTime = serviceEnd * 15 * 60;
+
+    // TODO:测试用的运营结束时间
+    m_serviceEndTime = SettingCenter::getThis()->getTestServiceOffTime();
+
 
 //    seviceStart = (seviceStart % 0x60);
 //    if (seviceStart < 0x30) {     // 开始时间应早于12:00
@@ -1525,12 +1529,13 @@ void DataCenter::serviceStateCheck()
 
     long nowSec = dayStart.secsTo(now);
 
-    long startSec = DataCenter::getThis()->getServiceStartTime();
-    long endSec = DataCenter::getThis()->getServiceEndTime();
+    long startSec = getServiceStartTime();
+    long endSec = getServiceEndTime();
 
-//    // TODO:test code
+//    // TODO:test code  测试代码，务必删除
 //    startSec = 14 * 3600 + 41 * 60;
-    endSec = 19 * 3600 + 32 * 60;
+//    endSec = 22 * 3600 + 34 * 60;
+//    endSec = SettingCenter::getThis()->getTestServiceOffTime();
 
     // 交集为反
     bool type = true;

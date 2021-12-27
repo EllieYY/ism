@@ -78,7 +78,7 @@ void TaskThread::run()
 
         if (task) {
             // 发送任务开始执行信号
-            qDebug() << task->message();
+//            qDebug() << task->message();
 
             // 执行任务
             task->doWork();

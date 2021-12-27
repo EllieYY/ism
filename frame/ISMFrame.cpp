@@ -124,6 +124,10 @@ void ISMFrame::initDevice()
     m_deviceManager = new DeviceManager();
     connect(this, &ISMFrame::initDeviceInThread, m_deviceManager, &DeviceManager::initDevice);
     connect(this, &ISMFrame::deviceUpdate, m_deviceManager, &DeviceManager::onDeviceUpdate);
+
+    DataCenter* data = DataCenter::getThis();
+    connect(data, &DataCenter::sigReaderReset, m_deviceManager, &DeviceManager::onReaderReset);
+    connect(data, &DataCenter::sigCashboxReset, m_deviceManager, &DeviceManager::onCashboxReset);
     m_deviceManager->startDeviceTimer();
 
     m_deviceManager->moveToThread(m_deviceThread);

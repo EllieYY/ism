@@ -1,4 +1,4 @@
-/* 配置中心
+﻿/* 配置中心
  * 各种信息与json文件的转换
  *
 */
@@ -1063,6 +1063,33 @@ void SettingCenter::saveLineStationTimetables(QList<LineStationTimetables *> lin
 
     rootObject.insert("lineTimeTables", jsonArray);
     saveJsonFile(rootObject, "lineStationTimes.json");
+}
+
+
+// 测试用--读取文件设置运营结束时间
+long SettingCenter::getTestServiceOffTime()
+{
+    QTime time = QTime::fromString("01:30", "HH:mm");
+    int serviceOffTime = 0.001 * time.msecsSinceStartOfDay();
+
+    QMap<int, LineStationTimetables *> lines;
+    QJsonDocument jsonDocument = readJsonFile("serviceOffTime.json");
+    if (jsonDocument.isNull() || jsonDocument.isEmpty()) {
+        return serviceOffTime;
+    }
+
+    QJsonObject rootObject = jsonDocument.object();
+    if(!rootObject.contains("time") || !rootObject.value("time").isString())
+    {
+        return serviceOffTime;
+    }
+
+    QString timeStr = rootObject.value("time").toString();
+    QTime newTime = QTime::fromString(timeStr, "HH:mm");
+    serviceOffTime = 0.001 * newTime.msecsSinceStartOfDay();
+
+    qDebug() << "运营结束时间：" << serviceOffTime;
+    return serviceOffTime;
 }
 
 
