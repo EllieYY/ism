@@ -18,7 +18,7 @@ int AFCTimerTask::doWork()
     if (m_type == DEV_STATE) {
         DataCenter::getThis()->deviceState2afc(DEV_OK);
     } else if (m_type == TRADE_FILE) {
-        DataCenter::getThis()->packageTradeFile();
+//        DataCenter::getThis()->packageTradeFile();
     }
 
     return 0;

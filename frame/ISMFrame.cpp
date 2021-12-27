@@ -281,18 +281,16 @@ void ISMFrame::registerWidget(QHBoxLayout *layout, WidgetBase *widget, int widge
 void ISMFrame::onServiceOff()
 {
     qDebug() << "onServiceOff: " << QThread::currentThreadId();
-
-    // TODO:关闭自动签退 -- 20211226
-    // 运营日结束时，自动签退 -- 只执行一次
-    bool isLogin = DataCenter::getThis()->getIsLogin();
-    bool isServiceOff = DataCenter::getThis()->getServiceOff();
-    if (isLogin && isServiceOff) {
-        // 自动签退
-        if (DataCenter::getThis()->autoLogout()) {
-            // 显示签到页面
-            login();
-        }
-    }
+//    // 运营日结束时，自动签退 -- 只执行一次
+//    bool isLogin = DataCenter::getThis()->getIsLogin();
+//    bool isServiceOff = DataCenter::getThis()->getServiceOff();
+//    if (isLogin && isServiceOff) {
+//        // 自动签退
+//        if (DataCenter::getThis()->autoLogout()) {
+//            // 显示签到页面
+//            login();
+//        }
+//    }
 
     // 设备参数和程序升级并重新初始化
     if (m_deviceManager != NULL) {

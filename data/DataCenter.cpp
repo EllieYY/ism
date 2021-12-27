@@ -117,8 +117,10 @@ void DataCenter::secEvent()
     if ((m_timeCount % m_tradeDataIntervalSec) == 0 || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
         fileTriggered = true;
         logger()->info("交易文件定时上送：%1, %2", m_timeCount, m_tradeDataIntervalSec);
-        AFCTimerTask* task = new AFCTimerTask(TRADE_FILE);
-        m_taskThread->addTask(task);
+        packageTradeFile();
+
+//        AFCTimerTask* task = new AFCTimerTask(TRADE_FILE);
+//        m_taskThread->addTask(task);
     }
 
     if (devTriggerd && fileTriggered) {
@@ -664,9 +666,6 @@ void DataCenter::taskFinished(int taskId, bool success)
             //参数文件更新
             updateParamVersion();
         }
-
-        // TODO:参数更新上报
-
     }
 
     if (taskId == m_curSoftwareTaskId) {
@@ -1147,7 +1146,7 @@ bool DataCenter::autoLogout()
 bool DataCenter::isValidUser(QString userCode, QString pwd)
 {
     if (userCode == ADMIN_USER && pwd == ADMIN_PWD) {
-//        setIsLogin(false);
+        setIsLogin(true);
         return true;
     }
 
