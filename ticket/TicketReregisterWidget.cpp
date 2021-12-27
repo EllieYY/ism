@@ -345,8 +345,11 @@ void TicketReregisterWidget::onCalcFare()
 
     logger()->info("[calcFare] amount = {%3}, 入参{%1}, 出参{%2}", strIn, strOut, calFareOut.intAmount);
 
-    m_difference = calFareOut.intAmount * 0.01;
-    ui->lineEdit6->setText(QString::number(m_difference));
+    m_difference = calFareOut.intAmount;  // 单位是分
+
+    float updateAmount = 0.01 * calFareOut.intAmount;
+    ui->lineEdit6->setText(QString::number(updateAmount));
+
     if (m_isAllowOctPay && m_difference < m_banlance) {
         ui->cashPollBtn->setDisabled(true);
         m_payType = 0x04;      // 卡内扣费
@@ -418,19 +421,19 @@ void TicketReregisterWidget::writeTradeFile(BYTE icType, BYTE *data)
 
 int TicketReregisterWidget::getTradeDataLength(int icType)
 {
-    int length = sizeof(MTR_UPDATE_RESP);
+    int length = sizeof(MTRCARD_TRADE_INFO);
     switch(icType) {
     case UL_CARD:
         length = sizeof(MTRCARD_TRADE_INFO);
         break;
     case METRO_CARD:
-        length = sizeof(MTR_UPDATE_RESP);
+        length = sizeof(MTRCARD_TRADE_INFO);
         break;
     case OCT_CARD:
-        length = sizeof(OCT_UPDATE_RESP);
+        length = sizeof(OCTCARD_TRADE_INFO);
         break;
     case TU_CARD:
-        length = sizeof(TU_UPDATE_RESP);
+        length = sizeof(TUCARD_TRADE_INFO);
         break;
     default:
         break;

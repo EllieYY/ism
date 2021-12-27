@@ -1,4 +1,4 @@
-#include "TradeFileUploadTask.h"
+﻿#include "TradeFileUploadTask.h"
 #include <QDebug>
 #include <QDateTime>
 #include "LibcurlFtp.h"
@@ -105,6 +105,7 @@ void TradeFileUploadTask::packageTradeFile(int fileCount, QSet<QString> fileName
 
 int TradeFileUploadTask::doWork()
 {
+    // TODO:打开，上传交易文件
     for (X7000FileInfo* info : m_fileList) {
         QString fileName = info->fileName();
         m_fileName = fileName;

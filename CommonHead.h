@@ -43,7 +43,7 @@
 #define CASHBOX_FILE_PATH "sc\\cashbox"
 
 #define ADMIN_USER "04326688"
-#define ADMIN_PWD "1234qwer."
+#define ADMIN_PWD "123456"
 
 
 // 低频周期任务ID，固定使用

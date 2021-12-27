@@ -117,8 +117,10 @@ void DataCenter::secEvent()
     if ((m_timeCount % m_tradeDataIntervalSec) == 0 || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
         fileTriggered = true;
         logger()->info("交易文件定时上送：%1, %2", m_timeCount, m_tradeDataIntervalSec);
-        AFCTimerTask* task = new AFCTimerTask(TRADE_FILE);
-        m_taskThread->addTask(task);
+        packageTradeFile();
+
+//        AFCTimerTask* task = new AFCTimerTask(TRADE_FILE);
+//        m_taskThread->addTask(task);
     }
 
     if (devTriggerd && fileTriggered) {
@@ -1064,10 +1066,6 @@ void DataCenter::setLoginInfo(LoginInfo *loginInfo)
 }
 bool DataCenter::setLoginData(QString user, QString pwd)
 {
-    if (user == ADMIN_USER && pwd == ADMIN_PWD) {
-        setIsLogin(true);
-        return true;
-    }
 
     // 用户校验
     if (!isValidUser(user, pwd)) {
@@ -1097,10 +1095,10 @@ bool DataCenter::setLoginData(QString user, QString pwd)
 
 bool DataCenter::setLogoutData(QString user, QString pwd)
 {
-    if (user == ADMIN_USER && pwd == ADMIN_PWD) {
-        setIsLogin(false);
-        return true;
-    }
+//    if (user == ADMIN_USER && pwd == ADMIN_PWD) {
+//        setIsLogin(false);
+//        return true;
+//    }
 
     // 容错处理
     if (m_loginInfo == NULL) {
@@ -1152,6 +1150,11 @@ bool DataCenter::autoLogout()
 // 用户鉴权：暂时只校验用户名和密码，不校验权限
 bool DataCenter::isValidUser(QString userCode, QString pwd)
 {
+    if (userCode == ADMIN_USER && pwd == ADMIN_PWD) {
+        setIsLogin(true);
+        return true;
+    }
+
     if (!m_operatorMap.contains(userCode)) {
         return false;
     }
