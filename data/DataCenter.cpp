@@ -130,13 +130,14 @@ void DataCenter::secEvent()
 
 void DataCenter::init()
 {
-    m_ismVersion = "00000006";
-    logger()->info("ISM version:%1", "20211226-1156-%1", m_ismVersion);
+    m_ismVersion = "00000007";
+    logger()->info("ISM version:%1", "20211228-0110-%1", m_ismVersion);
     initData();    // 默认数据
 
     /* 基础信息 */
-    logger()->info("基础信息读取");
     m_basicInfo = SettingCenter::getThis()->getBasicInfo();
+    logger()->info("[站点信息]名称=%1，付费区=%2", m_basicInfo->stationName(), m_basicInfo->isPayZone());
+
     HttpTool::getThis()->setId(m_basicInfo->deviceId(), m_basicInfo->stationName());
     HttpTool::getThis()->setServUrl(m_basicInfo->ismServiceIp(), m_basicInfo->ismServicePort());
 
@@ -639,6 +640,10 @@ int DataCenter::parseParam2005(QString filePath)
     // 运营时间解析 | 容错
 //    serviceEnd = (serviceEnd % 0x60);
     m_serviceEndTime = serviceEnd * 15 * 60;
+
+    // TODO:测试用的运营结束时间
+//    m_serviceEndTime = SettingCenter::getThis()->getTestServiceOffTime();
+
 
 //    seviceStart = (seviceStart % 0x60);
 //    if (seviceStart < 0x30) {     // 开始时间应早于12:00
@@ -1309,10 +1314,10 @@ void DataCenter::setHrtOffData(int idx)
     case AFC_HRT: // AFC
         node = "AFC";
         m_afcNetState = 1;
-        // 网络库重连
-        if (m_afcTaskThread != NULL && m_afcTaskThread->isRunning()) {
-            m_afcTaskThread->onAfcReset();
-        }
+//        // 网络库重连
+//        if (m_afcTaskThread != NULL && m_afcTaskThread->isRunning()) {
+//            m_afcTaskThread->onAfcReset();
+//        }
 
         WidgetMng::notify(AFC_ONLINE_STATE_ID);
         break;
@@ -1525,12 +1530,13 @@ void DataCenter::serviceStateCheck()
 
     long nowSec = dayStart.secsTo(now);
 
-    long startSec = DataCenter::getThis()->getServiceStartTime();
-    long endSec = DataCenter::getThis()->getServiceEndTime();
+    long startSec = getServiceStartTime();
+    long endSec = getServiceEndTime();
 
-//    // TODO:test code
+//    // TODO:test code  测试代码，务必删除
 //    startSec = 14 * 3600 + 41 * 60;
-    endSec = 19 * 3600 + 32 * 60;
+//    endSec = 22 * 3600 + 34 * 60;
+//    endSec = SettingCenter::getThis()->getTestServiceOffTime();
 
     // 交集为反
     bool type = true;

@@ -1,4 +1,4 @@
-#ifndef SETTINGCENTER_H
+﻿#ifndef SETTINGCENTER_H
 #define SETTINGCENTER_H
 
 #include <QObject>
@@ -70,6 +70,10 @@ public:
     // 线路站点信息 - 配置文件版本
     QMap<int, LineStationTimetables*> getLineStationTimetables();
     void saveLineStationTimetables(QList<LineStationTimetables*> info);
+
+    // 测试运营时间-设置运营结束时间文件
+    long getTestServiceOffTime();
+
 
 private:
     QList<InterchangeInfo*> matchInterchangeStations(QList<InterchangeInfo*> stations, QString lineCode);

@@ -21,8 +21,6 @@ public:
     int taskId() override;
     bool result() override;
 
-private:
-    void serviceStateCheck();
 
 private:
     bool m_result;

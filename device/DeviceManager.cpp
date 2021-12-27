@@ -150,12 +150,22 @@ void DeviceManager::hearChecking()
     bool coin = (SimplePoll() == 0);
     bool banknotes = (BIM_Poll() == 0);
     bool banknotesRe = (F53Poll() == 0);
+
+    // TODO:
+//    coin = true;
+//    banknotes = true;
+//    banknotesRe = true;
+
     DataCenter::getThis()->cashboxOnline(coin, banknotes, banknotesRe);
 
     // 读写器心跳检测
     STATUS_INFO ReaderStatus = {0};
     BYTE ret = getStatus(&ReaderStatus);
     bool readerOn = (ret == 0);
+
+    // TODO:
+//    readerOn = true;
+
     DataCenter::getThis()->readerOnline(readerOn);
 }
 
@@ -164,19 +174,24 @@ void DeviceManager::ticketReading()
     if (!m_onReading) {
         return;
     }
-
 //    qDebug() << "reading....";
 
     // 操作超时控制
     long currentTime = QDateTime::currentSecsSinceEpoch();
     if (m_readStartTime <= 0) {
+        qDebug() << "m_readStartTime init";
         m_readStartTime = currentTime;
     }
 
     // 超时判断
     long diff = currentTime - m_readStartTime;
-    if (diff > MIN_1) {
+
+//    qDebug() << "cur=" << currentTime << ", m_readStartTime=" << m_readStartTime << ", diff=" << diff;
+//    if (diff > MIN_1) {
+    if (diff > 30) {
         m_readStartTime = -1;
+
+//        qDebug() << "overtime";
         emit ticketRead(0x05);
         return;
     }
@@ -204,12 +219,14 @@ void DeviceManager::readTransactionInfo()
             return;
         } else if (hisRet != 0x00) {
             m_readStartTime = -1;
+            qDebug() << "[readTransactionInfo]m_readStartTime = -1   #2";
             emit ticketRead(hisRet);
             return;
         }
     }
 
     m_readStartTime = -1;
+    qDebug() << "[readTransactionInfo]m_readStartTime = -1   #1";
     emit ticketRead(0);
 }
 
@@ -220,6 +237,7 @@ void DeviceManager::readReregisterInfo()
     }
 
     m_readStartTime = -1;
+    qDebug() << "[readReregisterInfo]m_readStartTime = -1";
     emit ticketRead(0);
 }
 
@@ -230,15 +248,18 @@ int DeviceManager::readBasicInfo()
     // 票卡信息获取
     int ret = readTicketInfo(anti);
 
+//    qDebug() << "[readTicketInfo]=" << ret;
 //    // TODO: 使用测试数据
-//    ret = 0;
+//    ret = 0x05;
 //    setTestData();
 
     // 找不到卡的情况下继续读卡，其他错误直接提示
     if (ret == 0x05 || ret == 0x06) {
+        qDebug() << "[readTicketInfo]=" << ret;
         return -1;
     } else if (ret != 0x00) {
         m_readStartTime = -1;
+        qDebug() << "[readBasicInfo]m_readStartTime = -1";
         emit ticketRead(ret);
         return -2;
     }
@@ -326,7 +347,7 @@ uchar DeviceManager::readHistoryTrade(uchar anti)
     // 结果打印
     QByteArray resArr = QByteArray((char*)&cardHistory, sizeof(HISTORY_RESP));
     QString resStr = resArr.toHex();
-    logger()->info("[readCardHistory] %1", resStr);
+//    logger()->info("[readCardHistory] %1", resStr);
 
     // 交易条数
     QList<TransactionInfo*> transList;
@@ -540,12 +561,14 @@ void DeviceManager::setOnReading(bool onReading, int type)
     m_onReading = onReading;
     m_ticketInfoType = type;
     m_readStartTime = -1;
+    qDebug() << "[setOnReading]m_readStartTime = -1";
 }
 
 
 // 设备复位  device - [bit0]:brc [bit1]:bim [bit2]:f53
 void DeviceManager::onCashboxReset(uchar device)
 {
+    logger()->info("设备复位[onCashboxReset]");
     BasicInfo* basicInfo = DataCenter::getThis()->getBasicInfo();
 
     if (device == 0x01) {    // 硬币器复位
@@ -609,6 +632,7 @@ void DeviceManager::onCashboxReset(uchar device)
 
 void DeviceManager::onReaderReset()
 {
+    logger()->info("设备复位[onReaderReset]");
     initReader();
 }
 

@@ -41,38 +41,3 @@ bool HeartTask::result()
     return m_result;
 }
 
-
-// 运营状态检测
-void HeartTask::serviceStateCheck()
-{
-    QDateTime dayStart = QDate::currentDate().startOfDay();
-    QDateTime now = QDateTime::currentDateTime();
-
-    long nowSec = dayStart.secsTo(now);
-
-    long startSec = DataCenter::getThis()->getServiceStartTime();
-    long endSec = DataCenter::getThis()->getServiceEndTime();
-
-//    // TODO:test code
-//    startSec = 14 * 3600 + 41 * 60;
-//    endSec = 22 * 3600 + 15 * 60;
-
-    // 交集为反
-    bool type = true;
-    if (endSec < startSec) {
-        type = false;
-    }
-
-    // 运营结束
-    bool serviceOn = false;
-    if (nowSec >= qMin(startSec, endSec) && nowSec < qMax(startSec, endSec)) {
-        serviceOn = true;
-    }
-
-    bool serviceOff = serviceOn ^ type;
-
-//    QString info = QString("start:%1, end:%2, serviceOff:%3").arg(startSec).arg(endSec).arg(serviceOff);
-//    qDebug() << "serviceStateCheck = " << info;
-
-    DataCenter::getThis()->setServiceOff(serviceOff);
-}
