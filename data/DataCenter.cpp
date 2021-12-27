@@ -87,7 +87,7 @@ void DataCenter::secEvent()
     m_timeCount++;
     for (int i = 0; i < HEART_NUM; i++) {
         m_hrtCnt[i] = m_hrtCnt[i] + 1;
-        if (m_hrtCnt[i] >= 60) {    // 超过10分钟未连接则掉线处理
+        if (m_hrtCnt[i] >= 600) {    // 超过10分钟未连接则掉线处理
             setHrtOffData(i);
         }
     }
@@ -135,8 +135,9 @@ void DataCenter::init()
     initData();    // 默认数据
 
     /* 基础信息 */
-    logger()->info("基础信息读取");
     m_basicInfo = SettingCenter::getThis()->getBasicInfo();
+    logger()->info("[站点信息]名称=%1，付费区=%2", m_basicInfo->stationName(), m_basicInfo->isPayZone());
+
     HttpTool::getThis()->setId(m_basicInfo->deviceId(), m_basicInfo->stationName());
     HttpTool::getThis()->setServUrl(m_basicInfo->ismServiceIp(), m_basicInfo->ismServicePort());
 
@@ -1313,10 +1314,10 @@ void DataCenter::setHrtOffData(int idx)
     case AFC_HRT: // AFC
         node = "AFC";
         m_afcNetState = 1;
-        // 网络库重连
-        if (m_afcTaskThread != NULL && m_afcTaskThread->isRunning()) {
-            m_afcTaskThread->onAfcReset();
-        }
+//        // 网络库重连
+//        if (m_afcTaskThread != NULL && m_afcTaskThread->isRunning()) {
+//            m_afcTaskThread->onAfcReset();
+//        }
 
         WidgetMng::notify(AFC_ONLINE_STATE_ID);
         break;

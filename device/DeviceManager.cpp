@@ -347,7 +347,7 @@ uchar DeviceManager::readHistoryTrade(uchar anti)
     // 结果打印
     QByteArray resArr = QByteArray((char*)&cardHistory, sizeof(HISTORY_RESP));
     QString resStr = resArr.toHex();
-    logger()->info("[readCardHistory] %1", resStr);
+//    logger()->info("[readCardHistory] %1", resStr);
 
     // 交易条数
     QList<TransactionInfo*> transList;
