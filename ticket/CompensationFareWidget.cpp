@@ -70,7 +70,7 @@ void CompensationFareWidget::initShow(long difference, uchar devState)
     if (devState == 0x00) {
         MyHelper::ShowMessageBoxError("硬件设备故障，无法投币，请联系工作人员。");
         logger()->error("硬件设备故障，无法投币，请联系工作人员。");
-        supplementaryOk(false);
+        emit supplementaryOk(false);
         close();
         return;
     }
@@ -114,7 +114,7 @@ void CompensationFareWidget::activePaying()
 void CompensationFareWidget::startPaying()
 {
     int ret = StartPutCoin(m_difference);
-    QString info3 = QString("StartPutCoin(%1)=%2").arg(m_difference).arg(ret);
+    QString info3 = QString("打开阀门StartPutCoin(%1)=%2").arg(m_difference).arg(ret);
     showInfo(info3);
 
     // TODO:

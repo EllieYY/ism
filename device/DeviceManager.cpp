@@ -27,6 +27,10 @@ DeviceManager::DeviceManager(QObject *parent) : QObject(parent)
     m_onChecking = false;
     m_startTime = 0;
 
+    // 退币检测
+    m_onReturnCoins = false;
+    m_startReturnTime = -1;
+
     // 票卡信息读取
     m_ticketInfoType = 0;   // 默认读取历史交易信息
     m_onReading = false;
@@ -36,6 +40,7 @@ DeviceManager::DeviceManager(QObject *parent) : QObject(parent)
     m_checkingTimerId = 0;
     m_hearTimerId = 0;
     m_readingTimerId = 0;
+    m_returnTimerId = 0;
 }
 
 DeviceManager::~DeviceManager()
@@ -91,6 +96,7 @@ void DeviceManager::startDeviceTimer()
     m_checkingTimerId = startTimer(300);
     m_hearTimerId = startTimer(1000);
     m_readingTimerId = startTimer(500);
+    m_returnTimerId = startTimer(200);
 }
 
 
@@ -102,6 +108,8 @@ void DeviceManager::timerEvent(QTimerEvent *event)
         ticketReading();
     } else if (event->timerId() == m_hearTimerId) {  // 设备心跳
         hearChecking();
+    } else if (event->timerId() == m_returnTimerId) {     // 退币
+
     }
 }
 
@@ -157,6 +165,11 @@ void DeviceManager::hearChecking()
     BYTE ret = getStatus(&ReaderStatus);
     bool readerOn = (ret == 0);
     DataCenter::getThis()->readerOnline(readerOn);
+}
+
+void DeviceManager::returnChecking()
+{
+
 }
 
 void DeviceManager::ticketReading()

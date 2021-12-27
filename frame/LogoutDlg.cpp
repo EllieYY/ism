@@ -76,12 +76,14 @@ void LogoutDlg::initStyle()
     this->setAttribute(Qt::WA_DeleteOnClose);
     setAttribute(Qt::WA_ShowModal, true);
 
+    //限制输入整数，范围0-500
+    ui->lineEdit_amount->setValidator(new QIntValidator(1,500,this));
 
     QAction *pLeadindAction_user = new QAction(this);
     QImage userIcon("images/login/user.png");
     pLeadindAction_user->setIcon(QIcon(QPixmap::fromImage(userIcon)));
     ui->userLineEdit->addAction(pLeadindAction_user, QLineEdit::LeadingPosition);
-    ui->userLineEdit->setPlaceholderText("请输入用户名");
+    ui->userLineEdit->setPlaceholderText("请输入操作员编号");
     ui->userLineEdit->installEventFilter(this);
     ui->userLineEdit->setFocusPolicy(Qt::ClickFocus);
 
@@ -373,6 +375,14 @@ void LogoutDlg::onSupplementaryOk(bool isOk)
 
 void LogoutDlg::onAddCoins()
 {
+    // 获取加币金额
+    int amount = ui->lineEdit_amount->text().toInt();
+
+
+
+    ui->addCoinsBtn->setDisabled(true);
+
+
 
 }
 

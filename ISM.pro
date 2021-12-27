@@ -106,6 +106,7 @@ SOURCES += \
     data/ticket/TransactionInfo.cpp \
     device/DeviceManager.cpp \
     frame/AFCTaskThread.cpp \
+    frame/CoinsManageWidget.cpp \
     frame/CustomTabWidget.cpp \
     frame/ISMFrame.cpp \
     frame/ISMMessageBox.cpp \
@@ -190,6 +191,7 @@ HEADERS += \
     data/ticket/TransactionInfo.h \
     device/DeviceManager.h \
     frame/AFCTaskThread.h \
+    frame/CoinsManageWidget.h \
     frame/CustomTabWidget.h \
     frame/ISMFrame.h \
     frame/ISMMessageBox.h \
@@ -232,6 +234,7 @@ HEADERS += \
 FORMS += \
     data/TestWidget.ui \
     data/TicketUpdateTestDlg.ui \
+    frame/CoinsManageWidget.ui \
     frame/ISMFrame.ui \
     frame/ISMMessageBox.ui \
     frame/ISMWaiting.ui \

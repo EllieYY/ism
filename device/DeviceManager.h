@@ -53,6 +53,9 @@ protected:
 private:
     void cashboxChecking();
     void hearChecking();
+
+    void returnChecking();     // 退币检测
+
     void ticketReading();    // 票卡信息读取
     void readTransactionInfo();     // 读取交易信息
     void readReregisterInfo();      // 读取票卡更新信息
@@ -89,12 +92,13 @@ private:
 
     // 硬币退币
     bool m_onReturnCoins;   // 开始退币
-//    long m_start
+    long m_startReturnTime;   // 退币时间控制
 
     // 定时器id
     int m_checkingTimerId;    // 投币检测定时器
     int m_hearTimerId;        // 设备心跳定时器
     int m_readingTimerId;     // 票卡读取定时器
+    int m_returnTimerId;      // 退币定时器
 };
 
 #endif // DEVICEMANAGER_H
