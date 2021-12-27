@@ -174,8 +174,7 @@ void DeviceManager::ticketReading()
     if (!m_onReading) {
         return;
     }
-
-    qDebug() << "reading....";
+//    qDebug() << "reading....";
 
     // 操作超时控制
     long currentTime = QDateTime::currentSecsSinceEpoch();
@@ -187,12 +186,12 @@ void DeviceManager::ticketReading()
     // 超时判断
     long diff = currentTime - m_readStartTime;
 
-    qDebug() << "cur=" << currentTime << ", m_readStartTime=" << m_readStartTime << ", diff=" << diff;
+//    qDebug() << "cur=" << currentTime << ", m_readStartTime=" << m_readStartTime << ", diff=" << diff;
 //    if (diff > MIN_1) {
-    if (diff > 10) {
+    if (diff > 30) {
         m_readStartTime = -1;
 
-        qDebug() << "overtime";
+//        qDebug() << "overtime";
         emit ticketRead(0x05);
         return;
     }
@@ -249,13 +248,14 @@ int DeviceManager::readBasicInfo()
     // 票卡信息获取
     int ret = readTicketInfo(anti);
 
-    qDebug() << "[readTicketInfo]=" << ret;
+//    qDebug() << "[readTicketInfo]=" << ret;
 //    // TODO: 使用测试数据
 //    ret = 0x05;
 //    setTestData();
 
     // 找不到卡的情况下继续读卡，其他错误直接提示
     if (ret == 0x05 || ret == 0x06) {
+        qDebug() << "[readTicketInfo]=" << ret;
         return -1;
     } else if (ret != 0x00) {
         m_readStartTime = -1;

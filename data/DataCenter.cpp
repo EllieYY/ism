@@ -130,8 +130,8 @@ void DataCenter::secEvent()
 
 void DataCenter::init()
 {
-    m_ismVersion = "00000006";
-    logger()->info("ISM version:%1", "20211226-1156-%1", m_ismVersion);
+    m_ismVersion = "00000007";
+    logger()->info("ISM version:%1", "20211228-0110-%1", m_ismVersion);
     initData();    // 默认数据
 
     /* 基础信息 */
@@ -642,7 +642,7 @@ int DataCenter::parseParam2005(QString filePath)
     m_serviceEndTime = serviceEnd * 15 * 60;
 
     // TODO:测试用的运营结束时间
-    m_serviceEndTime = SettingCenter::getThis()->getTestServiceOffTime();
+//    m_serviceEndTime = SettingCenter::getThis()->getTestServiceOffTime();
 
 
 //    seviceStart = (seviceStart % 0x60);
