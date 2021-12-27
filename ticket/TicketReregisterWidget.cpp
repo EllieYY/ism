@@ -58,8 +58,12 @@ bool TicketReregisterWidget::showData()
     m_banlance = info->balance();
     m_payType = 0x01;       // 现金支付
     if (m_isAllowOctPay) {  // 卡内扣费
-        m_payType = 0x04;
         ui->cashPollBtn->setDisabled(true);
+        if (info->icType() == OCT_CARD) {
+            m_payType = 0x04;
+        } else if (info->icType() == METRO_CARD) {
+            m_payType = 0x03;
+        }
     }
 
     // 票卡基本信息显示
