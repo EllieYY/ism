@@ -39,6 +39,7 @@ contains(TARGET_ARCH, x86_64){
         LIBS += -L$$PWD/sdk/lib/ticket/x86/release -lBRCBoard -lBIM2020 -lF53Board -lIOBoard -lNC_ReaderLib
 }
 
+include(./qtsingleapplication/qtsingleapplication.pri)
 
 INCLUDEPATH += 	frame \
     wndManger \

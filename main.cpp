@@ -6,6 +6,7 @@
 #include "propertyconfigurator.h"
 #include "LoginDlg.h"
 #include <iostream>
+#include <QDebug>
 
 /**
  * @Author: Ellie
@@ -13,11 +14,18 @@
  **/
 
 #include <QApplication>
+#include "qtsingleapplication.h"
 
 int main(int argc, char *argv[])
 {
 //    qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboard"));
-    QApplication a(argc, argv);
+//    QApplication a(argc, argv);
+
+    QtSingleApplication a("ism_id", argc, argv);
+    if (a.isRunning()) {
+        a.sendMessage("raise_window_noop", 4000);
+        return EXIT_SUCCESS;
+    }
 
 //    Singleton<LogHandler>::getInstance().installMessageHandler();
 
@@ -33,9 +41,17 @@ int main(int argc, char *argv[])
 //    a.setPalette(QPalette(QColor("#F0F0F0")));
 
     ISMFrame* w = new ISMFrame();
+    a.setActivationWindow(w, 1);
     w->login();
 //    w->show();
 //    w->showMaximized();
+
+
+
+
+
+
+
 
     int ret = a.exec();
 //    Singleton<LogHandler>::getInstance().uninstallMessageHandler();
