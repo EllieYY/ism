@@ -47,6 +47,8 @@ private:
     void cashboxChecking();
     void hearChecking();
     void ticketReading();    // 票卡信息读取
+    void readFinish(int ret);   // 读卡完成
+
     void readTransactionInfo();     // 读取交易信息
     void readReregisterInfo();      // 读取票卡更新信息
     int readBasicInfo();           // 票卡基本信息读取

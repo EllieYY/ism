@@ -89,8 +89,8 @@ void DeviceManager::onCashboxIn()
 void DeviceManager::startDeviceTimer()
 {
     m_checkingTimerId = startTimer(300);
-    m_hearTimerId = startTimer(1000);
-    m_readingTimerId = startTimer(500);
+    m_hearTimerId = startTimer(5000);
+    m_readingTimerId = startTimer(1000);
 }
 
 
@@ -189,9 +189,8 @@ void DeviceManager::ticketReading()
 //    qDebug() << "cur=" << currentTime << ", m_readStartTime=" << m_readStartTime << ", diff=" << diff;
 //    if (diff > MIN_1) {
     if (diff > 30) {
-        m_readStartTime = -1;
 
-//        qDebug() << "overtime";
+        m_readStartTime = -1;
         emit ticketRead(0x05);
         return;
     }
@@ -202,6 +201,12 @@ void DeviceManager::ticketReading()
     } else if (m_ticketInfoType == 1) {
         readReregisterInfo();
     }
+}
+
+void DeviceManager::readFinish(int ret)
+{
+    m_readStartTime = -1;
+    emit ticketRead(ret);
 }
 
 void DeviceManager::readTransactionInfo()
@@ -219,7 +224,6 @@ void DeviceManager::readTransactionInfo()
             return;
         } else if (hisRet != 0x00) {
             m_readStartTime = -1;
-            qDebug() << "[readTransactionInfo]m_readStartTime = -1   #2";
             emit ticketRead(hisRet);
             return;
         }
@@ -250,7 +254,7 @@ int DeviceManager::readBasicInfo()
 
 //    qDebug() << "[readTicketInfo]=" << ret;
 //    // TODO: 使用测试数据
-//    ret = 0x05;
+//    ret = 0x06;
 //    setTestData();
 
     // 找不到卡的情况下继续读卡，其他错误直接提示
@@ -264,7 +268,7 @@ int DeviceManager::readBasicInfo()
         return -2;
     }
 
-    return 0;
+    return ret;
 }
 
 uchar DeviceManager::readTicketInfo(uchar anti)
@@ -560,7 +564,10 @@ void DeviceManager::setOnReading(bool onReading, int type)
 //    qDebug() << "开始读卡: " << onReading;
     m_onReading = onReading;
     m_ticketInfoType = type;
-    m_readStartTime = -1;
+
+    if (m_onReading) {
+        m_readStartTime = QDateTime::currentSecsSinceEpoch();
+    }
     qDebug() << "[setOnReading]m_readStartTime = -1";
 }
 
