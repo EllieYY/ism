@@ -302,7 +302,7 @@ uchar DeviceManager::readTicketInfo(uchar anti)
     TicketBasicInfo* preTicket = DataCenter::getThis()->getTicketBasicInfo();
     if (preTicket != NULL && number.compare(preTicket->number()) == 0 &&
             preTicket->cardState() == state) {
-        return 0;
+        return ret;
     }
 
     // 允许更新 | 卡扣更新 | 更新类型 | 应收费用（分）
