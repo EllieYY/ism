@@ -150,6 +150,11 @@ void CoinsManageWidget::startWork()
 
 void CoinsManageWidget::startAddCoin()
 {
+    // TODO:使用单独的接口，不是封装接口
+//    Clear_Money_Counters();   //清除已接收的金额数
+//    Modify_inhibit_Open();    // 打开投币口阀门
+
+
     int ret = StartPutCoin(m_difference);
     QString info3 = QString("打开阀门StartPutCoin(%1)=%2").arg(m_difference).arg(ret);
     showInfo(info3);
@@ -174,6 +179,8 @@ void CoinsManageWidget::stopAddCoin()
     int banknotes = 0;
     int coins = 0;
     int ret = StopPutCoin(&banknotes, &coins);
+
+//    Modify_inhibit_Closes();   // 关闭阀门
 
     QString info3 = QString("StopPutCoin()=%1，投入纸币%2，投入硬币%3").arg(ret).arg(banknotes).arg(coins);
     logForCashbox(info3);
