@@ -257,43 +257,35 @@ void CoinsManageWidget::addAmountConfirm(int amount)
     }
     ui->returnCashBtn->setDisabled(false);
 
-    // 金额不足提醒继续投币or退币放弃，金额超出则找零
-    if (m_amount < m_difference) {
-        ui->continueBtn->setText("继续投币");
-        ui->continueBtn->setDisabled(false);
-        ui->endBtn->setDisabled(true);
-        return;
-    }
-
-    // 无需继续投币
-    ui->continueBtn->setText("开始投币");
-    ui->continueBtn->setDisabled(true);
-    ui->endBtn->setDisabled(true);
+//    // 无需继续投币
+//    ui->continueBtn->setText("开始投币");
+//    ui->continueBtn->setDisabled(true);
+//    ui->endBtn->setDisabled(true);
 
     // 投币金额及找零金额，用户确认
-    int changeAmount = m_income > m_difference ? (m_income - m_difference) : 0;
-    QString info = QString("已投入纸币%1元，投入硬币%2元，无需找零，点击确认按钮完成投币！").arg(banknotes).arg(coins);
-    if (changeAmount > 0) {
-        info = QString("已投入纸币%1元，投入硬币%2元，应找零%3元，点击确认按钮开始找零！\n对金额有疑问，请手动退币或联系工作人员。")
-                .arg(banknotes).arg(coins).arg(changeAmount);
-    }
-    showInfo(info);
-    int ret = MyHelper::ShowMessageBoxQuesion(info);
-    if (ret != 1) {
-        qDebug() << "用户对金额有疑问，";
-        return;
-    }
+//    int changeAmount = m_income > m_difference ? (m_income - m_difference) : 0;
+//    QString info = QString("已投入纸币%1元，投入硬币%2元，无需找零，点击确认按钮完成投币！").arg(banknotes).arg(coins);
+//    if (changeAmount > 0) {
+//        info = QString("已投入纸币%1元，投入硬币%2元，应找零%3元，点击确认按钮开始找零！\n对金额有疑问，请手动退币或联系工作人员。")
+//                .arg(banknotes).arg(coins).arg(changeAmount);
+//    }
+//    showInfo(info);
+//    int ret = MyHelper::ShowMessageBoxQuesion(info);
+//    if (ret != 1) {
+//        qDebug() << "用户对金额有疑问，";
+//        return;
+//    }
 
 
-    emit sigCashboxIn();
-    showInfo("钱进钱箱");
-    logForCashbox(QString("钱进钱箱"));
+//    emit sigCashboxIn();
+//    showInfo("钱进钱箱");
+//    logForCashbox(QString("钱进钱箱"));
 
 
-    setNeedReturn(false);
+//    setNeedReturn(false);
 
-    emit supplementaryOk(true);
-    emit stopReading(true, 1);
+//    emit supplementaryOk(true);
+//    emit stopReading(true, 1);
     close();
 
 }
