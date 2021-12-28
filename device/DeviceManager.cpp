@@ -146,6 +146,7 @@ void DeviceManager::cashboxChecking()
 
 void DeviceManager::hearChecking()
 {
+    qDebug() << "[start]hearChecking......";
     // 钱箱心跳检测
     bool coin = (SimplePoll() == 0);
     bool banknotes = (BIM_Poll() == 0);
@@ -167,6 +168,7 @@ void DeviceManager::hearChecking()
 //    readerOn = true;
 
     DataCenter::getThis()->readerOnline(readerOn);
+    qDebug() << "[start]hearChecking......";
 }
 
 void DeviceManager::ticketReading()
@@ -174,7 +176,6 @@ void DeviceManager::ticketReading()
     if (!m_onReading) {
         return;
     }
-//    qDebug() << "reading....";
 
     // 操作超时控制
     long currentTime = QDateTime::currentSecsSinceEpoch();
@@ -188,8 +189,7 @@ void DeviceManager::ticketReading()
 
 //    qDebug() << "cur=" << currentTime << ", m_readStartTime=" << m_readStartTime << ", diff=" << diff;
 //    if (diff > MIN_1) {
-    if (diff > 30) {
-
+    if (diff > 10) {
         m_readStartTime = -1;
         emit ticketRead(0x05);
         return;
@@ -220,9 +220,7 @@ void DeviceManager::readTransactionInfo()
     if (cardType != UL_CARD) {
         BYTE anti = DataCenter::getThis()->getAntiNo();
         int hisRet = readHistoryTrade(anti);
-        if (hisRet == 0x05 || hisRet == 0x06) {
-            return;
-        } else if (hisRet != 0x00) {
+        if (hisRet != 0x00) {
             m_readStartTime = -1;
             emit ticketRead(hisRet);
             return;
@@ -263,7 +261,7 @@ int DeviceManager::readBasicInfo()
         return -1;
     } else if (ret != 0x00) {
         m_readStartTime = -1;
-        qDebug() << "[readBasicInfo]m_readStartTime = -1";
+        qDebug() << "其他错误[readTicketInfo]=" << ret;
         emit ticketRead(ret);
         return -2;
     }
@@ -566,9 +564,9 @@ void DeviceManager::setOnReading(bool onReading, int type)
     m_ticketInfoType = type;
 
     if (m_onReading) {
-        m_readStartTime = QDateTime::currentSecsSinceEpoch();
+        m_readStartTime = -1;
+        qDebug() << "[setOnReading]m_readStartTime = -1";
     }
-    qDebug() << "[setOnReading]m_readStartTime = -1";
 }
 
 

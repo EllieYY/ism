@@ -1,4 +1,4 @@
-#include "CardReadWidget.h"
+﻿#include "CardReadWidget.h"
 #include "ui_CardReadWidget.h"
 #include "NC_ReaderLib.h"
 #include "DataCenter.h"
@@ -21,6 +21,7 @@ CardReadWidget::~CardReadWidget()
 
 void CardReadWidget::readCard(int id)
 {
+    logger()->info("开始读卡[readCard]");
     ui->readerInfoLabel->setText("请将卡片正确放置在感应区域内。");
 
     m_ticketWidgetId = id;
@@ -67,7 +68,13 @@ void CardReadWidget::updateReadingState(int ret)
 
 void CardReadWidget::secEvent()
 {
-//    if (!m_isReading) {
+//    if (m_isReading) {
+//        m_readCount++;
+//        if (m_readCount >= 10) {
+//            emit doReading(false, m_infoType);
+//            updateReadingState(0x05);
+//            m_readCount = 0;
+//        }
 //        return;
 //    }
 
@@ -118,8 +125,10 @@ void CardReadWidget::setStyle()
 
 void CardReadWidget::onClose()
 {
+    logger()->info("取消读卡[emit doReading]");
+
     emit doReading(false, m_infoType);
-//    m_isReading = false;
+    m_isReading = false;
     ui->readBtn->setDisabled(false);
     ui->readerInfoLabel->setText("取消读卡。");
     this->close();
@@ -127,8 +136,11 @@ void CardReadWidget::onClose()
 
 void CardReadWidget::onRefundTicket()
 {
+    logger()->info("读卡[emit doReading]");
+
     emit doReading(true, m_infoType);
-//    m_isReading = true;
+    m_isReading = true;
+    m_readCount = 0;
     ui->readBtn->setDisabled(true);
     ui->readerInfoLabel->setText("正在读卡，请稍后……");
 }
