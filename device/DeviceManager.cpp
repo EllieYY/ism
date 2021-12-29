@@ -96,6 +96,16 @@ void DeviceManager::startDeviceTimer()
 
 void DeviceManager::timerEvent(QTimerEvent *event)
 {
+    // TODO:test code
+    while(QThread::currentThread()->isInterruptionRequested())//如果没收到中断请求，就执行循环体里面的内容
+    {
+        qDebug() << "退出设备线程." << QThread::currentThreadId();
+        QThread::currentThread()->exit(0);
+        break;
+//        qDebug()<<"new Thread: "<<QThread::currentThreadId()<<" " <<count++;
+//        QThread::sleep(1);
+    }
+
     if (event->timerId() == m_checkingTimerId) {    // 投币检测
         cashboxChecking();
     } else if (event->timerId() == m_readingTimerId) {   // 票卡读取
@@ -146,7 +156,13 @@ void DeviceManager::cashboxChecking()
 
 void DeviceManager::hearChecking()
 {
-    qDebug() << "[start]hearChecking......";
+    // 读卡和钱箱的时候不检测心跳
+    if (m_onReading || m_onChecking) {
+        DataCenter::getThis()->readerOnline(true);
+        DataCenter::getThis()->cashboxOnline(true, true, true);
+        return;
+    }
+//    qDebug() << "[start]hearChecking......";
     // 钱箱心跳检测
     bool coin = (SimplePoll() == 0);
     bool banknotes = (BIM_Poll() == 0);
@@ -168,11 +184,27 @@ void DeviceManager::hearChecking()
 //    readerOn = true;
 
     DataCenter::getThis()->readerOnline(readerOn);
-    qDebug() << "[start]hearChecking......";
+//    qDebug() << "[start]hearChecking......";
 }
 
 void DeviceManager::ticketReading()
 {
+    qDebug() << "DeviceManager::ticketReading=======";
+
+    QApplication::processEvents();
+
+    // TODO:test code模拟耗时操作
+//    QThread::msleep(2000);
+
+    QThread::msleep(10000);
+    for (int i = 0; i < 100000; i++) {
+        for (int j = 0; j < 100000; j++) {
+            int d = i + j;
+        }
+    }
+
+
+
     if (!m_onReading) {
         return;
     }

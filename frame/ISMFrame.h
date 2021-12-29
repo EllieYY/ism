@@ -1,4 +1,4 @@
-#ifndef ISMFRAME_H
+﻿#ifndef ISMFRAME_H
 #define ISMFRAME_H
 
 #include <QFrame>
@@ -55,6 +55,8 @@ private:
 
     CompensationFareWidget* m_fareWidget;
 //    CardReadWidget* m_cardReadWidget;
+
+    int m_deviceCount;
 private:
     Ui::ISMFrame *ui;
 };

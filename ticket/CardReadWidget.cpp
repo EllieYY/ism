@@ -68,15 +68,15 @@ void CardReadWidget::updateReadingState(int ret)
 
 void CardReadWidget::secEvent()
 {
-//    if (m_isReading) {
-//        m_readCount++;
-//        if (m_readCount >= 10) {
-//            emit doReading(false, m_infoType);
-//            updateReadingState(0x05);
-//            m_readCount = 0;
-//        }
-//        return;
-//    }
+    if (m_isReading) {
+        m_readCount++;
+        if (m_readCount >= 10) {
+            emit doReading(false, m_infoType);
+            updateReadingState(0x05);
+            m_readCount = 0;
+        }
+        return;
+    }
 
 //    ui->readerInfoLabel->setText("正在读卡，请稍后……");
 

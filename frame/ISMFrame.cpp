@@ -48,6 +48,8 @@
 #include "CompensationFareWidget.h"
 #include "CardReadWidget.h"
 
+#include "ReaderManager.h"
+
 ISMFrame::ISMFrame(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::ISMFrame)
@@ -131,7 +133,15 @@ void ISMFrame::initDevice()
     m_deviceManager->startDeviceTimer();
 
     m_deviceManager->moveToThread(m_deviceThread);
+
+    // TODO:test code
+    ReaderManager* manager = new ReaderManager();
+    manager->moveToThread(m_deviceThread);
+
     m_deviceThread->start();
+
+    // TODO:
+    m_deviceCount = 1;
 
     emit initDeviceInThread();
 }
@@ -168,6 +178,14 @@ void ISMFrame::secEvent()
     WidgetMng::getThis()->secEvent();    // 子窗口的秒驱动
 
     DataCenter::getThis()->secEvent();
+
+    if (m_deviceCount > 0) {
+        if (m_deviceCount++ > 5) {
+            m_deviceThread->requestInterruption();
+            m_deviceCount = 0;
+        }
+        qDebug() << "device count = " << m_deviceCount;
+    }
 }
 
 void ISMFrame::initWgt()
