@@ -48,7 +48,8 @@
 #include "CompensationFareWidget.h"
 #include "CardReadWidget.h"
 
-#include "ReaderManager.h"
+#include "ReaderWorker.h"
+#include "CashboxWorker.h"
 
 ISMFrame::ISMFrame(QWidget *parent) :
     QFrame(parent),
@@ -69,6 +70,18 @@ ISMFrame::~ISMFrame()
         m_deviceThread->quit();
         m_deviceThread->wait();
         m_deviceThread->deleteLater();
+    }
+
+    if (m_readerThread->isRunning()) {
+        m_readerThread->quit();
+        m_readerThread->wait();
+        m_readerThread->deleteLater();
+    }
+
+    if (m_cashboxThread->isRunning()) {
+        m_cashboxThread->quit();
+        m_cashboxThread->wait();
+        m_cashboxThread->deleteLater();
     }
 
     if(DataCenter::getThis() != NULL) {
@@ -121,27 +134,38 @@ void ISMFrame::initShow()
 void ISMFrame::initDevice()
 {
     // 设备管理器初始化
-    m_deviceThread = new QThread();
+//    m_deviceThread = new QThread();
+//    m_deviceManager = new DeviceManager();
+//    connect(this, &ISMFrame::initDeviceInThread, m_deviceManager, &DeviceManager::initDevice);
+//    connect(this, &ISMFrame::deviceUpdate, m_deviceManager, &DeviceManager::onDeviceUpdate);
 
-    m_deviceManager = new DeviceManager();
-    connect(this, &ISMFrame::initDeviceInThread, m_deviceManager, &DeviceManager::initDevice);
-    connect(this, &ISMFrame::deviceUpdate, m_deviceManager, &DeviceManager::onDeviceUpdate);
+//    DataCenter* data = DataCenter::getThis();
+//    connect(data, &DataCenter::sigReaderReset, m_deviceManager, &DeviceManager::onReaderReset);
+//    connect(data, &DataCenter::sigCashboxReset, m_deviceManager, &DeviceManager::onCashboxReset);
+//    m_deviceManager->startDeviceTimer();
+//    m_deviceManager->moveToThread(m_deviceThread);
 
+    //=============================================
     DataCenter* data = DataCenter::getThis();
-    connect(data, &DataCenter::sigReaderReset, m_deviceManager, &DeviceManager::onReaderReset);
+
+    // 读写器和钱箱分开两个线程处理
+    m_readerThread = new QThread();
+    m_readerMng = new ReaderWorker();
+    connect(this, &ISMFrame::initDeviceInThread, m_readerMng, &ReaderWorker::onResetDevice);
+    connect(this, &ISMFrame::deviceUpdate, m_readerMng, &ReaderWorker::onDeviceUpdate);
+    connect(data, &DataCenter::sigReaderReset, m_readerMng, &ReaderWorker::onReaderReset);
+    m_readerMng->moveToThread(m_readerThread);
+
+    m_cashboxThread = new QThread();
+    m_cashboxMng = new CashboxWorker();
+    connect(this, &ISMFrame::initDeviceInThread, m_deviceManager, &DeviceManager::initDevice);
     connect(data, &DataCenter::sigCashboxReset, m_deviceManager, &DeviceManager::onCashboxReset);
-    m_deviceManager->startDeviceTimer();
+    m_cashboxMng->moveToThread(m_cashboxThread);
 
-    m_deviceManager->moveToThread(m_deviceThread);
+//    m_deviceThread->start();
 
-    // TODO:test code
-    ReaderManager* manager = new ReaderManager();
-    manager->moveToThread(m_deviceThread);
-
-    m_deviceThread->start();
-
-    // TODO:
-    m_deviceCount = 1;
+//    // TODO:
+//    m_deviceCount = 1;
 
     emit initDeviceInThread();
 }
@@ -179,13 +203,13 @@ void ISMFrame::secEvent()
 
     DataCenter::getThis()->secEvent();
 
-    if (m_deviceCount > 0) {
-        if (m_deviceCount++ > 5) {
-            m_deviceThread->requestInterruption();
-            m_deviceCount = 0;
-        }
-        qDebug() << "device count = " << m_deviceCount;
-    }
+//    if (m_deviceCount > 0) {
+//        if (m_deviceCount++ > 5) {
+//            m_deviceThread->requestInterruption();
+//            m_deviceCount = 0;
+//        }
+//        qDebug() << "device count = " << m_deviceCount;
+//    }
 }
 
 void ISMFrame::initWgt()

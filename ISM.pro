@@ -105,9 +105,10 @@ SOURCES += \
     data/ticket/ReregisterInfo.cpp \
     data/ticket/TicketBasicInfo.cpp \
     data/ticket/TransactionInfo.cpp \
+    device/CashboxWorker.cpp \
     device/DeviceManager.cpp \
     device/IsmDeviceManager.cpp \
-    device/ReaderManager.cpp \
+    device/ReaderWorker.cpp \
     frame/AFCTaskThread.cpp \
     frame/CustomTabWidget.cpp \
     frame/ISMFrame.cpp \
@@ -191,9 +192,10 @@ HEADERS += \
     data/ticket/ReregisterInfo.h \
     data/ticket/TicketBasicInfo.h \
     data/ticket/TransactionInfo.h \
+    device/CashboxWorker.h \
     device/DeviceManager.h \
     device/IsmDeviceManager.h \
-    device/ReaderManager.h \
+    device/ReaderWorker.h \
     frame/AFCTaskThread.h \
     frame/CustomTabWidget.h \
     frame/ISMFrame.h \

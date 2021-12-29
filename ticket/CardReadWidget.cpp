@@ -72,7 +72,7 @@ void CardReadWidget::secEvent()
         m_readCount++;
         if (m_readCount >= 10) {
             emit doReading(false, m_infoType);
-            updateReadingState(0x05);
+            updateReadingState(0x06);
             m_readCount = 0;
         }
         return;

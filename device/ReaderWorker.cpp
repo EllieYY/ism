@@ -1,6 +1,5 @@
-﻿#include "DeviceManager.h"
+﻿#include "ReaderWorker.h"
 #include "NC_ReaderLib.h"
-#include "BIM2020.h"
 #include "NCNetwork_Lib.h"
 #include "MyHelper.h"
 #include "BasicInfo.h"
@@ -11,196 +10,98 @@
 #include "ReaderSoftFileInfo.h"
 #include "BomParamVersionInfo.h"
 
+#include <QDebug>
+
 #define RETRY_COUNT 3
 #define MIN_5 5*60
 #define MIN_1 60
 
-DeviceManager::DeviceManager(QObject *parent) : QObject(parent)
+ReaderWorker::ReaderWorker(QObject *parent) : QObject(parent)
 {
-    // 初始状态：设备未初始化
-    m_rwState = -1;
-    m_coinState = -1;
-    m_banknotes = -1;
-    m_banknotesRe = -1;
-
-    // 钱箱检测
-    m_onChecking = false;
-    m_startTime = 0;
-
     // 票卡信息读取
     m_ticketInfoType = 0;   // 默认读取历史交易信息
     m_onReading = false;
     m_readStartTime = -1;
 
-    // 定时器
-    m_checkingTimerId = 0;
-    m_hearTimerId = 0;
-    m_readingTimerId = 0;
+    m_hearTimerId = startTimer(60000);     // 1分钟检测一次
+    m_readingTimerId = startTimer(1000);   // 秒级读卡
 }
 
-DeviceManager::~DeviceManager()
+void ReaderWorker::onResetDevice()
 {
-    qDebug() << "~DeviceManager()";
-}
-
-
-void DeviceManager::initDevice()
-{
-    qDebug() << "initDevice in " << QThread::currentThreadId();
-    initCashbox();
-
-    // 初始化读写器
     initReader();
 }
 
-// 设备更新
-void DeviceManager::onDeviceUpdate()
+void ReaderWorker::onReading(bool onReading, int type)
 {
-    qDebug() << "onDeviceUpdate: " << QThread::currentThreadId();
+    m_onReading = onReading;
+    m_ticketInfoType = type;
 
-    // 软件版本升级
-    readerSoftUpdate();
-
-    // 参数升级
-    readerParamUpdate();
+    if (m_onReading) {
+        m_readStartTime = -1;
+    }
 }
 
-void DeviceManager::onCheckingCashbox(bool isOn)
+void ReaderWorker::timerEvent(QTimerEvent *event)
 {
-    qDebug() << "onCheckingCashbox:" << isOn;
-    m_onChecking = isOn;
-}
-
-void DeviceManager::onCashboxIn()
-{
-    logger()->info("thread:钱进钱箱");
-
-    // 钱箱收钱
-    int retR = ResultOperate(1);
-    logger()->info("ResultOperate(1) = %1", retR);
-
-
-    // 由设备心跳去检测设备故障
-//    if (retR != 0) {
-//        DataCenter::getThis()->setCashboxState(0, -1, 0, 0x03);    // 默认是纸币故障
-//    }
-}
-
-void DeviceManager::startDeviceTimer()
-{
-    m_checkingTimerId = startTimer(300);
-    m_hearTimerId = startTimer(5000);
-    m_readingTimerId = startTimer(1000);
-}
-
-
-void DeviceManager::timerEvent(QTimerEvent *event)
-{
-    // TODO:test code
-//    while(QThread::currentThread()->isInterruptionRequested())//如果没收到中断请求，就执行循环体里面的内容
-//    {
-//        qDebug() << "退出设备线程." << QThread::currentThreadId();
-//        QThread::currentThread()->exit(0);
-//        break;
-////        qDebug()<<"new Thread: "<<QThread::currentThreadId()<<" " <<count++;
-////        QThread::sleep(1);
-//    }
-
-    if (event->timerId() == m_checkingTimerId) {    // 投币检测
-        cashboxChecking();
-    } else if (event->timerId() == m_readingTimerId) {   // 票卡读取
+    qDebug() << "Thread心跳[ReaderManager]...";
+    if (event->timerId() == m_readingTimerId) {   // 票卡读取
         ticketReading();
     } else if (event->timerId() == m_hearTimerId) {  // 设备心跳
         hearChecking();
     }
 }
 
-void DeviceManager::cashboxChecking()
+void ReaderWorker::initReader()
 {
-    if (m_onChecking) {
-        long currentTime = QDateTime::currentSecsSinceEpoch();
-        if (m_startTime <= 0) {   // 初始化投币开始时间
-            m_startTime = currentTime;
-        }
+    BasicInfo* basicInfo = DataCenter::getThis()->getBasicInfo();
+    int port = basicInfo->readerPort();
+    QString deviceIdStr = DataCenter::getThis()->getDeviceId();
 
-        // 投币完成检测
-        int bankNoteCount = 0;
-        int coinCount = 0;
-        int ret = CheckCoinStatus(&bankNoteCount, &coinCount);
-        emit checkState(ret, bankNoteCount, coinCount);  // 检测状态检测，方便测试
+    QByteArray devByteArray = MyHelper::hexStrToByte(deviceIdStr);
+    BYTE* deviceId = (BYTE*)devByteArray.data();
+
+    int tryTime = 0;
+    while (tryTime++ < RETRY_COUNT) {
+        // 打开串口
+        int initRet = -1;
+        int ret = (ushort)readerComOpen(port);
         if (ret == 0) {
-            m_onChecking = false;
-            emit receiveOk(bankNoteCount, coinCount);
-        } else {    // 检测超时：超时自动调用停止投币接口
-            long diff = currentTime - m_startTime;
-
-//            qDebug() << "overtime:" << diff;
-//            //TODO: test code
-//            if (diff > 10) {
-//                m_onChecking = false;
-//                emit receiveOk(5, 2);
-////                emit checkState(0, 5, 5);
-//                return;
-//            }
-
-            if (diff > MIN_5) {
-                m_onChecking = false;
-                m_startTime = -1;
-                emit timeoutChecking();
+            // 设备初始化、自检
+            BYTE producter = 0;
+            initRet = readerInit(deviceId, producter);
+            if (initRet == 0) {
+                DataCenter::getThis()->setReaderState(0);
+                readReaderVersion();
+                readSamInfo();
+                break;
             }
         }
-    } else {
-        m_startTime = -1;
+        logger()->info("[readerComOpen]读写器open={%1}, 端口号={%2}; [readerInit]={%3}",
+                       ret, port, initRet);
     }
 }
 
-void DeviceManager::hearChecking()
+void ReaderWorker::hearChecking()
 {
-    // 读卡和钱箱的时候不检测心跳
-    if (m_onReading || m_onChecking) {
-        DataCenter::getThis()->readerOnline(true);
-        DataCenter::getThis()->cashboxOnline(true, true, true);
-        return;
-    }
-//    qDebug() << "[start]hearChecking......";
-    // 钱箱心跳检测
-    bool coin = (SimplePoll() == 0);
-    bool banknotes = (BIM_Poll() == 0);
-    bool banknotesRe = (F53Poll() == 0);
-
-    // TODO:
-//    coin = true;
-//    banknotes = true;
-//    banknotesRe = true;
-
-    DataCenter::getThis()->cashboxOnline(coin, banknotes, banknotesRe);
+    qDebug() << "[hearChecking]-reader:start";
 
     // 读写器心跳检测
     STATUS_INFO ReaderStatus = {0};
     BYTE ret = getStatus(&ReaderStatus);
-    bool readerOn = (ret == 0);
 
+    qDebug() << "[hearChecking]-reader:end";
+
+    bool readerOn = (ret == 0);
     // TODO:
 //    readerOn = true;
 
     DataCenter::getThis()->readerOnline(readerOn);
-//    qDebug() << "[start]hearChecking......";
 }
 
-void DeviceManager::ticketReading()
+void ReaderWorker::ticketReading()
 {
-    qDebug() << "DeviceManager::ticketReading=======";
-
-    // TODO:test code模拟耗时操作
-//    QThread::msleep(2000);
-
-//    QThread::msleep(10000);
-//    for (int i = 0; i < 100000; i++) {
-//        for (int j = 0; j < 100000; j++) {
-//            int d = i + j;
-//        }
-//    }
-
+    qDebug() << "ticketReading=======";
     if (!m_onReading) {
         return;
     }
@@ -214,9 +115,6 @@ void DeviceManager::ticketReading()
 
     // 超时判断
     long diff = currentTime - m_readStartTime;
-
-//    qDebug() << "cur=" << currentTime << ", m_readStartTime=" << m_readStartTime << ", diff=" << diff;
-//    if (diff > MIN_1) {
     if (diff > 10) {
         m_readStartTime = -1;
         emit ticketRead(0x05);
@@ -231,13 +129,7 @@ void DeviceManager::ticketReading()
     }
 }
 
-void DeviceManager::readFinish(int ret)
-{
-    m_readStartTime = -1;
-    emit ticketRead(ret);
-}
-
-void DeviceManager::readTransactionInfo()
+void ReaderWorker::readTransactionInfo()
 {
     if (readBasicInfo() != 0) {
         return;
@@ -260,7 +152,7 @@ void DeviceManager::readTransactionInfo()
     emit ticketRead(0);
 }
 
-void DeviceManager::readReregisterInfo()
+void ReaderWorker::readReregisterInfo()
 {
     if (readBasicInfo() != 0) {
         return;
@@ -271,7 +163,7 @@ void DeviceManager::readReregisterInfo()
     emit ticketRead(0);
 }
 
-int DeviceManager::readBasicInfo()
+int ReaderWorker::readBasicInfo()
 {
     BYTE anti = DataCenter::getThis()->getAntiNo();
 
@@ -297,7 +189,7 @@ int DeviceManager::readBasicInfo()
     return ret;
 }
 
-uchar DeviceManager::readTicketInfo(uchar anti)
+uchar ReaderWorker::readTicketInfo(uchar anti)
 {
     BYTE zone = DataCenter::getThis()->isPayZone() ? PAY : FREE;
     ANALYSECARD_RESP analyseInfo = {0};
@@ -366,7 +258,7 @@ uchar DeviceManager::readTicketInfo(uchar anti)
     return ret;
 }
 
-uchar DeviceManager::readHistoryTrade(uchar anti)
+uchar ReaderWorker::readHistoryTrade(uchar anti)
 {
     HISTORY_RESP cardHistory = {0};
     uchar hisRet = readCardHistory(anti, &cardHistory);
@@ -398,73 +290,7 @@ uchar DeviceManager::readHistoryTrade(uchar anti)
     return hisRet;
 }
 
-// 0 - 初始化成功
-void DeviceManager::initReader()
-{
-    BasicInfo* basicInfo = DataCenter::getThis()->getBasicInfo();
-    int port = basicInfo->readerPort();
-    QString deviceIdStr = DataCenter::getThis()->getDeviceId();
-
-    QByteArray devByteArray = MyHelper::hexStrToByte(deviceIdStr);
-    BYTE* deviceId = (BYTE*)devByteArray.data();
-
-    int tryTime = 0;
-    while (tryTime++ < RETRY_COUNT) {
-        // 打开串口
-        int initRet = -1;
-        int ret = (ushort)readerComOpen(port);
-        if (ret == 0) {
-            // 设备初始化、自检
-            BYTE producter = 0;
-            initRet = readerInit(deviceId, producter);
-            if (initRet == 0) {
-                m_rwState = 0;
-                DataCenter::getThis()->setReaderState(m_rwState);
-                readReaderVersion();
-                readSamInfo();
-                break;
-            }
-        }
-        logger()->info("[readerComOpen]读写器open={%1}, 端口号={%2}; [readerInit]={%3}",
-                       ret, port, initRet);
-    }
-}
-
-
-// 0 - 初始化成功  2 - 在线
-void DeviceManager::initCashbox()
-{
-    BasicInfo* basicInfo = DataCenter::getThis()->getBasicInfo();
-    int portBanknotes = basicInfo->bimPort();
-    int portCoin = basicInfo->brcPort();
-    int portBanknoteRe = basicInfo->f53Port();
-
-    int tryTime = 0;
-    while (tryTime++ < RETRY_COUNT) {
-        // 端口：纸币、硬币、纸币找零器
-        int retC = ConnectMachine(portBanknotes, portCoin, portBanknoteRe);
-        m_banknotes = (retC & 0x000F);
-        m_coinState = (retC & 0x00F0) >> 4;
-        m_banknotesRe = (retC & 0x0F00) >> 8;
-
-        logger()->info("[ConnectMachine]钱箱初始化={%1}, 端口号：billPort={%2}, coinPort={%3}, changePort={%4}, state={%5 %6 %7}",
-                       retC, portBanknotes, portCoin, portBanknoteRe,
-                       QString::number(m_coinState, 16),
-                       QString::number(m_banknotes, 16),
-                       QString::number(m_banknotesRe, 16));
-
-        DataCenter::getThis()->setCashboxInitRet(retC);
-
-        // 初始化成功，不必重试
-        if (retC == 0) {
-            break;
-        }
-    }
-
-    DataCenter::getThis()->setCashboxState(m_coinState, m_banknotes, m_banknotesRe, 0x07);
-}
-
-void DeviceManager::readSamInfo()
+void ReaderWorker::readSamInfo()
 {
     BYTE mtrSam[6] = {0};
     BYTE octSam[6] = {0};
@@ -495,7 +321,7 @@ void DeviceManager::readSamInfo()
                    ret, mtrStr, octStr, jtbStr);
 }
 
-void DeviceManager::readReaderVersion()
+void ReaderWorker::readReaderVersion()
 {
     // 获取读写器版本
     QString versionStr = "00000000";
@@ -512,7 +338,7 @@ void DeviceManager::readReaderVersion()
 }
 
 // 读写器程序升级 --- 升级完成之后会自动重启，
-void DeviceManager::readerSoftUpdate()
+void ReaderWorker::readerSoftUpdate()
 {
     // 升级之前先限制读写器功能的使用
     DataCenter::getThis()->setReaderState(-1);
@@ -543,9 +369,8 @@ void DeviceManager::readerSoftUpdate()
     }
 }
 
-
 // 读写器参数更新
-void DeviceManager::readerParamUpdate()
+void ReaderWorker::readerParamUpdate()
 {
     QString path = QDir::currentPath() + QDir::separator() + PARAM_FILE_PATH + QDir::separator();
     QList<BomParamVersionInfo*> list = SettingCenter::getThis()->getParamVersionInfo(path + "version.json");
@@ -583,108 +408,4 @@ void DeviceManager::readerParamUpdate()
 
     // 版本信息存储
     SettingCenter::getThis()->saveParamVersionInfo(newList, "version.json");
-}
-
-void DeviceManager::setOnReading(bool onReading, int type)
-{
-//    qDebug() << "开始读卡: " << onReading;
-    m_onReading = onReading;
-    m_ticketInfoType = type;
-
-    if (m_onReading) {
-        m_readStartTime = -1;
-        qDebug() << "[setOnReading]m_readStartTime = -1";
-    }
-}
-
-
-// 设备复位  device - [bit0]:brc [bit1]:bim [bit2]:f53
-void DeviceManager::onCashboxReset(uchar device)
-{
-    logger()->info("设备复位[onCashboxReset]");
-    BasicInfo* basicInfo = DataCenter::getThis()->getBasicInfo();
-
-    if (device == 0x01) {    // 硬币器复位
-        int portCoin = basicInfo->brcPort();
-        int ret1 = BRC_Connect(portCoin);
-        if (ret1 != 0) {
-            logger()->error("[onCashboxReset]设备复位失败，BRC_Connect(%2)={%1}", ret1, portCoin);
-            return;
-        }
-        int ret2 = BRC_Reset();
-        if (ret2 != 0) {
-            logger()->error("[onCashboxReset]设备复位失败，BRC_Reset={%1}", ret2);
-            return;
-        }
-        int ret3 = Perform_Self_Check();
-        if (ret3 != 0) {
-            logger()->error("[onCashboxReset]设备复位失败，Perform_Self_Check={%1}", ret3);
-            return;
-        }
-        // 成功状态设置
-        DataCenter::getThis()->setCashboxState(0, 0, 0, 0x01);
-
-    } else if (device == 0x02) {   // 纸币器复位
-        int portBanknotes = basicInfo->bimPort();
-        int ret1 = BIM_Connect(portBanknotes);
-        if (ret1 != 0) {
-            logger()->error("[onCashboxReset]设备复位失败，BIM_Connect(%2)={%1}", ret1, portBanknotes);
-            return;
-        }
-        int ret2 = BIM_Reset();
-        if (ret2 != 0) {
-            logger()->error("[onCashboxReset]设备复位失败，BIM_Reset={%1}", ret2);
-            return;
-        }
-        int ret3 = BIM_Initial();
-        if (ret3 != 0) {
-            logger()->error("[onCashboxReset]设备复位失败，BIM_Initial={%1}", ret3);
-            return;
-        }
-
-        // 成功状态设置
-        DataCenter::getThis()->setCashboxState(0, 0, 0, 0x02);
-
-    } else if (device == 0x04) {   // 纸币找零器复位
-        int portBanknoteRe = basicInfo->f53Port();
-        int ret1 = F53Bill_Connect(portBanknoteRe);
-        if (ret1 != 0) {
-            logger()->error("[onCashboxReset]设备复位失败，F53Bill_Connect(%2)={%1}", ret1, portBanknoteRe);
-            return;
-        }
-        int ret2 = F53Bill_Setting(5, 10);
-        if (ret2 != 0) {
-            logger()->error("[onCashboxReset]设备复位失败，F53Bill_Setting(5, 10)={%1}", ret2);
-            return;
-        }
-
-        // 成功状态设置
-        DataCenter::getThis()->setCashboxState(0, 0, 0, 0x04);
-    }
-}
-
-void DeviceManager::onReaderReset()
-{
-    logger()->info("设备复位[onReaderReset]");
-    initReader();
-}
-
-void DeviceManager::setTestData()
-{
-    int typeNum = 0x80;
-    QString type = DataCenter::getThis()->getTicketTypeString(typeNum);
-    TicketBasicInfo* ticket = new TicketBasicInfo(
-                0x85, type, "30010088562007", "20200901", "20231001", 1, 1, 500);
-    ticket->setIsAllowOctPay(false);
-    ticket->setIsAllowUpdate(true);
-    ticket->setUpdateType(OVER_TIME);
-    ticket->setEnStationCode("0203");
-    ticket->setEnTime("20211115212305");
-    ticket->setExStationCode("0306");
-    ticket->setExTime("20211115212606");
-    ticket->setUpdateAmount(700);
-    ticket->setIcType(UL_CARD);
-    ticket->setBalance(200);
-
-    DataCenter::getThis()->setTicketBasicInfo(ticket);
 }

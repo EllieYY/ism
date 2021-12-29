@@ -38,6 +38,7 @@ signals:
     void receiveOk(int banknotes, int coins);    // 自动检测结束投币
     void timeoutChecking();                      // 投币检测超时
     void checkState(int, int, int);
+
     void ticketRead(int ret);             // 票卡信息读取结果反馈
 
 protected:
@@ -80,7 +81,7 @@ private:
     // 票卡信息读取
     bool m_onReading;      // 读卡状态开启
     int m_ticketInfoType;  // 读取票卡内容： 0-历史交易信息  1-票卡更新信息
-    long m_readStartTime;      // 投币时间控制
+    long m_readStartTime;      // 读卡时间控制
 
     // 定时器id
     int m_checkingTimerId;    // 投币检测定时器

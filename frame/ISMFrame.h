@@ -14,7 +14,8 @@ class ISMFrame;
 class WidgetBase;
 class LoginDlg;
 class DeviceManager;
-class ReaderManager;
+class ReaderWorker;
+class CashboxWorker;
 class CompensationFareWidget;
 class CardReadWidget;
 class ISMFrame : public QFrame
@@ -49,9 +50,17 @@ private:
     QDateTime m_oldtime;
     LoginDlg* m_loginDlg;
 
+    // old device
     DeviceManager* m_deviceManager;
-    ReaderManager* m_readerMng;
     QThread* m_deviceThread;
+
+    // new device
+    ReaderWorker* m_readerMng;
+    QThread* m_readerThread;
+
+    CashboxWorker* m_cashboxMng;
+    QThread* m_cashboxThread;
+
 
     CompensationFareWidget* m_fareWidget;
 //    CardReadWidget* m_cardReadWidget;
