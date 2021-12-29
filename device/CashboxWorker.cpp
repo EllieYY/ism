@@ -181,14 +181,13 @@ void CashboxWorker::cashboxChecking()
         } else {    // 检测超时：超时自动调用停止投币接口
             long diff = currentTime - m_startTime;
 
-//            qDebug() << "overtime:" << diff;
-//            //TODO: test code
-//            if (diff > 10) {
-//                m_onChecking = false;
-//                emit receiveOk(5, 2);
-////                emit checkState(0, 5, 5);
-//                return;
-//            }
+            //TODO: test code
+            if (diff > 10) {
+                m_onChecking = false;
+                emit receiveOk(5, 5);
+//                emit checkState(0, 5, 5);
+                return;
+            }
 
             if (diff > MIN_3) {
                 m_onChecking = false;

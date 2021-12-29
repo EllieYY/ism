@@ -66,14 +66,14 @@ void CompensationFareWidget::initShow(long difference, uchar devState)
     showInfo(info2);
 
     // TODO: 限制打开
-    // 设备状态检查，限制功能使用
-    if (devState == 0x00) {
-        MyHelper::ShowMessageBoxError("硬件设备故障，无法投币，请联系工作人员。");
-        logger()->error("硬件设备故障，无法投币，请联系工作人员。");
-        supplementaryOk(false);
-        close();
-        return;
-    }
+//    // 设备状态检查，限制功能使用
+//    if (devState == 0x00) {
+//        MyHelper::ShowMessageBoxError("硬件设备故障，无法投币，请联系工作人员。");
+//        logger()->error("硬件设备故障，无法投币，请联系工作人员。");
+//        supplementaryOk(false);
+//        close();
+//        return;
+//    }
 
 //    int coinNum = Request_Cashbox_Counter();
     QString logInfo = QString("需投币%1元").arg(m_difference);
@@ -118,7 +118,7 @@ void CompensationFareWidget::startPaying()
     showInfo(info3);
 
     // TODO:
-//    ret = 0;
+    ret = 0;
 
     if (ret == 1) {
         QString amountStr = ui->infoLabel->text();
@@ -153,7 +153,7 @@ void CompensationFareWidget::onAutoStopPaying(int bankNoteCount, int coinCount)
 {
     m_payingState = 2;
     ui->continueBtn->setDisabled(true);
-    ui->endBtn->setDisabled(true);
+//    ui->endBtn->setDisabled(true);
 
     QString info3 = QString("onAutoStopPaying, 投入纸币%2，投入硬币%3").arg(bankNoteCount).arg(coinCount);
     logForCashbox(info3);
@@ -261,10 +261,10 @@ void CompensationFareWidget::onAmountConfirm(int banknotes, int coins)
         showInfo("开始找零");
         int changeRet = ChanceCoin(changeAmount, &billMoney, &coinMoney);
 
-//        // TODO:test code
-//        changeRet = 0;
-//        billMoney = 0;
-//        coinMoney = 3;
+        // TODO:test code
+        changeRet = 0;
+        billMoney = 0;
+        coinMoney = 3;
 
         QString info2 = QString("钱箱找零：[找零金额]%1, [纸币]%2, [硬币]%3，[结果]%4")
                 .arg(changeAmount).arg(billMoney).arg(coinMoney).arg(changeRet);
