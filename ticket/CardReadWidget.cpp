@@ -38,6 +38,7 @@ void CardReadWidget::readCard(int id)
 // 票卡读取状态更新
 void CardReadWidget::updateReadingState(int ret)
 {
+    m_readCount = 0;
     if (!isVisible()) {
         return;
     }
@@ -55,11 +56,12 @@ void CardReadWidget::updateReadingState(int ret)
         close();
     } else {
         QString errMsg = DataCenter::getThis()->getReaderErrorStr(ret);
-        QString info = QString("%1读取失败[%2]:%3。")
+        QString info = QString("%1读取失败[%2]:%3")
                 .arg(desInfo).arg(ret).arg(errMsg);
         ui->readerInfoLabel->setText(info);
         ui->readBtn->setDisabled(false);
 
+        m_isReading = false;
         emit doReading(false, m_infoType);
         MyHelper::ShowMessageBoxInfo(QString("%1，请重新读卡或联系工作人员。")
                                      .arg(info));
@@ -70,7 +72,7 @@ void CardReadWidget::secEvent()
 {
     if (m_isReading) {
         m_readCount++;
-        if (m_readCount >= 10) {
+        if (m_readCount >= 15) {
             emit doReading(false, m_infoType);
             updateReadingState(0x06);
             m_readCount = 0;

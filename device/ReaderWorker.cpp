@@ -23,7 +23,7 @@ ReaderWorker::ReaderWorker(QObject *parent) : QObject(parent)
     m_onReading = false;
     m_readStartTime = -1;
 
-    m_hearTimerId = startTimer(60000);     // 1分钟检测一次
+    m_hearTimerId = startTimer(1000);     // 1分钟检测一次
     m_readingTimerId = startTimer(1000);   // 秒级读卡
 }
 
@@ -42,9 +42,19 @@ void ReaderWorker::onReading(bool onReading, int type)
     }
 }
 
+void ReaderWorker::onDeviceUpdate()
+{
+    logger()->info("[onDeviceUpdate]读写器更新");
+
+    // 软件版本升级
+    readerSoftUpdate();
+
+    // 参数升级
+    readerParamUpdate();
+}
+
 void ReaderWorker::timerEvent(QTimerEvent *event)
 {
-    qDebug() << "Thread心跳[ReaderManager]...";
     if (event->timerId() == m_readingTimerId) {   // 票卡读取
         ticketReading();
     } else if (event->timerId() == m_hearTimerId) {  // 设备心跳
@@ -172,8 +182,8 @@ int ReaderWorker::readBasicInfo()
 
 //    qDebug() << "[readTicketInfo]=" << ret;
 //    // TODO: 使用测试数据
-//    ret = 0x06;
-//    setTestData();
+    ret = 0x00;
+    setTestData();
 
     // 找不到卡的情况下继续读卡，其他错误直接提示
     if (ret == 0x05 || ret == 0x06) {
@@ -288,6 +298,26 @@ uchar ReaderWorker::readHistoryTrade(uchar anti)
 
     DataCenter::getThis()->setTransInfoList(transList);
     return hisRet;
+}
+
+void ReaderWorker::setTestData()
+{
+    int typeNum = 0x01;
+    QString type = DataCenter::getThis()->getTicketTypeString(typeNum);
+    TicketBasicInfo* ticket = new TicketBasicInfo(
+                0x85, type, "30010088562007", "20200901", "20231001", 1, 1, 500);
+    ticket->setIsAllowOctPay(false);
+    ticket->setIsAllowUpdate(true);
+    ticket->setUpdateType(OVER_TIME);
+    ticket->setEnStationCode("0203");
+    ticket->setEnTime("20211115212305");
+    ticket->setExStationCode("0306");
+    ticket->setExTime("20211115212606");
+    ticket->setUpdateAmount(700);
+    ticket->setIcType(UL_CARD);
+    ticket->setBalance(200);
+
+    DataCenter::getThis()->setTicketBasicInfo(ticket);
 }
 
 void ReaderWorker::readSamInfo()

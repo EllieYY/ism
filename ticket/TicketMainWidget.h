@@ -1,4 +1,4 @@
-#ifndef TICKETMAINWIDGET_H
+﻿#ifndef TICKETMAINWIDGET_H
 #define TICKETMAINWIDGET_H
 
 #include <QWidget>
@@ -10,6 +10,7 @@ class TicketMainWidget;
 
 class CardReadWidget;
 class DeviceManager;
+class ReaderWorker;
 class TicketMainWidget : public WidgetBase
 {
     Q_OBJECT
@@ -20,7 +21,8 @@ public:
 
     void secEvent();
 
-    void setDeviceManager(DeviceManager* manager);
+//    void setDeviceManager(DeviceManager* manager);
+    void setDeviceManager(ReaderWorker* manager);
 
 //    void setCardReadWidget(CardReadWidget *cardReadWidget);
 

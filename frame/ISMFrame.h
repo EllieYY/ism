@@ -51,7 +51,7 @@ private:
     LoginDlg* m_loginDlg;
 
     // old device
-    DeviceManager* m_deviceManager;
+//    DeviceManager* m_deviceManager;
     QThread* m_deviceThread;
 
     // new device

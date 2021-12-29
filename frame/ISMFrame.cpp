@@ -144,6 +144,7 @@ void ISMFrame::initDevice()
 //    connect(data, &DataCenter::sigCashboxReset, m_deviceManager, &DeviceManager::onCashboxReset);
 //    m_deviceManager->startDeviceTimer();
 //    m_deviceManager->moveToThread(m_deviceThread);
+//    m_deviceThread->start();
 
     //=============================================
     DataCenter* data = DataCenter::getThis();
@@ -153,16 +154,16 @@ void ISMFrame::initDevice()
     m_readerMng = new ReaderWorker();
     connect(this, &ISMFrame::initDeviceInThread, m_readerMng, &ReaderWorker::onResetDevice);
     connect(this, &ISMFrame::deviceUpdate, m_readerMng, &ReaderWorker::onDeviceUpdate);
-    connect(data, &DataCenter::sigReaderReset, m_readerMng, &ReaderWorker::onReaderReset);
+    connect(data, &DataCenter::sigReaderReset, m_readerMng, &ReaderWorker::onResetDevice);
     m_readerMng->moveToThread(m_readerThread);
+    m_readerThread->start();
 
     m_cashboxThread = new QThread();
     m_cashboxMng = new CashboxWorker();
-    connect(this, &ISMFrame::initDeviceInThread, m_deviceManager, &DeviceManager::initDevice);
-    connect(data, &DataCenter::sigCashboxReset, m_deviceManager, &DeviceManager::onCashboxReset);
+    connect(this, &ISMFrame::initDeviceInThread, m_cashboxMng, &CashboxWorker::onInitDevice);
+    connect(data, &DataCenter::sigCashboxReset, m_cashboxMng, &CashboxWorker::onCashboxReset);
     m_cashboxMng->moveToThread(m_cashboxThread);
-
-//    m_deviceThread->start();
+    m_cashboxThread->start();
 
 //    // TODO:
 //    m_deviceCount = 1;
@@ -218,17 +219,25 @@ void ISMFrame::initWgt()
     WidgetMng* mng = new WidgetMng();
 
     // 控制读写器停止工作
-    connect(mng, &WidgetMng::stopReadingTicket,
-            m_deviceManager, &DeviceManager::setOnReading);
+//    connect(mng, &WidgetMng::stopReadingTicket, m_deviceManager, &DeviceManager::setOnReading);
+    connect(mng, &WidgetMng::stopReadingTicket, m_readerMng, &ReaderWorker::onReading);
 
     // 现金缴费窗口：窗口生成线程要跟设备管理线程属于同一个，否则信号槽连接不通
     m_fareWidget = new CompensationFareWidget();
-    connect(m_fareWidget, &CompensationFareWidget::startChecking, m_deviceManager, &DeviceManager::onCheckingCashbox);
-    connect(m_fareWidget, &CompensationFareWidget::stopReading, m_deviceManager, &DeviceManager::setOnReading);
-    connect(m_fareWidget, &CompensationFareWidget::sigCashboxIn, m_deviceManager, &DeviceManager::onCashboxIn);
-    connect(m_deviceManager, &DeviceManager::receiveOk, m_fareWidget, &CompensationFareWidget::onAutoStopPaying);
-    connect(m_deviceManager, &DeviceManager::timeoutChecking, m_fareWidget, &CompensationFareWidget::onStopPaying);
-    connect(m_deviceManager, &DeviceManager::checkState, m_fareWidget, &CompensationFareWidget::showCheckState);
+//    connect(m_fareWidget, &CompensationFareWidget::startChecking, m_deviceManager, &DeviceManager::onCheckingCashbox);
+//    connect(m_fareWidget, &CompensationFareWidget::stopReading, m_deviceManager, &DeviceManager::setOnReading);
+//    connect(m_fareWidget, &CompensationFareWidget::sigCashboxIn, m_deviceManager, &DeviceManager::onCashboxIn);
+//    connect(m_deviceManager, &DeviceManager::receiveOk, m_fareWidget, &CompensationFareWidget::onAutoStopPaying);
+//    connect(m_deviceManager, &DeviceManager::timeoutChecking, m_fareWidget, &CompensationFareWidget::onStopPaying);
+//    connect(m_deviceManager, &DeviceManager::checkState, m_fareWidget, &CompensationFareWidget::showCheckState);
+
+    connect(m_fareWidget, &CompensationFareWidget::stopReading, m_readerMng, &ReaderWorker::onReading);
+
+    connect(m_fareWidget, &CompensationFareWidget::startChecking, m_cashboxMng, &CashboxWorker::onCheckingCashbox);
+    connect(m_fareWidget, &CompensationFareWidget::sigCashboxIn, m_cashboxMng, &CashboxWorker::onCashboxIn);
+    connect(m_cashboxMng, &CashboxWorker::receiveOk, m_fareWidget, &CompensationFareWidget::onAutoStopPaying);
+    connect(m_cashboxMng, &CashboxWorker::timeoutChecking, m_fareWidget, &CompensationFareWidget::onStopPaying);
+    connect(m_cashboxMng, &CashboxWorker::checkState, m_fareWidget, &CompensationFareWidget::showCheckState);
     m_fareWidget->hide();
 
 
@@ -251,8 +260,8 @@ void ISMFrame::initWgt()
     registerWidget(layoutWnd, new MainWidget(this), MAIN_DLG, true);
 
     TicketMainWidget* ticketMainWgt = new TicketMainWidget(this);
-//    ticketMainWgt->setCardReadWidget(m_cardReadWidget);
-    ticketMainWgt->setDeviceManager(m_deviceManager);
+//    ticketMainWgt->setDeviceManager(m_deviceManager);
+    ticketMainWgt->setDeviceManager(m_readerMng);
     registerWidget(layoutWnd, ticketMainWgt, CARD_DLG, false);
 
     registerWidget(layoutWnd, new InquiryMainWidget(this), INQUIRY_DLG, false);      // 2021-10-20
@@ -265,7 +274,6 @@ void ISMFrame::initWgt()
     registerWidget(layoutWnd, new TicketQueryWidget(this), QUERY_DLG, false);
 
     TicketReregisterWidget* registWidget = new TicketReregisterWidget(this);
-//    registWidget->setDeviceManager(m_deviceManager);
     registWidget->setFareWidget(m_fareWidget);
     registerWidget(layoutWnd, registWidget, REREGISTER_DLG, false);
 //    registerWidget(layoutWnd, new PaymentWidget(this), PAYMENT_DLG, false);
@@ -338,7 +346,10 @@ void ISMFrame::onServiceOff()
 //    }
 
     // 设备参数和程序升级并重新初始化
-    if (m_deviceManager != NULL) {
+//    if (m_deviceManager != NULL) {
+//        emit deviceUpdate();
+//    }
+    if (m_readerMng != NULL) {
         emit deviceUpdate();
     }
 }

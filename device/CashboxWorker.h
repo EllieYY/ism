@@ -15,6 +15,7 @@ public:
     void onCheckingCashbox(bool isOn);      // 钱箱开始检测
     void onCashboxReset(uchar device);      // 钱箱复位
     void onCashboxIn();                     // 钱进钱箱
+    void onInitDevice();
 
 signals:
     void receiveOk(int banknotes, int coins);    // 自动检测结束投币

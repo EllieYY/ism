@@ -87,7 +87,7 @@ void DataCenter::secEvent()
     m_timeCount++;
     for (int i = 0; i < HEART_NUM; i++) {
         m_hrtCnt[i] = m_hrtCnt[i] + 1;
-        if (m_hrtCnt[i] >= 600) {    // 超过10分钟未连接则掉线处理
+        if (m_hrtCnt[i] >= 20) {    // 超过10分钟未连接则掉线处理
             setHrtOffData(i);
         }
     }

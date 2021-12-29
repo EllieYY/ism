@@ -1,10 +1,10 @@
-#include "TicketMainWidget.h"
+﻿#include "TicketMainWidget.h"
 #include "ui_TicketMainWidget.h"
 #include "WidgetMng.h"
 #include "CommonHead.h"
 #include "CardReadWidget.h"
 #include "DeviceManager.h"
-
+#include "ReaderWorker.h"
 
 TicketMainWidget::TicketMainWidget(QWidget *parent) :
     WidgetBase(parent),
@@ -27,12 +27,16 @@ void TicketMainWidget::secEvent()
     }
 }
 
-void TicketMainWidget::setDeviceManager(DeviceManager *manager)
+//void TicketMainWidget::setDeviceManager(DeviceManager *manager)
+//{
+//    connect(manager, &DeviceManager::ticketRead, m_cardReadWidget, &CardReadWidget::updateReadingState);
+//    connect(m_cardReadWidget, &CardReadWidget::doReading, manager, &DeviceManager::setOnReading);
+//}
+
+void TicketMainWidget::setDeviceManager(ReaderWorker *manager)
 {
-    connect(manager, &DeviceManager::ticketRead,
-            m_cardReadWidget, &CardReadWidget::updateReadingState);
-    connect(m_cardReadWidget, &CardReadWidget::doReading,
-            manager, &DeviceManager::setOnReading);
+    connect(manager, &ReaderWorker::ticketRead, m_cardReadWidget, &CardReadWidget::updateReadingState);
+    connect(m_cardReadWidget, &CardReadWidget::doReading, manager, &ReaderWorker::onReading);
 }
 
 const int  TICKET_WIDGET_NUM = 2;

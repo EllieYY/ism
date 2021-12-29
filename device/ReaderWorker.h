@@ -14,6 +14,7 @@ public:
 
     void onResetDevice();
     void onReading(bool onReading, int type);  // 票卡信息读取设置
+    void onDeviceUpdate();
 
 signals:
     void ticketRead(int ret);  // 票卡信息读取结果反馈
