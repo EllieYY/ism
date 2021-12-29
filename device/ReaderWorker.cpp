@@ -23,7 +23,7 @@ ReaderWorker::ReaderWorker(QObject *parent) : QObject(parent)
     m_onReading = false;
     m_readStartTime = -1;
 
-    m_hearTimerId = startTimer(1000);     // 1分钟检测一次
+    m_hearTimerId = startTimer(60000);     // 1分钟检测一次
     m_readingTimerId = startTimer(1000);   // 秒级读卡
 }
 

@@ -377,7 +377,7 @@ void TicketReregisterWidget::onSupplementaryOk(bool result)
     } else {
         ui->tUpdateBtn->setDisabled(true);
         ui->cashPollBtn->setDisabled(false);
-        MyHelper::ShowMessageBoxError("现金支付失败，请联系工作人员处理。");
+        MyHelper::ShowMessageBoxError("现金支付失败。");
     }
 }
 

@@ -66,14 +66,14 @@ void CompensationFareWidget::initShow(long difference, uchar devState)
     showInfo(info2);
 
     // TODO: 限制打开
-//    // 设备状态检查，限制功能使用
-//    if (devState == 0x00) {
-//        MyHelper::ShowMessageBoxError("硬件设备故障，无法投币，请联系工作人员。");
-//        logger()->error("硬件设备故障，无法投币，请联系工作人员。");
-//        supplementaryOk(false);
-//        close();
-//        return;
-//    }
+    // 设备状态检查，限制功能使用
+    if (devState == 0x00) {
+        MyHelper::ShowMessageBoxError("硬件设备故障，无法投币，请联系工作人员。");
+        logger()->error("硬件设备故障，无法投币，请联系工作人员。");
+        supplementaryOk(false);
+        close();
+        return;
+    }
 
 //    int coinNum = Request_Cashbox_Counter();
     QString logInfo = QString("需投币%1元").arg(m_difference);
@@ -90,6 +90,8 @@ void CompensationFareWidget::initShow(long difference, uchar devState)
     ui->continueBtn->setDisabled(false);
     ui->endBtn->setDisabled(true);
     ui->returnCashBtn->setDisabled(false);
+
+    logRepertory();
 
     show();
 }
@@ -108,6 +110,8 @@ void CompensationFareWidget::activePaying()
     ui->continueBtn->setText("继续投币");
     ui->continueBtn->setDisabled(true);
     ui->endBtn->setDisabled(false);
+
+    ui->returnCashBtn->setDisabled(true);
 }
 
 // 开始投币
@@ -118,7 +122,7 @@ void CompensationFareWidget::startPaying()
     showInfo(info3);
 
     // TODO:
-    ret = 0;
+//    ret = 0;
 
     if (ret == 1) {
         QString amountStr = ui->infoLabel->text();
@@ -155,9 +159,12 @@ void CompensationFareWidget::onAutoStopPaying(int bankNoteCount, int coinCount)
     ui->continueBtn->setDisabled(true);
 //    ui->endBtn->setDisabled(true);
 
+    ui->returnCashBtn->setDisabled(false);
+
     QString info3 = QString("onAutoStopPaying, 投入纸币%2，投入硬币%3").arg(bankNoteCount).arg(coinCount);
     logForCashbox(info3);
     showInfo(info3);
+    logRepertory();
 
     m_inCoins = coinCount;
     m_inBanknotes = bankNoteCount;
@@ -183,6 +190,9 @@ void CompensationFareWidget::onStopPaying()
     QString info3 = QString("StopPutCoin()=%1，投入纸币%2，投入硬币%3").arg(ret).arg(banknotes).arg(coins);
     logForCashbox(info3);
     showInfo(info3);
+    logRepertory();
+
+    ui->returnCashBtn->setDisabled(false);
 
     if (m_income > 0 && (banknotes + coins) == 0) {
         showInfo("StopPutCoin接口返回的投币金额为0时，使用投币状态检查接口返回的投币金额。");
@@ -262,9 +272,9 @@ void CompensationFareWidget::onAmountConfirm(int banknotes, int coins)
         int changeRet = ChanceCoin(changeAmount, &billMoney, &coinMoney);
 
         // TODO:test code
-        changeRet = 0;
-        billMoney = 0;
-        coinMoney = 3;
+//        changeRet = 0;
+//        billMoney = 0;
+//        coinMoney = 3;
 
         QString info2 = QString("钱箱找零：[找零金额]%1, [纸币]%2, [硬币]%3，[结果]%4")
                 .arg(changeAmount).arg(billMoney).arg(coinMoney).arg(changeRet);
@@ -293,6 +303,7 @@ void CompensationFareWidget::onAmountConfirm(int banknotes, int coins)
     //        qDebug() << "钱进钱箱提问";
             return;
         }
+        logRepertory();
     }
 
     emit sigCashboxIn();
@@ -386,6 +397,16 @@ void CompensationFareWidget::showInfo(QString info)
     logger()->info(info);
 }
 
+void CompensationFareWidget::logRepertory()
+{
+    int amount2 = Request_Hopper_Balance();   // 检查找找零器中的硬币余额
+    int amount3 = Request_Cashbox_Counter();   //查询钱箱中的硬币数量
+    QString info = QString("硬币找零器余额%1元，硬币钱箱余额%2元")
+            .arg(amount2).arg(amount3);
+
+    logForCashbox(info);
+}
+
 void CompensationFareWidget::setNeedReturn(bool needReturn)
 {
     m_isNeedReturn = needReturn;
@@ -399,17 +420,16 @@ void CompensationFareWidget::setNeedReturn(bool needReturn)
 
 void CompensationFareWidget::logForCashbox(QString line)
 {
-    int amount2 = Request_Hopper_Balance();   // 检查找找零器中的硬币余额
-    int amount3 = Request_Cashbox_Counter();   //查询钱箱中的硬币数量
+//    int amount2 = Request_Hopper_Balance();   // 检查找找零器中的硬币余额
+//    int amount3 = Request_Cashbox_Counter();   //查询钱箱中的硬币数量
 
     QDateTime curTime = QDateTime::currentDateTime();
     TicketBasicInfo* info = DataCenter::getThis()->getTicketBasicInfo();
     QString cardNo = info->number();
-    QString prefixInfo = QString("%1  [卡号%2]%3, 硬币找零器余额%4元，硬币钱箱余额%5元")
+    QString prefixInfo = QString("%1  [卡号%2]%3")
             .arg(curTime.toString("yyyy-MM-dd HH:mm:ss"))
             .arg(cardNo)
-            .arg(line)
-            .arg(amount2).arg(amount3);
+            .arg(line);
 
     QDate curDay = QDate::currentDate();
     QString fileName = QString("cashboxLog_%1.log").arg(curDay.toString("yyyyMMdd"));

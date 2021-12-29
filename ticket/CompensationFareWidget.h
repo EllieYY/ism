@@ -43,6 +43,7 @@ private:
 
     void deviceStateShow();                         // 设备在线状态显示
     void showInfo(QString info);                    // 操作信息显示
+    void logRepertory();                // 记录库存
 
     void setNeedReturn(bool);    // 设置是否需要退币
 

@@ -205,8 +205,8 @@ int CardReadWidget::readBasicInfo()
     int ret = readTicketInfo(anti);
 
 ////    // TODO: 使用测试数据
-    ret = 0;
-    setTestData();
+//    ret = 0;
+//    setTestData();
 
     if (ret == 0x05 || ret == 0x06) {
         m_readCount++;

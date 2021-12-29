@@ -182,12 +182,12 @@ void CashboxWorker::cashboxChecking()
             long diff = currentTime - m_startTime;
 
             //TODO: test code
-            if (diff > 10) {
-                m_onChecking = false;
-                emit receiveOk(5, 5);
-//                emit checkState(0, 5, 5);
-                return;
-            }
+//            if (diff > 10) {
+//                m_onChecking = false;
+//                emit receiveOk(5, 5);
+////                emit checkState(0, 5, 5);
+//                return;
+//            }
 
             if (diff > MIN_3) {
                 m_onChecking = false;

@@ -87,7 +87,7 @@ void DataCenter::secEvent()
     m_timeCount++;
     for (int i = 0; i < HEART_NUM; i++) {
         m_hrtCnt[i] = m_hrtCnt[i] + 1;
-        if (m_hrtCnt[i] >= 20) {    // 超过10分钟未连接则掉线处理
+        if (m_hrtCnt[i] >= 600) {    // 超过10分钟未连接则掉线处理
             setHrtOffData(i);
         }
     }
@@ -130,8 +130,8 @@ void DataCenter::secEvent()
 
 void DataCenter::init()
 {
-    m_ismVersion = "00000007";
-    logger()->info("ISM version:%1", "20211229-0341-%1-02", m_ismVersion);
+    m_ismVersion = "00000009";
+    logger()->info("ISM version:%1", "20211229-2206-%1", m_ismVersion);
     initData();    // 默认数据
 
     /* 基础信息 */

@@ -252,8 +252,8 @@ void ISMFrame::initWgt()
     layoutWnd->setMargin(0);
 
     //TODO: 测试页面：
-    TestWidget* testWidget = new TestWidget(this);
-    registerWidget(layoutWnd, testWidget, TEST_DLG, false);
+//    TestWidget* testWidget = new TestWidget(this);
+//    registerWidget(layoutWnd, testWidget, TEST_DLG, false);
 //    connect(testWidget, &TestWidget::onCashboxChecking, m_deviceManager, &DeviceManager::onCheckingCashbox);
 //    connect(testWidget, &TestWidget::onReader, m_readerMng, &ReaderManager::onStartDoingSomething);
 
