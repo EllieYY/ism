@@ -28,6 +28,7 @@ public:
 
     void login();
     void logout();
+    void exitISM();
 
 signals:
     void initDeviceInThread();

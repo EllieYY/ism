@@ -46,7 +46,7 @@ void LoginDlg::initStyle()
     this->setWindowFlags(Qt::FramelessWindowHint);
 //    this->setAttribute(Qt::WA_DeleteOnClose);
     QScreen *screen = QGuiApplication::primaryScreen();   //获取当前屏幕的大小
-    QRect mm = screen->availableGeometry();
+    QRect mm = screen->geometry();
     int screenWidth = mm.width();
     int screenHeight = mm.height();
     this->setFixedSize(screenWidth, screenHeight);
@@ -81,6 +81,14 @@ void LoginDlg::login()
         MyHelper::ShowMessageBoxError("请输入密码。");
         return;
     }
+
+    // 退出程序
+    if (userName == "000000" && pwd == "1234qwer.") {
+        emit sigExitISM();
+        this->close();
+        return;
+    }
+
 
     // 密码校验
     ui->loginBtn->setDisabled(true);

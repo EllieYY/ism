@@ -57,8 +57,8 @@ ISMFrame::ISMFrame(QWidget *parent) :
 {
     //设置窗体标题栏隐藏
     this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint | Qt::WindowMinMaxButtonsHint);
-    this->showFullScreen();
-    this->showMaximized();
+//    this->showFullScreen();
+//    this->showMaximized();
 
     ui->setupUi(this);
     init();
@@ -102,8 +102,14 @@ void ISMFrame::logout()
     // 签退
     LogoutDlg* dlg = new LogoutDlg(this);
     connect(dlg, &LogoutDlg::logoutOk, this, &ISMFrame::login);
+
     MyHelper::FormInCenter(dlg);
     dlg->show();
+}
+
+void ISMFrame::exitISM()
+{
+    this->close();
 }
 
 void ISMFrame::init()
@@ -128,7 +134,8 @@ void ISMFrame::init()
 
 void ISMFrame::initShow()
 {
-    this->showMaximized();
+//    this->showMaximized();
+    this->showFullScreen();
 }
 
 void ISMFrame::initDevice()
@@ -308,6 +315,7 @@ void ISMFrame::initWgt()
 
     m_loginDlg = new LoginDlg();
     connect(m_loginDlg, &LoginDlg::loginOk, this, &ISMFrame::initShow);
+    connect(m_loginDlg, &LoginDlg::sigExitISM, this, &ISMFrame::exitISM);
     m_loginDlg->hide();
 }
 

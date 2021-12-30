@@ -1,4 +1,4 @@
-#ifndef LOGINDLG_H
+﻿#ifndef LOGINDLG_H
 #define LOGINDLG_H
 
 #include <QWidget>
@@ -22,6 +22,7 @@ public:
 
 signals:
     void loginOk();     // 签到成功
+    void sigExitISM();
 
 private:
     void init();
