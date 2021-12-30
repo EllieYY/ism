@@ -1,4 +1,4 @@
-QT       += core gui multimedia network
+QT       += core gui multimedia network sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -33,6 +33,7 @@ contains(TARGET_ARCH, x86_64){
         LIBS += -L$$PWD/sdk/lib/log4qt/x64/release -llog4qt
         LIBS += -L$$PWD/sdk/lib/ticket/x64/release -lNC_ReaderLib -lNCNetwork_Lib -lBIM2020A
         LIBS += -L$$PWD/sdk/lib/curl -llibcurl
+        LIBS += -L$$PWD/sdk/lib -lQkeyTools
 }else{
         message("32-bit")
         LIBS += -L$$PWD/sdk/lib/log4qt/x86 -llog4qt
@@ -55,6 +56,7 @@ INCLUDEPATH += 	frame \
     data/asr \
     data/ticket \
     data/thread \
+    sdk/include \
     sdk/include/ticket \
     sdk/include/curl \
     $$LOG4QT_ROOT_PATH/src \

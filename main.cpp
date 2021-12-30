@@ -15,6 +15,7 @@
 
 #include <QApplication>
 #include "qtsingleapplication.h"
+#include "qkeytools.h"
 
 int main(int argc, char *argv[])
 {
@@ -47,11 +48,23 @@ int main(int argc, char *argv[])
 //    w->showMaximized();
 
 
+#if (QT_VERSION <= QT_VERSION_CHECK(5,0,0))
+    //QT5版本以上默认就是采用UTF-8编码
+    QTextCodec *codec = QTextCodec::codecForName("UTF-8");
+    QTextCodec::setCodecForLocale(codec);
+    QTextCodec::setCodecForCStrings(codec);
+    QTextCodec::setCodecForTr(codec);
+#endif
+    // 设置键盘的字体大小
+    QFont sfont;
+    sfont.setPointSize(16);
+    qApp->setFont(sfont);
 
-
-
-
-
+    // 设置键盘的父对象、宽度、高度、以及默认的样式设置
+//    QkeyTools::getInstance()->setMainWindowObject(&w);
+    QkeyTools::getInstance()->setWidth(1200);
+    QkeyTools::getInstance()->setHeight(400);
+    QkeyTools::getInstance()->Init(QkeyTools::ScreenBottom, QkeyTools::GRAY, 16, 16);
 
     int ret = a.exec();
 //    Singleton<LogHandler>::getInstance().uninstallMessageHandler();
