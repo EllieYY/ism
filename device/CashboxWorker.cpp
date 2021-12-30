@@ -227,9 +227,17 @@ void CashboxWorker::initCashbox()
 
         // 初始化成功，不必重试
         if (retC == 0) {
+            int amount2 = Request_Hopper_Balance();   // 检查找找零器中的硬币余额
+            int amount3 = Request_Cashbox_Counter();   //查询钱箱中的硬币数量
+            QString info = QString("硬币找零器余额%1元，硬币钱箱余额%2元")
+                    .arg(amount2).arg(amount3);
+            logger()->info(info);
+
             break;
         }
     }
+
+
 
     DataCenter::getThis()->setCashboxState(m_coinState, m_banknotes, m_banknotesRe, 0x07);
 }

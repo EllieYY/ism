@@ -182,8 +182,8 @@ int ReaderWorker::readBasicInfo()
 
 //    qDebug() << "[readTicketInfo]=" << ret;
 //    // TODO: 使用测试数据
-    ret = 0x00;
-    setTestData();
+//    ret = 0x00;
+//    setTestData();
 
     // 找不到卡的情况下继续读卡，其他错误直接提示
     if (ret == 0x05 || ret == 0x06) {
