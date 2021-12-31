@@ -30,10 +30,10 @@ void CompensationFareWidget::initShow(long difference, uchar devState)
 
     //TODO: test code
 //    qDebug() << "现金补缴费用：" << difference;
-//    emit supplementaryOk(true);
-//    emit stopReading(true, 1);
-//    close();
-//    return;
+    emit supplementaryOk(true);
+    emit stopReading(true, 1);
+    close();
+    return;
 
     long ret = DataCenter::getThis()->getCashboxInitRet();
     QString info1 = QString("投币金额%1元，设备初始化返回%2，设备状态%3")

@@ -43,6 +43,8 @@ private:
 
     void onSupplementaryOk(bool result);    //  补票结果返回
 
+    void updateBtnControll();     // 更新按钮显示逻辑控制
+
     // 现金交易文件
     void writeTradeFile(BYTE icType, BYTE* data);
     QString getFileTypeStr(int icType);

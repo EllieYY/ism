@@ -305,17 +305,17 @@ void ReaderWorker::setTestData()
     int typeNum = 0x01;
     QString type = DataCenter::getThis()->getTicketTypeString(typeNum);
     TicketBasicInfo* ticket = new TicketBasicInfo(
-                0x85, type, "30010088562007", "20200901", "20231001", 1, 1, 500);
+                0x58, type, "30010088562007", "20200901", "20231001", 1, 1, 500);
     ticket->setIsAllowOctPay(true);
     ticket->setIsAllowUpdate(true);
-    ticket->setUpdateType(OVER_TIME);
+    ticket->setUpdateType(FARE_EN);
     ticket->setEnStationCode("0203");
     ticket->setEnTime("20211115212305");
     ticket->setExStationCode("0306");
     ticket->setExTime("20211115212606");
-    ticket->setUpdateAmount(100);
-    ticket->setIcType(METRO_CARD);
-    ticket->setBalance(200);
+    ticket->setUpdateAmount(300);
+    ticket->setIcType(UL_CARD);
+    ticket->setBalance(500);
 
     DataCenter::getThis()->setTicketBasicInfo(ticket);
 }

@@ -74,17 +74,17 @@ bool TicketReregisterWidget::showData()
         ui->tableWidget->setItem(0, index++, item);
     }
 
-    // 限制一卡通的使用
-    if (info->icType() == OCT_CARD) {
-        ui->selectBtn2->setDisabled(true);
-        ui->selectBtn3->setDisabled(true);
+//    // 限制一卡通的使用
+//    if (info->icType() == OCT_CARD) {
+//        ui->selectBtn2->setDisabled(true);
+//        ui->selectBtn3->setDisabled(true);
 
-        ui->textTips->setText("无法操作洪城一卡通，请联系人工处理。");
-        ui->cashPollBtn->setDisabled(true);
-        ui->tUpdateBtn->setDisabled(true);
+//        ui->textTips->setText("无法操作洪城一卡通，请联系人工处理。");
+//        ui->cashPollBtn->setDisabled(true);
+//        ui->tUpdateBtn->setDisabled(true);
 
-        return true;
-    }
+//        return true;
+//    }
 
     // 进站时间 | 出站时间 | 更新原因 | 应收费用
     if (info->enTime().toSecsSinceEpoch() > 1000) {
@@ -138,7 +138,6 @@ bool TicketReregisterWidget::showData()
             QString curStation = DataCenter::getThis()->getStationName();
             ui->lineEdit2->setText(curStation);
             m_enStationCode = DataCenter::getThis()->getStationCode();
-
             fareOk = true;
         } else {
             ui->selectBtn2->setDisabled(false);
@@ -163,21 +162,13 @@ bool TicketReregisterWidget::showData()
     } else {
         QString exStationName = DataCenter::getThis()->stationCode2Name(info->exStationCode());
         ui->lineEdit4->setText(exStationName);
-        fareOk = true;
     }
 
-    if (fareOk) {
+    // 更新按钮和现金支付按钮显示控制
+    if (fareOk) {   // 更新金额明确
         m_difference = m_difference < 0 ? 0 : m_difference;
-
-        if ((info->isAllowOctPay() && m_difference <= m_banlance) || m_difference <= 0) {
-            ui->cashPollBtn->setDisabled(true);
-            ui->tUpdateBtn->setDisabled(false);
-        } else if (m_difference > 0) {
-            m_payType = 0x01;      // 余额不足时，现金支付
-            ui->cashPollBtn->setDisabled(false);
-            ui->tUpdateBtn->setDisabled(true);
-        }
-    } else {
+        updateBtnControll();
+    } else {    // 更新金额不明确，需要计算票价
         ui->cashPollBtn->setDisabled(true);
         ui->tUpdateBtn->setDisabled(true);
     }
@@ -225,6 +216,10 @@ void TicketReregisterWidget::onStationSelected(QString lineName, QString station
     } else {
         ui->lineEdit2->setText(stationName);
         m_enStationCode = stationCode;
+
+        // 进站更新均是免费
+        m_difference = 0;
+        updateBtnControll();
     }
 }
 
@@ -371,13 +366,16 @@ void TicketReregisterWidget::onCalcFare()
     float updateAmount = 0.01 * calFareOut.intAmount;
     ui->lineEdit6->setText(QString::number(updateAmount));
 
-    if (m_isAllowOctPay && m_difference < m_banlance) {
-        ui->cashPollBtn->setDisabled(true);
-        ui->tUpdateBtn->setDisabled(false);
-    } else {
-        ui->cashPollBtn->setDisabled(false);
-        m_payType = 0x01;      // 余额不足时，现金支付
-    }
+
+    updateBtnControll();
+
+//    if (m_isAllowOctPay && m_difference < m_banlance) {
+//        ui->cashPollBtn->setDisabled(true);
+//        ui->tUpdateBtn->setDisabled(false);
+//    } else {
+//        ui->cashPollBtn->setDisabled(false);
+//        m_payType = 0x01;      // 余额不足时，现金支付
+//    }
 }
 
 void TicketReregisterWidget::onSupplementaryOk(bool result)
@@ -394,6 +392,28 @@ void TicketReregisterWidget::onSupplementaryOk(bool result)
         ui->tUpdateBtn->setDisabled(true);
         ui->cashPollBtn->setDisabled(false);
         MyHelper::ShowMessageBoxError("现金支付失败。");
+    }
+}
+
+void TicketReregisterWidget::updateBtnControll()
+{
+    if (m_difference <= 0) {    // 无需缴费，直接更新
+        ui->cashPollBtn->setDisabled(true);
+        ui->tUpdateBtn->setDisabled(false);
+    } else {                    // 需要缴费
+        if (m_isAllowOctPay) {    // 支持卡扣
+            if (m_difference > m_banlance) {   // 卡内余额不足，提人工处理
+                ui->textTips->setText("卡内余额不足以支付更新费用，请前往人工服务台处理。");
+                ui->cashPollBtn->setDisabled(true);
+                ui->tUpdateBtn->setDisabled(true);
+            } else {                    // 余额足够，直接更新
+                ui->cashPollBtn->setDisabled(true);
+                ui->tUpdateBtn->setDisabled(false);
+            }
+        } else {                        // 现金支付
+            ui->cashPollBtn->setDisabled(false);
+            ui->tUpdateBtn->setDisabled(true);
+        }
     }
 }
 

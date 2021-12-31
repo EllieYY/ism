@@ -1101,8 +1101,8 @@ bool DataCenter::setLoginData(QString user, QString pwd)
         logger()->error("AFC登录失败{%1}", ret);
 //        return;
     }
-
     setIsLogin(true);
+
     return true;
 }
 
