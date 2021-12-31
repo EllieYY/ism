@@ -73,6 +73,7 @@ bool TicketReregisterWidget::showData()
         item->setForeground(QColor("#09262A"));
         ui->tableWidget->setItem(0, index++, item);
     }
+
     // 进站时间 | 出站时间 | 更新原因 | 应收费用
     if (info->enTime().toSecsSinceEpoch() > 1000) {
         ui->lineEdit1->setText(info->enTime().toString("yyyy-MM-dd HH:mm:ss"));
@@ -262,12 +263,14 @@ void TicketReregisterWidget::onUpdateTicket()
     BYTE ret = cardUpdate(anti, &updateIn, &updateTradeData);
     if (ret == 0x05 || ret == 0x06) {
         MyHelper::ShowMessageBoxInfo("请将票卡正确放置在感应区域内。");
+        m_updateLock = false;
         return;
     } else if (ret != 0) {
         QString errMsg = DataCenter::getThis()->getReaderErrorStr(ret);
         MyHelper::ShowMessageBoxError(QString("票卡更新失败{%1}:%2，请重试或者联系工作人员。")
                                       .arg(QString::number(ret, 16))
                                       .arg(errMsg));
+        m_updateLock = false;
         return;
     }
 
@@ -371,7 +374,7 @@ void TicketReregisterWidget::onSupplementaryOk(bool result)
 //    ui->tUpdateBtn->setDisabled(false);
 
     if (result) {
-        m_updateLock = true;
+//        m_updateLock = true;
         ui->textTips->setText("现金支付成功，请点击更新按钮进行更新。");
         ui->cashPollBtn->setDisabled(true);
         ui->tUpdateBtn->setDisabled(false);
