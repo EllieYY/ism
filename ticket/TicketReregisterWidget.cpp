@@ -61,8 +61,6 @@ bool TicketReregisterWidget::showData()
         ui->cashPollBtn->setDisabled(true);
         if (info->icType() == OCT_CARD) {
             m_payType = 0x04;
-        } else if (info->icType() == METRO_CARD) {
-            m_payType = 0x03;
         }
     }
 
@@ -234,6 +232,10 @@ void TicketReregisterWidget::onUpdateTicket()
     int stationMode = DataCenter::getThis()->getStationMode();
     MyHelper::intToBigEndianByte(stationMode, 2, updateIn.StationMode);
     updateIn.CardType = m_ticketType;
+
+    if (m_difference <= 0) {
+        m_payType = 0x01;
+    }
     updateIn.PayType = m_payType;
 
 //    int updateAmount = m_difference * 100;    // 单位是分
@@ -356,7 +358,6 @@ void TicketReregisterWidget::onCalcFare()
 
     if (m_isAllowOctPay && m_difference < m_banlance) {
         ui->cashPollBtn->setDisabled(true);
-        m_payType = 0x04;      // 卡内扣费
         ui->tUpdateBtn->setDisabled(false);
     } else {
         ui->cashPollBtn->setDisabled(false);
