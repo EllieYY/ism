@@ -1,7 +1,6 @@
-#ifndef QKEYTOOLS_H
+﻿#ifndef QKEYTOOLS_H
 #define QKEYTOOLS_H
 
-#include "qkeytools_global.h"
 #include <QWidget>
 #include <QMouseEvent>
 #include <QLabel>
@@ -34,7 +33,7 @@ namespace Ui {
 class QkeyTools;
 }
 
-class QKEYTOOLSSHARED_EXPORT QkeyTools : public QWidget
+class QkeyTools : public QWidget
 {
     Q_OBJECT
 

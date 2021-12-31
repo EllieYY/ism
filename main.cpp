@@ -60,11 +60,11 @@ int main(int argc, char *argv[])
 //    sfont.setPointSize(16);
 //    qApp->setFont(sfont);
 
-//    // 设置键盘的父对象、宽度、高度、以及默认的样式设置
-////    QkeyTools::getInstance()->setMainWindowObject(&w);
+    // 设置键盘的父对象、宽度、高度、以及默认的样式设置
+//    QkeyTools::getInstance()->setMainWindowObject(w);
 //    QkeyTools::getInstance()->setWidth(1200);
-//    QkeyTools::getInstance()->setHeight(400);
-//    QkeyTools::getInstance()->Init(QkeyTools::ScreenBottom, QkeyTools::GRAY, 16, 16);
+//    QkeyTools::getInstance()->setHeight(320);
+//    QkeyTools::getInstance()->Init(QkeyTools::UnderWidget, QkeyTools::GRAY, 16, 16);
 
     int ret = a.exec();
 //    Singleton<LogHandler>::getInstance().uninstallMessageHandler();

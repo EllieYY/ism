@@ -33,7 +33,6 @@ contains(TARGET_ARCH, x86_64){
         LIBS += -L$$PWD/sdk/lib/log4qt/x64/release -llog4qt
         LIBS += -L$$PWD/sdk/lib/ticket/x64/release -lNC_ReaderLib -lNCNetwork_Lib -lBIM2020A
         LIBS += -L$$PWD/sdk/lib/curl -llibcurl
-        LIBS += -L$$PWD/sdk/lib -lQkeyTools
 }else{
         message("32-bit")
         LIBS += -L$$PWD/sdk/lib/log4qt/x86 -llog4qt
@@ -51,6 +50,7 @@ INCLUDEPATH += 	frame \
     guide \
     qtftp \
     device \
+    keyboard \
     data \
     data/line \
     data/asr \
@@ -135,6 +135,7 @@ SOURCES += \
     info/TimeTableWidget.cpp \
     inquiry/InquiryMainWidget.cpp \
     inquiry/QNChatMessage.cpp \
+    keyboard/qkeytools.cpp \
     main.cpp \
     qrCode/QrCodeMainWidget.cpp \
     qrCode/QrQueryWidget.cpp \
@@ -224,6 +225,7 @@ HEADERS += \
     info/TimeTableWidget.h \
     inquiry/InquiryMainWidget.h \
     inquiry/QNChatMessage.h \
+    keyboard/qkeytools.h \
     qrCode/QrCodeMainWidget.h \
     qrCode/QrQueryWidget.h \
     qrCode/QrReregisterWidget.h \
@@ -260,6 +262,7 @@ FORMS += \
     info/TicketPriceWidget.ui \
     info/TimeTableWidget.ui \
     inquiry/InquiryMainWidget.ui \
+    keyboard/qkeytools.ui \
     qrCode/QrCodeMainWidget.ui \
     qrCode/QrQueryWidget.ui \
     qrCode/QrReregisterWidget.ui \

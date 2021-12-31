@@ -474,7 +474,10 @@ int DataCenter::parseParam1004(QString filePath)
 
     m_ticketCodeMap.clear();     // <code, name>
     for (int i = 0; i < count; i++) {
-        stream.skipRawData(1);
+//        stream.skipRawData(1);
+        BYTE mainCode;
+        stream >> mainCode;
+
         BYTE code;
         stream >> code;
         QByteArray en(15, Qt::Uninitialized);
@@ -482,16 +485,21 @@ int DataCenter::parseParam1004(QString filePath)
         stream.readRawData(en.data(), 15);
         stream.readRawData(ch.data(), 15);
 
-        QString info = QString("code={%1},en={%2},ch={%3}")
+        QString info = QString("mainCode={%4},code={%1},en={%2},ch={%3}")
                 .arg(code, 2, 16, QLatin1Char('0'))
                 .arg(QString(en.toHex()))
-                .arg(QString(ch.toHex()));
+                .arg(QString(ch.toHex()))
+                .arg(mainCode, 2, 16, QLatin1Char('0'));
+
+//        QString info1 = QString("mainCode={%2},code={%1}")
+//                .arg(code, 2, 16, QLatin1Char('0'))
+//                .arg(mainCode, 2, 16, QLatin1Char('0'));
 
         QString enStr = MyHelper::getCorrectUnicode(en);
         QString chStr = MyHelper::getCorrectUnicode(ch);
 
         m_ticketCodeMap.insert(code, chStr);
-//        logger()->info("src={%1},enStr={%2},chStr={%3}", info, enStr, chStr);
+//        logger()->info("src={%1},enStr={%2},chStr={%3}", info1, enStr, chStr);
 
         stream.skipRawData(193);
     }
