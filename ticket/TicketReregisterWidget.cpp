@@ -39,14 +39,16 @@ bool TicketReregisterWidget::showData()
         return true;
     }
 
-    ui->calcFareBtn->hide();
-    ui->cashPollBtn->setDisabled(true);
-    ui->tUpdateBtn->setDisabled(true);
+//    ui->calcFareBtn->hide();
+//    ui->cashPollBtn->setDisabled(true);
+//    ui->tUpdateBtn->setDisabled(true);
 
     if (!m_dataUpdateNum[TICKET_REREGISTER]) {
         return true;
     }
     m_dataUpdateNum[TICKET_REREGISTER] = false;
+
+    initShow();
 
     TicketBasicInfo* info = DataCenter::getThis()->getTicketBasicInfo();
     m_ticketType = info->typeNum();
@@ -106,30 +108,9 @@ bool TicketReregisterWidget::showData()
 //    QString reason = DataCenter::getThis()->getUpdateTypeString(m_updateType);
     ui->lineEdit5->setText(errMsg);
 
-    // 操作控制
-    ui->selectBtn2->setDisabled(true);
-    ui->selectBtn3->setDisabled(true);
-
-    if (!info->isAllowUpdate()) {
-        // 无需更新
-        if (info->errorCode() == 0) {
-            ui->tUpdateBtn->setDisabled(true);
-            ui->textTips->setText("票卡无需更新");
-            ui->lineEdit5->setText("无需更新");
-            MyHelper::ShowMessageBoxInfo("当前票卡无需更新。");
-        } else {
-            // 不可更新
-            ui->tUpdateBtn->setDisabled(true);
-            ui->textTips->setText("票卡不可更新");
-            ui->lineEdit5->setText("不可更新");
-
-            QString tipsStr = QString("%1，无法进行票卡更新[%2]，请联系工作人员处理。")
-                    .arg(errMsg)
-                    .arg(info->errorCode());
-            MyHelper::ShowMessageBoxInfo(tipsStr);          
-        }
-        return true;
-    }
+//    // 操作控制
+//    ui->selectBtn2->setDisabled(true);
+//    ui->selectBtn3->setDisabled(true);
 
     bool fareOk = true;
     // 进站更新（付费区）
@@ -168,6 +149,7 @@ bool TicketReregisterWidget::showData()
         fareOk = true;
     }
 
+
     if (fareOk) {
         m_difference = m_difference < 0 ? 0 : m_difference;
 
@@ -184,7 +166,54 @@ bool TicketReregisterWidget::showData()
         ui->tUpdateBtn->setDisabled(true);
     }
 
+
+    if (!info->isAllowUpdate()) {
+        m_updateLock = true;
+        // 无需更新
+        if (info->errorCode() == 0) {
+            ui->tUpdateBtn->setDisabled(true);
+            ui->textTips->setText("票卡无需更新");
+            ui->lineEdit5->setText("无需更新");
+            MyHelper::ShowMessageBoxInfo("当前票卡无需更新。");
+        } else {
+            // 不可更新
+            ui->tUpdateBtn->setDisabled(true);
+            ui->textTips->setText("票卡不可更新");
+            ui->lineEdit5->setText("不可更新");
+
+            QString tipsStr = QString("%1，无法进行票卡更新[%2]，请联系工作人员处理。")
+                    .arg(errMsg)
+                    .arg(info->errorCode());
+            MyHelper::ShowMessageBoxInfo(tipsStr);
+        }
+
+        m_updateLock = false;
+        return true;
+    }
+
     return true;
+}
+
+void TicketReregisterWidget::initShow()
+{
+    ui->tableWidget->clearContents();
+
+    ui->lineEdit1->setText("");
+    ui->lineEdit2->setText("");
+    ui->lineEdit3->setText("");
+    ui->lineEdit4->setText("");
+    ui->lineEdit5->setText("");
+    ui->lineEdit6->setText("");
+    ui->textTips->setText("");
+
+    // 站点选择
+    ui->selectBtn2->setDisabled(true);
+    ui->selectBtn3->setDisabled(true);
+
+    // 更新相关
+    ui->cashPollBtn->setDisabled(true);
+    ui->tUpdateBtn->setDisabled(true);
+    ui->calcFareBtn->hide();
 }
 
 void TicketReregisterWidget::init()
@@ -470,6 +499,11 @@ void TicketReregisterWidget::setFareWidget(CompensationFareWidget *fareWidget)
     connect(m_fareWidget, &CompensationFareWidget::supplementaryOk, this, &TicketReregisterWidget::onSupplementaryOk);
 }
 
+void TicketReregisterWidget::secEvent()
+{
+    showData();
+}
+
 
 void TicketReregisterWidget::setStyle()
 {
@@ -483,6 +517,7 @@ void TicketReregisterWidget::setStyle()
     ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
     ui->tableWidget->verticalHeader()->setVisible(false);
     ui->tableWidget->verticalHeader()->setDefaultSectionSize(72);
+//    ui->tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
     ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->tableWidget->setFrameShape(QFrame::NoFrame);
 
