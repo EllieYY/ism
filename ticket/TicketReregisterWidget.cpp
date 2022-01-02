@@ -87,10 +87,12 @@ bool TicketReregisterWidget::showData()
     }
 
     // 进站时间 | 出站时间 | 更新原因 | 应收费用
+    ui->lineEdit1->setText("");
     if (info->enTime().toSecsSinceEpoch() > 1000) {
         ui->lineEdit1->setText(info->enTime().toString("yyyy-MM-dd HH:mm:ss"));
     }
 
+    ui->lineEdit3->setText("");
     if (info->exTime().toSecsSinceEpoch() > 1000) {
         ui->lineEdit3->setText(info->exTime().toString("yyyy-MM-dd HH:mm:ss"));
     }

@@ -15,7 +15,6 @@
 
 #include <QApplication>
 #include "qtsingleapplication.h"
-#include "qkeytools.h"
 
 int main(int argc, char *argv[])
 {
