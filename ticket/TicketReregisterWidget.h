@@ -28,6 +28,8 @@ public:
 
 private:
     bool showData();
+    void initShow();
+
     void setStyle();
 
     void init();

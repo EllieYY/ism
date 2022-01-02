@@ -39,14 +39,13 @@ bool TicketReregisterWidget::showData()
         return true;
     }
 
-    ui->calcFareBtn->hide();
-    ui->cashPollBtn->setDisabled(true);
-    ui->tUpdateBtn->setDisabled(true);
-
     if (!m_dataUpdateNum[TICKET_REREGISTER]) {
         return true;
     }
     m_dataUpdateNum[TICKET_REREGISTER] = false;
+
+    // 初始化显示状态
+    initShow();
 
     TicketBasicInfo* info = DataCenter::getThis()->getTicketBasicInfo();
     m_ticketType = info->typeNum();
@@ -174,6 +173,24 @@ bool TicketReregisterWidget::showData()
     }
 
     return true;
+}
+
+//清理之前的显示
+void TicketReregisterWidget::initShow()
+{
+    ui->tableWidget->clear();
+
+    ui->lineEdit1->setText("");
+    ui->lineEdit2->setText("");
+    ui->lineEdit3->setText("");
+    ui->lineEdit4->setText("");
+    ui->lineEdit5->setText("");
+    ui->lineEdit6->setText("");
+    ui->textTips->setText("");
+
+    ui->cashPollBtn->setDisabled(true);
+    ui->tUpdateBtn->setDisabled(true);
+    ui->calcFareBtn->hide();
 }
 
 void TicketReregisterWidget::init()
