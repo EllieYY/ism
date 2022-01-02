@@ -113,10 +113,10 @@ void ReaderWorker::hearChecking()
 
 void ReaderWorker::ticketReading()
 {
-    qDebug() << "ticketReading=======";
     if (!m_onReading) {
         return;
     }
+    qDebug() << "ticketReading=======";
 
     // 操作超时控制
     long currentTime = QDateTime::currentSecsSinceEpoch();

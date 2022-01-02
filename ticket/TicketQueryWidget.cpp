@@ -1,4 +1,4 @@
-#include "TicketQueryWidget.h"
+﻿#include "TicketQueryWidget.h"
 #include "ui_TicketQueryWidget.h"
 #include "CommonHead.h"
 #include "DataCenter.h"
@@ -55,6 +55,7 @@ void TicketQueryWidget::showTicketBasicInfo()
     QList<QTableWidgetItem*> itemList = DataCenter::getThis()->getTicketItems(tInfo);
 
     int index = 0;
+    ui->tableWidget->clearContents();
     for (QTableWidgetItem* item:itemList) {
         item->setTextAlignment(Qt::AlignCenter);
         item->setFont(QFont("Microsoft YaHei",18,500));
@@ -73,6 +74,7 @@ void TicketQueryWidget::showTicketTransInfo()
     if(count <= 0)
         return;
 
+    ui->tableWidget_2->clearContents();
     ui->tableWidget_2->setRowCount(count);
 
     int row = 0;
