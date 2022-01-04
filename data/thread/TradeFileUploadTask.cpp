@@ -80,7 +80,7 @@ void TradeFileUploadTask::packageTradeFile(int fileCount, QSet<QString> fileName
 
 
         //文件长度计算
-        int tradeCount = calcTradeCount(srcArray.size());
+        int tradeCount = calcTradeCount(fileTypeStr, srcArray.size());
         array.append(MyHelper::intToBytes(tradeCount, 4));
         QString headStr = array.toHex().toUpper();
 

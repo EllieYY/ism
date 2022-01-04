@@ -288,7 +288,13 @@ void TicketReregisterWidget::onUpdateTicket()
 
     updateIn.UpdateType = m_updateType;
     QString operatorIdStr = DataCenter::getThis()->getOperatorId();
-    MyHelper::hexStrToByte(operatorIdStr, 4, updateIn.OperatorID);
+
+//    MyHelper::hexStrToByte(operatorIdStr, 4, updateIn.OperatorID);
+    // 读写器按10进制读取操作员编号
+    bool ok;
+    long operatorId = operatorIdStr.toLong(&ok, 16);
+    QString operatorStrD = QString("%1").arg(operatorId, 8, 10, QLatin1Char('0'));
+    MyHelper::hexStrToByte(operatorStrD, 4, updateIn.OperatorID);
 
     if (m_updateType == FARE_EX) {
         MyHelper::hexStrToByte(m_exStationCode, 2, updateIn.UpdateStation);
