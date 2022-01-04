@@ -1,4 +1,4 @@
-#include "TradeFileInfo.h"
+﻿#include "TradeFileInfo.h"
 
 TradeFileInfo::TradeFileInfo(QObject *parent) : QObject(parent)
 {
@@ -10,9 +10,9 @@ TradeFileInfo::TradeFileInfo(QObject *parent) : QObject(parent)
 void TradeFileInfo::reset()
 {
     setFileTradeSerial(m_fileTradeSerial + 1);
-    m_fileCount = 0;
     m_datetime = QDateTime::currentDateTime();
     m_fileNameSet.clear();
+    m_fileCount = m_fileNameSet.size();
 }
 
 int TradeFileInfo::fileCount() const
@@ -32,8 +32,9 @@ QSet<QString> TradeFileInfo::fileNameSet() const
 
 void TradeFileInfo::addFileName(QString name)
 {
-    m_fileCount++;
+//    m_fileCount++;
     m_fileNameSet.insert(name);
+    m_fileCount = m_fileNameSet.size();
 }
 
 QDateTime TradeFileInfo::datetime() const

@@ -1,4 +1,4 @@
-#ifndef TRADEFILEUPLOADTASK_H
+﻿#ifndef TRADEFILEUPLOADTASK_H
 #define TRADEFILEUPLOADTASK_H
 
 #include <QObject>
@@ -24,6 +24,9 @@ public:
     bool result() override;
 
     void packageTradeFile(int fileCount, QSet<QString> fileNameList, QString remotePath);
+
+private:
+    long calcTradeCount(QString typeStr, long srcBytes);
 
 private:
     LibcurlFtp* m_ftp;

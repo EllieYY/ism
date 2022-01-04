@@ -460,7 +460,7 @@ void TicketReregisterWidget::writeTradeFile(BYTE icType, BYTE *data)
         array.append((char*)(data + 8), length);
     }
 
-    qDebug() << "文件内容 size = " << array.size();
+//    qDebug() << "文件内容 size = " << array.size();
     QString bodyStr = array.toHex().toUpper();
     logger()->info("[writeTradeFile]fileName={%1},文件内容：", fileName, bodyStr);
 
