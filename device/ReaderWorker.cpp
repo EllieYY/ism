@@ -234,13 +234,6 @@ uchar ReaderWorker::readTicketInfo(uchar anti)
     bool ok;
     long balance = QByteArray((char*)analyseInfo.balance, 4).toHex().toLong(&ok, 16);
 
-    // 相同卡且状态相同，不做数据更新
-    TicketBasicInfo* preTicket = DataCenter::getThis()->getTicketBasicInfo();
-    if (preTicket != NULL && number.compare(preTicket->number()) == 0 &&
-            preTicket->cardState() == state) {
-        return ret;
-    }
-
     // 允许更新 | 卡扣更新 | 更新类型 | 应收费用（分）
     bool isAllowUpdate = analyseInfo.isAllowUpdate;
     bool isAllowOctPay = analyseInfo.isAllowOctPay;
@@ -252,6 +245,18 @@ uchar ReaderWorker::readTicketInfo(uchar anti)
     QString exStation = QByteArray((char*)analyseInfo.lastExitStation, 2).toHex().toUpper();
     QString enTime = QByteArray((char*)analyseInfo.lastEntryTime, 7).toHex();
     QString exTime = QByteArray((char*)analyseInfo.lastExitTime, 7).toHex();
+
+    // 相同卡且状态相同，不做数据更新
+    TicketBasicInfo* preTicket = DataCenter::getThis()->getTicketBasicInfo();
+    if (preTicket != NULL &&
+            number.compare(preTicket->number()) == 0 &&
+            preTicket->cardState() == state &&
+            preTicket->updateType() == updateType &&
+            preTicket->updateAmount() == amount &&
+            preTicket->errorCode() == analyseInfo.errCode) {
+        return ret;
+    }
+
 
     // 原始字节结果打印
     QByteArray resArr = QByteArray((char*)&analyseInfo, sizeof(ANALYSECARD_RESP));

@@ -84,6 +84,7 @@ void TradeFileUploadTask::packageTradeFile(int fileCount, QSet<QString> fileName
         array.append(MyHelper::intToBytes(tradeCount, 4));
         QString headStr = array.toHex().toUpper();
 
+
         // 文件内容
         array.append(srcArray);
 
@@ -97,6 +98,10 @@ void TradeFileUploadTask::packageTradeFile(int fileCount, QSet<QString> fileName
 
 //        logger()->info("[packageTradeFile]文件头内容：%1, MD5=%2，size=%3",
 //                       headStr, md5Str, array.size());
+
+        if (tradeCount == 0) {
+            return;
+        }
 
         // 交易文件列表获取
         X7000FileInfo* info = new X7000FileInfo();
@@ -115,7 +120,7 @@ long TradeFileUploadTask::calcTradeCount(QString typeStr, long srcBytes)
         length = sizeof(MTRCARD_TRADE_INFO);
     } else if (typeStr == "Y") {
         length = sizeof(OCTCARD_TRADE_INFO);
-    } else if (typeStr == "T") {
+    } else if (typeStr == "J") {
         length = sizeof(TUCARD_TRADE_INFO);
     } else {
         length = 0;

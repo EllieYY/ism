@@ -1,4 +1,4 @@
-#include "StatusBar.h"
+﻿#include "StatusBar.h"
 #include "ui_StatusBar.h"
 #include "CommonHead.h"
 #include "WidgetMng.h"
@@ -41,14 +41,14 @@ void StatusBar::showButtons(bool isMainWnd)
 
 bool StatusBar::showData()
 {
-    if (!m_dataUpdateNum[AFC_ONLINE_STATE_ID])
-    {
-        return true;
-    }
-    m_dataUpdateNum[AFC_ONLINE_STATE_ID] = false;
+//    if (!m_dataUpdateNum[AFC_ONLINE_STATE_ID])
+//    {
+//        return true;
+//    }
+//    m_dataUpdateNum[AFC_ONLINE_STATE_ID] = false;
 
     int netState = DataCenter::getThis()->getNetState();
-    QString netStateStr = netState == 0 ? "网络状态：在线":"网络状态：离线";
+    QString netStateStr = (netState == 0 ? "网络状态：在线":"网络状态：离线");
     ui->netStateLabel->setText(netStateStr);
     ui->siteNameLabel->setText(DataCenter::getThis()->getStationName());
 
