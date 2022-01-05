@@ -1654,7 +1654,8 @@ QList<QTableWidgetItem *> DataCenter::getTranscationItems(TransactionInfo *info)
     QString typeStr = getTradeTypeString(info->type());
     QTableWidgetItem* item2 = new QTableWidgetItem(typeStr);
 
-    QString comStr = QString("%1").arg(info->amount(), 0, 'f', 2);
+    float fAmount = 0.01 * info->amount();
+    QString comStr = QString("%1").arg(fAmount, 0, 'f', 2);
     QTableWidgetItem* item3 = new QTableWidgetItem(comStr);
 
     QTableWidgetItem* item4 = new QTableWidgetItem(info->samNum());
