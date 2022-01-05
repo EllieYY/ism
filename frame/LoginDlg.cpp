@@ -27,8 +27,8 @@ void LoginDlg::initShow()
     ui->loginBtn->setDisabled(false);
 
     // TODO:测试数据
-    ui->userLineEdit->setText("04326688");
-    ui->pwdLineEdit->setText("123456");
+//    ui->userLineEdit->setText("04326688");
+//    ui->pwdLineEdit->setText("123456");
     show();
 }
 

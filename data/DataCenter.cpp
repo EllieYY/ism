@@ -155,15 +155,14 @@ void DataCenter::init()
     logger()->info("配置文件读取完毕。");
 
     logger()->info("基础数据更新");
-    // TODO:放开限制
-//    // 获取基础数据并更新数据 #7
-//    HttpTool::getThis()->requestLineBaseInfo();
-//    HttpTool::getThis()->requestLineStations();
-//    HttpTool::getThis()->requestInterchanges();
-//    HttpTool::getThis()->requestTimeTables();
-//    HttpTool::getThis()->requestStationMap();
-//    HttpTool::getThis()->requestStationPreMap();
-//    HttpTool::getThis()->requestLineMap();
+    // 获取基础数据并更新数据 #7
+    HttpTool::getThis()->requestLineBaseInfo();
+    HttpTool::getThis()->requestLineStations();
+    HttpTool::getThis()->requestInterchanges();
+    HttpTool::getThis()->requestTimeTables();
+    HttpTool::getThis()->requestStationMap();
+    HttpTool::getThis()->requestStationPreMap();
+    HttpTool::getThis()->requestLineMap();
 
     // AFC监听线程
     m_afcTaskThread = NULL;
@@ -1093,17 +1092,17 @@ bool DataCenter::setLoginData(QString user, QString pwd)
     m_loginInfo->setLoginTime(QDateTime::currentDateTime());
 
     // TODO: 放开限制
-//    // 签到
-//    BYTE * operatorID = reinterpret_cast<byte*>(user.toLocal8Bit().data());
-//    BYTE event = 2;          // 带口令登录
-//    BYTE operatorType = 2;   // 维护人员
-//    BYTE ret = OperatorAction(operatorID, event, operatorType);
-//    if (ret != 0) {
-////        MyHelper::ShowMessageBoxError(QString("登录失败[%1]，请联系工作人员。").arg(ret));
-//        logger()->error("AFC登录失败{%1}", ret);
-////        return;
-//    }
-//    setIsLogin(true);
+    // 签到
+    BYTE * operatorID = reinterpret_cast<byte*>(user.toLocal8Bit().data());
+    BYTE event = 2;          // 带口令登录
+    BYTE operatorType = 2;   // 维护人员
+    BYTE ret = OperatorAction(operatorID, event, operatorType);
+    if (ret != 0) {
+//        MyHelper::ShowMessageBoxError(QString("登录失败[%1]，请联系工作人员。").arg(ret));
+        logger()->error("AFC登录失败{%1}", ret);
+//        return;
+    }
+    setIsLogin(true);
 
     return true;
 }
@@ -1130,18 +1129,18 @@ bool DataCenter::setLogoutData(QString user, QString pwd)
 
 
     // TODO: 放开限制
-//    // AFC 签退
-//    BYTE * operatorID = reinterpret_cast<byte*>(user.toLocal8Bit().data());
-//    BYTE event = 0;          // 签退
-//    BYTE operatorType = 2;   // 维护人员
-//    BYTE ret = OperatorAction(operatorID, event, operatorType);
-//    if (ret != 0) {
-//        logger()->error("[OperatorAction] 签退失败：%1", ret);
-//        // 此处只做日志记录，不做AFC返回结果校验
-////        return false;
-//    }
+    // AFC 签退
+    BYTE * operatorID = reinterpret_cast<byte*>(user.toLocal8Bit().data());
+    BYTE event = 0;          // 签退
+    BYTE operatorType = 2;   // 维护人员
+    BYTE ret = OperatorAction(operatorID, event, operatorType);
+    if (ret != 0) {
+        logger()->error("[OperatorAction] 签退失败：%1", ret);
+        // 此处只做日志记录，不做AFC返回结果校验
+//        return false;
+    }
 
-//    setIsLogin(false);
+    setIsLogin(false);
 
     return true;
 }
