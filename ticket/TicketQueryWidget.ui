@@ -92,7 +92,7 @@
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>200</height>
+          <height>190</height>
          </size>
         </property>
         <property name="frameShape">
@@ -235,7 +235,7 @@ border-radius: 3px;
          <item>
           <widget class="QTableWidget" name="tableWidget">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>

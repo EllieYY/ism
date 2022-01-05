@@ -64,7 +64,7 @@ LogoutDlg::~LogoutDlg()
 void LogoutDlg::initStyle()
 {
     //设置窗体标题栏隐藏
-    this->setWindowFlags(Qt::FramelessWindowHint);
+    this->setWindowFlags(Qt::FramelessWindowHint | Qt::SubWindow);
     //设置窗体关闭时自动释放内存
     this->setAttribute(Qt::WA_DeleteOnClose);
     setAttribute(Qt::WA_ShowModal, true);

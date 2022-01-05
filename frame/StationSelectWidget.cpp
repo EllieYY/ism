@@ -59,7 +59,7 @@ void StationSelectWidget::setStyle()
 
 
     this->setAttribute(Qt::WA_TranslucentBackground, true);
-    this->setWindowFlags(Qt::FramelessWindowHint);
+    this->setWindowFlags(Qt::FramelessWindowHint | Qt::SubWindow);
 //    QScreen *screen = QGuiApplication::primaryScreen();   //获取当前屏幕的大小
 //    QRect mm = screen->availableGeometry();
 //    int screenWidth = mm.width();
@@ -77,7 +77,6 @@ void StationSelectWidget::setStyle()
         screenHeight = rect.height();
     }
     this->setFixedSize(screenWidth, screenHeight);
-
 }
 
 void StationSelectWidget::init()
