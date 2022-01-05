@@ -35,6 +35,7 @@ private:
     uchar readHistoryTrade(uchar anti);   // 卡片历史交易信息
 
     void setTestData();
+    void setTestData1();
 
     // 信息读取
     void readSamInfo();          // 读取SAM卡信息
@@ -47,6 +48,8 @@ private:
     bool m_onReading;      // 读卡状态开启
     int m_ticketInfoType;  // 读取票卡内容： 0-历史交易信息  1-票卡更新信息
     long m_readStartTime;  // 投币时间控制
+
+    bool m_testFlag;
 
     // 定时器id
     int m_hearTimerId;        // 设备心跳定时器

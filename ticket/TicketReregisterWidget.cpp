@@ -39,12 +39,15 @@ bool TicketReregisterWidget::showData()
         return true;
     }
 
+//    ui->calcFareBtn->hide();
+//    ui->cashPollBtn->setDisabled(true);
+//    ui->tUpdateBtn->setDisabled(true);
+
     if (!m_dataUpdateNum[TICKET_REREGISTER]) {
         return true;
     }
     m_dataUpdateNum[TICKET_REREGISTER] = false;
 
-    // 初始化显示状态
     initShow();
 
     TicketBasicInfo* info = DataCenter::getThis()->getTicketBasicInfo();
@@ -86,10 +89,12 @@ bool TicketReregisterWidget::showData()
 //    }
 
     // 进站时间 | 出站时间 | 更新原因 | 应收费用
+    ui->lineEdit1->setText("");
     if (info->enTime().toSecsSinceEpoch() > 1000) {
         ui->lineEdit1->setText(info->enTime().toString("yyyy-MM-dd HH:mm:ss"));
     }
 
+    ui->lineEdit3->setText("");
     if (info->exTime().toSecsSinceEpoch() > 1000) {
         ui->lineEdit3->setText(info->exTime().toString("yyyy-MM-dd HH:mm:ss"));
     }
@@ -103,30 +108,9 @@ bool TicketReregisterWidget::showData()
 //    QString reason = DataCenter::getThis()->getUpdateTypeString(m_updateType);
     ui->lineEdit5->setText(errMsg);
 
-    // 操作控制
-    ui->selectBtn2->setDisabled(true);
-    ui->selectBtn3->setDisabled(true);
-
-    if (!info->isAllowUpdate()) {
-        // 无需更新
-        if (info->errorCode() == 0) {
-            ui->tUpdateBtn->setDisabled(true);
-            ui->textTips->setText("票卡无需更新");
-            ui->lineEdit5->setText("无需更新");
-            MyHelper::ShowMessageBoxInfo("当前票卡无需更新。");
-        } else {
-            // 不可更新
-            ui->tUpdateBtn->setDisabled(true);
-            ui->textTips->setText("票卡不可更新");
-            ui->lineEdit5->setText("不可更新");
-
-            QString tipsStr = QString("%1，无法进行票卡更新[%2]，请联系工作人员处理。")
-                    .arg(errMsg)
-                    .arg(info->errorCode());
-            MyHelper::ShowMessageBoxInfo(tipsStr);          
-        }
-        return true;
-    }
+//    // 操作控制
+//    ui->selectBtn2->setDisabled(true);
+//    ui->selectBtn3->setDisabled(true);
 
     bool fareOk = true;
     // 进站更新（付费区）
@@ -172,13 +156,38 @@ bool TicketReregisterWidget::showData()
         ui->tUpdateBtn->setDisabled(true);
     }
 
+
+    if (!info->isAllowUpdate()) {
+        m_updateLock = true;
+        // 无需更新
+        if (info->errorCode() == 0) {
+            ui->tUpdateBtn->setDisabled(true);
+            ui->textTips->setText("票卡无需更新");
+            ui->lineEdit5->setText("无需更新");
+            MyHelper::ShowMessageBoxInfo("当前票卡无需更新。");
+        } else {
+            // 不可更新
+            ui->tUpdateBtn->setDisabled(true);
+            ui->textTips->setText("票卡不可更新");
+            ui->lineEdit5->setText("不可更新");
+
+            QString tipsStr = QString("%1，无法进行票卡更新[%2]，请联系工作人员处理。")
+                    .arg(errMsg)
+                    .arg(info->errorCode());
+            MyHelper::ShowMessageBoxInfo(tipsStr);
+        }
+
+        m_updateLock = false;
+        return true;
+    }
+
     return true;
 }
 
-//清理之前的显示
+
 void TicketReregisterWidget::initShow()
 {
-    ui->tableWidget->clear();
+    ui->tableWidget->clearContents();
 
     ui->lineEdit1->setText("");
     ui->lineEdit2->setText("");
@@ -188,6 +197,11 @@ void TicketReregisterWidget::initShow()
     ui->lineEdit6->setText("");
     ui->textTips->setText("");
 
+    // 站点选择
+    ui->selectBtn2->setDisabled(true);
+    ui->selectBtn3->setDisabled(true);
+
+    // 更新相关
     ui->cashPollBtn->setDisabled(true);
     ui->tUpdateBtn->setDisabled(true);
     ui->calcFareBtn->hide();
@@ -269,7 +283,13 @@ void TicketReregisterWidget::onUpdateTicket()
 
     updateIn.UpdateType = m_updateType;
     QString operatorIdStr = DataCenter::getThis()->getOperatorId();
-    MyHelper::hexStrToByte(operatorIdStr, 4, updateIn.OperatorID);
+
+//    MyHelper::hexStrToByte(operatorIdStr, 4, updateIn.OperatorID);
+    // 读写器按10进制读取操作员编号
+    bool ok;
+    long operatorId = operatorIdStr.toLong(&ok, 16);
+    QString operatorStrD = QString("%1").arg(operatorId, 8, 10, QLatin1Char('0'));
+    MyHelper::hexStrToByte(operatorStrD, 4, updateIn.OperatorID);
 
     if (m_updateType == FARE_EX) {
         MyHelper::hexStrToByte(m_exStationCode, 2, updateIn.UpdateStation);
@@ -466,7 +486,7 @@ void TicketReregisterWidget::writeTradeFile(BYTE icType, BYTE *data)
         array.append((char*)(data + 8), length);
     }
 
-    qDebug() << "文件内容 size = " << array.size();
+//    qDebug() << "文件内容 size = " << array.size();
     QString bodyStr = array.toHex().toUpper();
     logger()->info("[writeTradeFile]fileName={%1},文件内容：", fileName, bodyStr);
 
@@ -505,6 +525,11 @@ void TicketReregisterWidget::setFareWidget(CompensationFareWidget *fareWidget)
     connect(m_fareWidget, &CompensationFareWidget::supplementaryOk, this, &TicketReregisterWidget::onSupplementaryOk);
 }
 
+void TicketReregisterWidget::secEvent()
+{
+    showData();
+}
+
 
 void TicketReregisterWidget::setStyle()
 {
@@ -518,6 +543,7 @@ void TicketReregisterWidget::setStyle()
     ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
     ui->tableWidget->verticalHeader()->setVisible(false);
     ui->tableWidget->verticalHeader()->setDefaultSectionSize(72);
+//    ui->tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
     ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->tableWidget->setFrameShape(QFrame::NoFrame);
 

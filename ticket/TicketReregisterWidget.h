@@ -27,6 +27,7 @@ public:
     void setFareWidget(CompensationFareWidget *fareWidget);
 
 private:
+    void secEvent();
     bool showData();
     void initShow();
 

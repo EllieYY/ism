@@ -18,6 +18,8 @@
 
 ReaderWorker::ReaderWorker(QObject *parent) : QObject(parent)
 {
+    m_testFlag = true;
+
     // 票卡信息读取
     m_ticketInfoType = 0;   // 默认读取历史交易信息
     m_onReading = false;
@@ -111,10 +113,10 @@ void ReaderWorker::hearChecking()
 
 void ReaderWorker::ticketReading()
 {
-    qDebug() << "ticketReading=======";
     if (!m_onReading) {
         return;
     }
+    qDebug() << "ticketReading=======";
 
     // 操作超时控制
     long currentTime = QDateTime::currentSecsSinceEpoch();
@@ -183,7 +185,13 @@ int ReaderWorker::readBasicInfo()
 //    qDebug() << "[readTicketInfo]=" << ret;
 //    // TODO: 使用测试数据
 //    ret = 0x00;
-//    setTestData();
+////    setTestData();
+//    if (m_testFlag) {
+//        setTestData1();
+//    } else {
+//        setTestData();
+//    }
+//    m_testFlag = 1 - m_testFlag;
 
     // 找不到卡的情况下继续读卡，其他错误直接提示
     if (ret == 0x05 || ret == 0x06) {
@@ -312,10 +320,31 @@ void ReaderWorker::setTestData()
     ticket->setEnStationCode("0203");
     ticket->setEnTime("20211115212305");
     ticket->setExStationCode("0306");
-    ticket->setExTime("20211115212606");
-    ticket->setUpdateAmount(300);
+    ticket->setExTime("19700101000000");
+    ticket->setUpdateAmount(500);
+    ticket->setIcType(METRO_CARD);
+    ticket->setBalance(800);
+    ticket->setErrorCode(0);
+
+    DataCenter::getThis()->setTicketBasicInfo(ticket);
+}
+
+void ReaderWorker::setTestData1()
+{
+    int typeNum = 0x01;
+    QString type = DataCenter::getThis()->getTicketTypeString(typeNum);
+    TicketBasicInfo* ticket = new TicketBasicInfo(
+                0x01, type, "00000088562007", "20200901", "20231001", 1, 1, 500);
+    ticket->setIsAllowOctPay(true);
+    ticket->setIsAllowUpdate(true);
+    ticket->setUpdateType(OVER_TRIP);
+    ticket->setEnStationCode("0303");
+    ticket->setEnTime("19700101000000");
+    ticket->setExStationCode("0406");
+    ticket->setExTime("20201115212606");
+    ticket->setUpdateAmount(100);
     ticket->setIcType(UL_CARD);
-    ticket->setBalance(500);
+    ticket->setBalance(400);
 
     DataCenter::getThis()->setTicketBasicInfo(ticket);
 }

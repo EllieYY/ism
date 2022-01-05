@@ -8,6 +8,7 @@
 #include "MyHelper.h"
 #include "X7000FileInfo.h"
 #include "NCNetwork_Lib.h"
+#include "NC_ReaderLib.h"
 
 TradeFileUploadTask::TradeFileUploadTask(int taskId) : m_id(taskId)
 {
@@ -76,7 +77,11 @@ void TradeFileUploadTask::packageTradeFile(int fileCount, QSet<QString> fileName
         array.append(0x01);
         array.append(MyHelper::hexStrToByte(deviceId));
         array.append(MyHelper::intToBytes(serial, 4));
-        array.append(MyHelper::intToBytes(fileCount, 4));
+
+
+        //文件长度计算
+        int tradeCount = calcTradeCount(fileTypeStr, srcArray.size());
+        array.append(MyHelper::intToBytes(tradeCount, 4));
         QString headStr = array.toHex().toUpper();
 
         // 文件内容
@@ -100,6 +105,27 @@ void TradeFileUploadTask::packageTradeFile(int fileCount, QSet<QString> fileName
         info->setType(icType);
         m_fileList.append(info);
     }
+}
+
+long TradeFileUploadTask::calcTradeCount(QString typeStr, long srcBytes)
+{
+    int count = 0;
+    int length = sizeof(MTRCARD_TRADE_INFO);
+    if (typeStr == "S" || typeStr == "V") {
+        length = sizeof(MTRCARD_TRADE_INFO);
+    } else if (typeStr == "Y") {
+        length = sizeof(OCTCARD_TRADE_INFO);
+    } else if (typeStr == "T") {
+        length = sizeof(TUCARD_TRADE_INFO);
+    } else {
+        length = 0;
+    }
+
+    if (length != 0) {
+        count = srcBytes / length;
+    }
+
+    return count;
 }
 
 
