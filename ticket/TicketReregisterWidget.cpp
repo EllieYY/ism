@@ -53,7 +53,8 @@ bool TicketReregisterWidget::showData()
     TicketBasicInfo* info = DataCenter::getThis()->getTicketBasicInfo();
     m_ticketType = info->typeNum();
     m_updateType = info->updateType();
-    m_difference = info->updateAmount();    
+    m_difference = info->updateAmount();
+    m_icType = info->icType();
 
     m_isAllowOctPay = info->isAllowOctPay();
 
@@ -239,6 +240,7 @@ void TicketReregisterWidget::init()
 
 void TicketReregisterWidget::onStationSelected(QString lineName, QString stationName, QString stationCode)
 {
+//    m_updateLock = true;
     if (m_curBtn) {
         ui->lineEdit4->setText(stationName);
         m_exStationCode = stationCode;
@@ -253,6 +255,7 @@ void TicketReregisterWidget::onStationSelected(QString lineName, QString station
         m_difference = 0;
         updateBtnControll();
     }
+    m_updateLock = false;
 }
 
 void TicketReregisterWidget::onUpdateTicket()
@@ -292,17 +295,23 @@ void TicketReregisterWidget::onUpdateTicket()
     QString operatorStrD = QString("%1").arg(operatorId, 8, 10, QLatin1Char('0'));
     MyHelper::hexStrToByte(operatorStrD, 4, updateIn.OperatorID);
 
+    QString stationStr = "";
     if (m_updateType == FARE_EX) {
         MyHelper::hexStrToByte(m_exStationCode, 2, updateIn.UpdateStation);
+        stationStr = m_exStationCode;
     } else if (m_updateType == FARE_EN) {
         MyHelper::hexStrToByte(m_enStationCode, 2, updateIn.UpdateStation);
+        stationStr = m_enStationCode;
     }
 
     // 票卡更新参数打印
-    QByteArray array;
-    array.append((char*)&updateIn, sizeof(updateIn));
-    QString str = array.toHex().toUpper();
-    logger()->info("票卡更新参数：%1", str);
+//    QByteArray array;
+//    array.append((char*)&updateIn, sizeof(updateIn));
+//    QString str = array.toHex().toUpper();
+//    logger()->info("票卡更新参数：%1", str);
+    logger()->info("[票卡更新参数]设备交易流水=%1,车站模式=%2,车票类型=%3,支付方式=%4,交易金额=%5分,更新方式=%6,更新车站=%7",
+                   tradeSerial, stationMode, m_ticketType, m_payType, m_difference, m_updateType, stationStr);
+
 
     // 票卡更新
     BYTE ret = cardUpdate(anti, &updateIn, &updateTradeData);
@@ -325,15 +334,24 @@ void TicketReregisterWidget::onUpdateTicket()
     QString str1 = array1.toHex().toUpper();
     logger()->info("票卡更新返回：%1", str1);
 
-    // 交易记录写文件
+//     交易记录写文件
     this->writeTradeFile(updateTradeData.ICType, updateTradeData.TraderRespData);
 
     // TODO:票卡更新返回同步到ISM后台
 
     // 更新成功提示。
     MyHelper::ShowMessageBoxInfo("票卡更新成功。");
-    ui->tUpdateBtn->setDisabled(true);
+
+    // 显示控制 -----
+    // 站点选择
+    ui->selectBtn2->setDisabled(true);
+    ui->selectBtn3->setDisabled(true);
+
+    // 更新相关
     ui->cashPollBtn->setDisabled(true);
+    ui->tUpdateBtn->setDisabled(true);
+    ui->calcFareBtn->hide();
+
 //    close();
 
     m_updateLock = false;
@@ -461,7 +479,8 @@ void TicketReregisterWidget::writeTradeFile(BYTE icType, BYTE *data)
     QString deviceId = DataCenter::getThis()->getDeviceId();
     QDateTime curTime = QDateTime::currentDateTime();
     QString curTimeStr = curTime.toString("yyyyMMdd");
-    int serial = DataCenter::getThis()->getTradeFileSerial();
+    int serial = DataCenter::getThis()->getTradeFileSerial(icType);
+    qDebug() << "[writeTradeFile] serial=" << serial;
 
     QString filePath = QDir::currentPath() + QDir::separator() +
             "sc" + QDir::separator() +
@@ -489,7 +508,7 @@ void TicketReregisterWidget::writeTradeFile(BYTE icType, BYTE *data)
 
 //    qDebug() << "文件内容 size = " << array.size();
     QString bodyStr = array.toHex().toUpper();
-    logger()->info("[writeTradeFile]fileName={%1},文件内容：", fileName, bodyStr);
+    logger()->info("[writeTradeFile]fileName={%1},文件内容：%2", fileName, bodyStr);
 
     file.write(array);   //这种方式不会有多余字节
     file.close();
@@ -581,12 +600,14 @@ void TicketReregisterWidget::setTestData()
 
 void TicketReregisterWidget::onEnStationSelect()
 {
+    m_updateLock = true;
     m_curBtn = 0;
     emit selectStation();
 }
 
 void TicketReregisterWidget::onExStationSelect()
 {
+    m_updateLock = true;
     m_curBtn = 1;
     emit selectStation();
 }

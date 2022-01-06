@@ -45,10 +45,20 @@ void LoginDlg::initStyle()
     // 页面显示设置
     this->setWindowFlags(Qt::FramelessWindowHint);
 //    this->setAttribute(Qt::WA_DeleteOnClose);
-    QScreen *screen = QGuiApplication::primaryScreen();   //获取当前屏幕的大小
-    QRect mm = screen->geometry();
-    int screenWidth = mm.width();
-    int screenHeight = mm.height();
+//    QScreen *screen = QGuiApplication::primaryScreen();   //获取当前屏幕的大小
+//    QRect mm = screen->geometry();
+//    int screenWidth = mm.width();
+//    int screenHeight = mm.height();
+//    this->setFixedSize(screenWidth, screenHeight);
+    int screenWidth = 1920;
+    int screenHeight = 1080;
+    QList<QScreen *> listScreen =  QGuiApplication::screens();
+    if (listScreen.size() > 0) {
+        QScreen *screen = listScreen.at(0);
+        QRect rect = screen->geometry();
+        screenWidth = rect.width();
+        screenHeight = rect.height();
+    }
     this->setFixedSize(screenWidth, screenHeight);
 
     QAction *pLeadindAction_user = new QAction(this);

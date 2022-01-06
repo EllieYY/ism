@@ -116,7 +116,7 @@ TradeFileInfo* SettingCenter::getTradeFileInfo()
         info->setFileTradeSerial(fileSerial);
         info->setDeviceTradeSerial(devTradeSerial);
         info->setFileNameSet(fileList);
-        info->setFileCount(fileCount);
+//        info->setFileCount(fileCount);
     }
 
     return info;

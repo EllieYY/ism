@@ -58,6 +58,8 @@ private:
     int m_curBtn;               // 0-en  1-ex
     int m_updateType;           // 更新类型
     int m_ticketType;           // 票卡类型
+
+    int m_icType;           // 票卡类型
     CompensationFareWidget* m_fareWidget;       // 补差额窗口
     uint  m_difference;       // 待补差价
 

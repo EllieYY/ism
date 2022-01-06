@@ -49,7 +49,7 @@ private:
     int m_ticketInfoType;  // 读取票卡内容： 0-历史交易信息  1-票卡更新信息
     long m_readStartTime;  // 投币时间控制
 
-    bool m_testFlag;
+    int m_testFlag;
 
     // 定时器id
     int m_hearTimerId;        // 设备心跳定时器

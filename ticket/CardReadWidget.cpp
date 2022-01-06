@@ -117,7 +117,7 @@ void CardReadWidget::setStyle()
 {
     // 透明背景设置
     this->setAttribute(Qt::WA_TranslucentBackground, true);
-    this->setWindowFlags(Qt::FramelessWindowHint | Qt::SubWindow);
+    this->setWindowFlags(Qt::FramelessWindowHint);
 //    QScreen *screen = QGuiApplication::primaryScreen();   //获取当前屏幕的大小
 //    QRect mm = screen->availableGeometry();
 //    int screenWidth = mm.width();

@@ -475,7 +475,7 @@ void CompensationFareWidget::setStyle()
 //    this->setAttribute(Qt::WA_DeleteOnClose);
     // 透明背景设置
     this->setAttribute(Qt::WA_TranslucentBackground, true);
-    this->setWindowFlags(Qt::FramelessWindowHint | Qt::SubWindow);
+    this->setWindowFlags(Qt::FramelessWindowHint);
 //    QScreen *screen = QGuiApplication::primaryScreen();   //获取当前屏幕的大小
 //    QRect mm = screen->availableGeometry();
 //    QRect mm = QApplication::desktop()->screenGeometry();

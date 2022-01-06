@@ -68,6 +68,7 @@ public:
     int errorCode() const;
     void setErrorCode(int errorCode);
 
+
 private:
     QString     m_type;         // 卡类型
     QString     m_number;       // 卡号

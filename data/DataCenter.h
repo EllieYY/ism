@@ -162,7 +162,7 @@ public:
     /* ---- 交易文件相关 ---------------------------*/
     void addTradeFileInfo(QString fileName);   // 暂存交易文件
     int packageTradeFile();        // 交易文件组包
-    ulong getTradeFileSerial();         // 交易文件序列号
+    ulong getTradeFileSerial(int icType);   // 交易文件序列号
     ulong getDeviceTradeSerial();   // 终端交易流水号
     bool findFileForDelete(const QString filePath, int days);    // 定时删除交易文件
 

@@ -131,7 +131,7 @@ void DataCenter::secEvent()
 void DataCenter::init()
 {
     m_ismVersion = "00000011";
-    logger()->info("ISM version:%1", "20210105-1103-%1-test04", m_ismVersion);
+    logger()->info("ISM version:%1", "20210106-1103-%1", m_ismVersion);
     initData();    // 默认数据
 
     /* 基础信息 */
@@ -714,13 +714,13 @@ void DataCenter::addTradeFileInfo(QString fileName)
 }
 
 // 交易文件流水号
-ulong DataCenter::getTradeFileSerial()
+ulong DataCenter::getTradeFileSerial(int icType)
 {
     if (m_tradeFileInfo == nullptr) {
         m_tradeFileInfo = new TradeFileInfo(this);
     }
 
-    return m_tradeFileInfo->fileTradeSerial();
+    return m_tradeFileInfo->fileTradeSerialByType(icType);
 }
 
 // 终端交易序号
@@ -797,12 +797,12 @@ int DataCenter::packageTradeFile()
 
     qDebug() << "fileCount" << m_tradeFileInfo->fileCount();
 
-    int fileCount = m_tradeFileInfo->fileCount();
+//    int fileCount = m_tradeFileInfo->fileCount();
     QSet<QString> fileNameList = m_tradeFileInfo->fileNameSet();
     if (m_taskThread->isRunning()) {
         TradeFileUploadTask* task = new TradeFileUploadTask(getTaskId());
         QString serverFilePath = m_basicInfo->ftpUrl().toString() + "/Transaction/";
-        task->packageTradeFile(fileCount, fileNameList, serverFilePath);
+        task->setTradeFileInfo(fileNameList, serverFilePath);
         m_taskThread->addTask(task);
     }
 

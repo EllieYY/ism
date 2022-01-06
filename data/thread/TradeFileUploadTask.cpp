@@ -55,11 +55,13 @@ void TradeFileUploadTask::packageTradeFile()
         QString deviceId = DataCenter::getThis()->getDeviceId();
         QDateTime curTime = QDateTime::currentDateTime();
         QString curTimeStr = curTime.toString("yyyyMMddHHmmss");
-        int serial = DataCenter::getThis()->getTradeFileSerial();
+        QString serialStr = file.mid(20, 6);
+        int serial = serialStr.toLong();
+//        int serial = DataCenter::getThis()->getTradeFileSerial();
 
         //命名规则：交易文件类别（1个字符）+“.”+节点编码（8位）+“.”+YYYYMMDDHHMMSS +“.”+文件序列号（6位）
         QString targetFileName = QString("%1.%2.%3.%4")
-                .arg(fileTypeStr).arg(deviceId).arg(curTimeStr).arg(serial, 6, 10, QLatin1Char('0'));
+                .arg(fileTypeStr).arg(deviceId).arg(curTimeStr).arg(serialStr);
 
         QFile desFile(filePath + targetFileName);
         if (!desFile.open(QIODevice::WriteOnly)) {
@@ -108,7 +110,8 @@ void TradeFileUploadTask::packageTradeFile()
         info->setMd5Arr(md5Arr.toHex());
         info->setType(icType);
 
-        SettingCenter::getThis()->addTradeFileInfo(info);
+        // TODO:功能待完善
+//        SettingCenter::getThis()->addTradeFileInfo(info);
         m_fileList.append(info);
     }
 }

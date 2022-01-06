@@ -18,7 +18,7 @@
 
 ReaderWorker::ReaderWorker(QObject *parent) : QObject(parent)
 {
-    m_testFlag = true;
+    m_testFlag = 0;
 
     // 票卡信息读取
     m_ticketInfoType = 0;   // 默认读取历史交易信息
@@ -26,6 +26,8 @@ ReaderWorker::ReaderWorker(QObject *parent) : QObject(parent)
     m_readStartTime = -1;
 
     m_hearTimerId = startTimer(60000);     // 1分钟检测一次
+
+    // TODO:change to 1000
     m_readingTimerId = startTimer(1000);   // 秒级读卡
 }
 
@@ -186,12 +188,13 @@ int ReaderWorker::readBasicInfo()
 //    // TODO: 使用测试数据
 //    ret = 0x00;
 ////    setTestData();
-//    if (m_testFlag) {
+//    if (m_testFlag == 0) {
 //        setTestData1();
 //    } else {
 //        setTestData();
 //    }
 //    m_testFlag = 1 - m_testFlag;
+
 
     // 找不到卡的情况下继续读卡，其他错误直接提示
     if (ret == 0x05 || ret == 0x06) {
@@ -259,9 +262,13 @@ uchar ReaderWorker::readTicketInfo(uchar anti)
 
 
     // 原始字节结果打印
-    QByteArray resArr = QByteArray((char*)&analyseInfo, sizeof(ANALYSECARD_RESP));
-    QString resStr = resArr.toHex();
-    logger()->info("[cardAnalyse] %1", resStr);
+//    QByteArray resArr = QByteArray((char*)&analyseInfo, sizeof(ANALYSECARD_RESP));
+//    QString resStr = resArr.toHex();
+//    logger()->info("[cardAnalyse] %1", resStr);
+    logger()->info("[票卡分析]卡类型=%1,卡号=%2,卡状态=%3,余额=%4分,允许更新=%5,允许卡扣=%6,更新金额=%7,更新类型=%8,进站车站=%9,进站时间=%10,出站车站=%11,出站时间=%12",
+                   typeNum, number, state, balance,
+                   isAllowUpdate, isAllowOctPay, amount, updateType,
+                   enStation, enTime, exStation, exTime);
 
     TicketBasicInfo* ticket = new TicketBasicInfo(
                 typeNum, type, number, startDate, validDate, state, tripState, balance);
@@ -315,7 +322,7 @@ uchar ReaderWorker::readHistoryTrade(uchar anti)
 
 void ReaderWorker::setTestData()
 {
-    int typeNum = 0x01;
+    int typeNum = 0x02;
     QString type = DataCenter::getThis()->getTicketTypeString(typeNum);
     TicketBasicInfo* ticket = new TicketBasicInfo(
                 0x58, type, "30010088562007", "20200901", "20231001", 1, 1, 500);
@@ -347,7 +354,7 @@ void ReaderWorker::setTestData1()
     ticket->setEnTime("19700101000000");
     ticket->setExStationCode("0406");
     ticket->setExTime("20201115212606");
-    ticket->setUpdateAmount(100);
+    ticket->setUpdateAmount(0);
     ticket->setIcType(UL_CARD);
     ticket->setBalance(400);
 

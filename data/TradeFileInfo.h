@@ -1,9 +1,10 @@
-#ifndef TRADEFILEINFO_H
+﻿#ifndef TRADEFILEINFO_H
 #define TRADEFILEINFO_H
 
 #include <QObject>
 #include <QSet>
 #include <QDateTime>
+#include <QHash>
 
 class TradeFileInfo : public QObject
 {
@@ -26,6 +27,7 @@ public:
     ulong deviceTradeSerial() const;
     void setDeviceTradeSerial(const ulong &deviceTradeSerial);
 
+    ulong fileTradeSerialByType(int icType);
     ulong fileTradeSerial() const;
     void setFileTradeSerial(const ulong &fileTradeSerial);
 
@@ -35,6 +37,8 @@ private:
     QDateTime m_datetime;
     QSet<QString> m_fileNameSet;  // 交易文件名称列表
     ulong m_deviceTradeSerial;    // 终端交易流水号   从1开始，不重复
+
+    QHash<int, ulong> m_typeSerialMap;     // int:交易文件类型，ulong:类型对应的流水号
 
 signals:
 
