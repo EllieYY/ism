@@ -15,6 +15,7 @@ class TradeFileInfo;
 class ReaderSoftFileInfo;
 class UpdateParamInfo;
 class LineStationTimetables;
+class X7000FileInfo;
 class SettingCenter : public QObject
 {
     Q_OBJECT
@@ -74,6 +75,9 @@ public:
     // 测试运营时间-设置运营结束时间文件
     long getTestServiceOffTime();
 
+    // 交易文件信息维护
+    void addTradeFileInfo(X7000FileInfo* info);
+    void deleteTradeFileInfo(QString md5Str);
 
 private:
     QList<InterchangeInfo*> matchInterchangeStations(QList<InterchangeInfo*> stations, QString lineCode);

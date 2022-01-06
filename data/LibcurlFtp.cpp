@@ -1,4 +1,4 @@
-#include "LibcurlFtp.h"
+﻿#include "LibcurlFtp.h"
 #include <iostream>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -272,7 +272,7 @@ int LibcurlFtp::ftpUpload(QString remotePath, QString fileName, QString localPat
 
     /* get the file size of the local file */
     if(stat(localFile, &file_info)) {
-        logger()->error("Couldnt open '%s': %s\n", localFile, strerror(errno));
+        logger()->error("Couldnt open %1: %2\n", localFile, strerror(errno));
         return -1;
     }
     fsize = (curl_off_t)file_info.st_size;

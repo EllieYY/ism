@@ -9,6 +9,7 @@
 #include "X7000FileInfo.h"
 #include "NCNetwork_Lib.h"
 #include "NC_ReaderLib.h"
+#include "SettingCenter.h"
 
 TradeFileUploadTask::TradeFileUploadTask(int taskId) : m_id(taskId)
 {
@@ -31,9 +32,8 @@ TradeFileUploadTask::~TradeFileUploadTask()
     }
 }
 
-void TradeFileUploadTask::packageTradeFile(int fileCount, QSet<QString> fileNameList, QString remotePath)
+void TradeFileUploadTask::packageTradeFile()
 {
-    m_remotePath = remotePath;
     QString filePath = QDir::currentPath() + QDir::separator() +
             "sc" + QDir::separator() +
             "transcation" + QDir::separator();
@@ -41,10 +41,10 @@ void TradeFileUploadTask::packageTradeFile(int fileCount, QSet<QString> fileName
     m_localPath = filePath;
 
     QList<QString> list;
-    for (QString file:fileNameList) {
+    for (QString file : m_tradeFileNameList) {
         QFile srcFile(filePath + file);
         if (!srcFile.open(QIODevice::ReadOnly)) {
-//            logger()->info("[packageTradeFile] cannot open file %: " , file);
+            qDebug() << "[临时交易文件无法打开][packageTradeFile] cannot open srcFile %: " << file;
             continue;
         }
 
@@ -63,7 +63,7 @@ void TradeFileUploadTask::packageTradeFile(int fileCount, QSet<QString> fileName
 
         QFile desFile(filePath + targetFileName);
         if (!desFile.open(QIODevice::WriteOnly)) {
-//            logger()->info("[packageTradeFile] cannot open file %: " , file);
+            qDebug() << "[目标交易文件无法生成][packageTradeFile] cannot open desFile %: " << targetFileName;
             continue;
         }
 
@@ -78,12 +78,10 @@ void TradeFileUploadTask::packageTradeFile(int fileCount, QSet<QString> fileName
         array.append(MyHelper::hexStrToByte(deviceId));
         array.append(MyHelper::intToBytes(serial, 4));
 
-
         //文件长度计算
         int tradeCount = calcTradeCount(fileTypeStr, srcArray.size());
         array.append(MyHelper::intToBytes(tradeCount, 4));
         QString headStr = array.toHex().toUpper();
-
 
         // 文件内容
         array.append(srcArray);
@@ -100,7 +98,8 @@ void TradeFileUploadTask::packageTradeFile(int fileCount, QSet<QString> fileName
 //                       headStr, md5Str, array.size());
 
         if (tradeCount == 0) {
-            return;
+            qDebug() << "[交易文件格式错误]类型=" << fileTypeStr << ", 文件名=" << file;
+            continue;
         }
 
         // 交易文件列表获取
@@ -108,6 +107,8 @@ void TradeFileUploadTask::packageTradeFile(int fileCount, QSet<QString> fileName
         info->setFileName(targetFileName);
         info->setMd5Arr(md5Arr.toHex());
         info->setType(icType);
+
+        SettingCenter::getThis()->addTradeFileInfo(info);
         m_fileList.append(info);
     }
 }
@@ -136,22 +137,38 @@ long TradeFileUploadTask::calcTradeCount(QString typeStr, long srcBytes)
 
 int TradeFileUploadTask::doWork()
 {
-    // TODO:打开，上传交易文件
+    // 交易文件打包
+    packageTradeFile();
+
+    // 交易文件上传
     for (X7000FileInfo* info : m_fileList) {
+        bool fileOk = false;
         QString fileName = info->fileName();
         m_fileName = fileName;
-        m_ftp->ftpUpload(m_remotePath, fileName, m_localPath);
+        int retFtp = m_ftp->ftpUpload(m_remotePath, fileName, m_localPath);
+        qDebug() << "交易文件：" << m_fileName << " 上传结果：" << retFtp;
 
-        // 发送7000报文
-        QByteArray fileNameArr = fileName.toUtf8();
-        int ret = FileDownloadNotify(info->type(), (BYTE*)fileNameArr.data(), (BYTE*) info->md5Arr().data());
+        // 上传成功，发送7000报文
+        if (retFtp == 0) {
+            int i = 0;
+            while (i++ < 4) {
+                QByteArray fileNameArr = fileName.toUtf8();
+                int ret = FileDownloadNotify(info->type(), (BYTE*)fileNameArr.data(), (BYTE*) info->md5Arr().data());
 
-        QString md5Str = info->md5Arr().toHex();
-//        logger()->info("[FileDownloadNotify]={%1}, filename=%2, md5=%3", ret, fileName, md5Str);
+                if (ret == 0) {
+                    fileOk = true;
+                    QString md5Str = info->md5Arr().toHex();
+                    qDebug() << "文件上传通知：" << ret << ", 文件名:" << fileName << ", md5:" << md5Str;
+                    break;
+                }
+            }
+        }
+
+        // 上传失败，记录文件信息
+        if (!fileOk) {
+
+        }
     }
-
-    qDebug() << "[CMyTask:" << m_id << "]run in thread:" << QThread::currentThreadId() << " >>> "
-             << QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss zzz");
 
     return 0;
 }
@@ -169,4 +186,14 @@ int TradeFileUploadTask::taskId()
 bool TradeFileUploadTask::result()
 {
     return m_result;
+}
+
+void TradeFileUploadTask::setTradeFileInfo(QSet<QString> fileNameList, QString remotePath)
+{
+    m_tradeFileNameList.clear();
+    for (QString item:fileNameList) {
+        m_tradeFileNameList.insert(item);
+    }
+
+    m_remotePath = remotePath;
 }

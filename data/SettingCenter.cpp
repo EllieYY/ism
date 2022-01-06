@@ -28,6 +28,7 @@
 #include "UpdateParamInfo.h"
 #include "LineStationTimetables.h"
 #include "StationTime.h"
+#include "X7000FileInfo.h"
 
 SettingCenter* SettingCenter::m_pInstance = NULL;
 SettingCenter::SettingCenter(QObject *parent) : QObject(parent)
@@ -1090,6 +1091,40 @@ long SettingCenter::getTestServiceOffTime()
 
     qDebug() << "运营结束时间：" << serviceOffTime;
     return serviceOffTime;
+}
+
+// 交易信息维护
+void SettingCenter::addTradeFileInfo(X7000FileInfo *info)
+{
+    QDateTime curTime = QDateTime::currentDateTime();
+    QString curTimeStr = curTime.toString("yyyyMMdd");
+    QString fileName = QString("%1/TradeFileInfo_%2.json").arg(TRADE_FILE_PATH).arg(curTimeStr);
+
+    QJsonDocument jsonDocument = readJsonFile(fileName);
+    QJsonObject rootObject;
+    QJsonArray jsonArray;
+    if (!jsonDocument.isNull() && !jsonDocument.isEmpty()) {
+        rootObject = jsonDocument.object();
+        if(rootObject.contains("tradeFiles") && rootObject.value("tradeFiles").isArray()) {
+            jsonArray = rootObject.value("versions").toArray();
+        }
+    }
+
+    QJsonObject leafObject;
+    leafObject.insert("fileName", info->fileName());
+    QString md5Str = info->md5Arr().toHex();
+    leafObject.insert("md5Str", md5Str);
+    leafObject.insert("type", info->type());
+
+    jsonArray.append(leafObject);
+    rootObject.insert("tradeFiles", jsonArray);
+
+    saveJsonFile(rootObject, fileName);
+}
+
+void SettingCenter::deleteTradeFileInfo(QString md5Str)
+{
+
 }
 
 

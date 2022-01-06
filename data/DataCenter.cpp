@@ -708,6 +708,9 @@ void DataCenter::addTradeFileInfo(QString fileName)
     }
 
     m_tradeFileInfo->addFileName(fileName);
+
+    //写文件
+    SettingCenter::getThis()->saveTradeFileInfo(m_tradeFileInfo);
 }
 
 // 交易文件流水号

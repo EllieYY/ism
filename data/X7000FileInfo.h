@@ -1,4 +1,4 @@
-#ifndef X7000FILEINFO_H
+﻿#ifndef X7000FILEINFO_H
 #define X7000FILEINFO_H
 
 #include <QObject>
@@ -22,6 +22,7 @@ private:
     QString m_fileName;
     QByteArray m_md5Arr;
     int m_type;
+
 
 signals:
 

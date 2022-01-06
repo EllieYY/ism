@@ -23,9 +23,10 @@ public:
     int taskId() override;
     bool result() override;
 
-    void packageTradeFile(int fileCount, QSet<QString> fileNameList, QString remotePath);
+    void setTradeFileInfo(QSet<QString> fileNameList, QString remotePath);
 
 private:
+    void packageTradeFile();
     long calcTradeCount(QString typeStr, long srcBytes);
 
 private:
@@ -37,7 +38,8 @@ private:
     int m_id;
     int m_result;
 
-    QList<X7000FileInfo*> m_fileList;
+    QSet<QString> m_tradeFileNameList;    // 临时交易文件列表 - 需要打包的，类别和序列号确定了唯一性
+    QList<X7000FileInfo*> m_fileList;     // 待上传的交易文件
 
 //signals:
 
