@@ -104,12 +104,12 @@ void TradeFileUploadTask::packageTradeFile()
             continue;
         }
 
-        // 交易文件列表获取
-        X7000FileInfo* info = new X7000FileInfo();
-        info->setFileName(targetFileName);
-        info->setMd5Arr(md5Arr.toHex());
-        info->setType(icType);
-        m_fileList.append(info);
+//        // 交易文件列表获取
+//        X7000FileInfo* info = new X7000FileInfo();
+//        info->setFileName(targetFileName);
+//        info->setMd5Arr(md5Arr.toHex());
+//        info->setType(icType);
+//        m_fileList.append(info);
 
         // 交易文件信息记录到文件中
         QString dateStr = curTime.toString("yyyyMMdd");
@@ -164,24 +164,17 @@ int TradeFileUploadTask::doWork()
         int retFtp = m_ftp->ftpUpload(m_remotePath, fileName, m_localPath);
         qDebug() << "交易文件：" << fileName << " 上传结果(0-sucess)：" << retFtp;
 
-        // 上传成功，发送7000报文
+        // 上传成功，发送7000报文 -- 失败重发
         if (retFtp == 0) {
             int i = 0;
             while (i++ < 3) {
                 QByteArray fileNameArr = fileName.toUtf8();
                 QByteArray md5Arr = md5Str.toUtf8();
 
-
-                QString md5Str1 = md5Arr.toHex().toUpper();
-                qDebug() << " after - md5Str:" << md5Str1;
-
-                // TODO:
-//                int ret = 0;
                 int ret = FileDownloadNotify(icType, (BYTE*)fileNameArr.data(), (BYTE*) md5Arr.data());
-
+                qDebug() << "文件上传通知：ret=" << ret << ", 文件名:" << fileName << ", md5:" << md5Str;
                 if (ret == 0) {
                     fileOk = true;
-                    qDebug() << "文件上传通知：" << ret << ", 文件名:" << fileName << ", md5:" << md5Str;
                     break;
                 }
             }
@@ -190,39 +183,6 @@ int TradeFileUploadTask::doWork()
         // 上传成功的文件，去掉记录
         if (fileOk) {
             SettingCenter::getThis()->deleteTradeFileInfo(dateStr, md5Str);
-        }
-    }
-
-
-    for (X7000FileInfo* info : m_fileList) {
-        bool fileOk = false;
-        QString fileName = info->fileName();
-        m_fileName = fileName;
-        int retFtp = m_ftp->ftpUpload(m_remotePath, fileName, m_localPath);
-        qDebug() << "交易文件：" << m_fileName << " 上传结果：" << retFtp;
-
-        // 上传成功，发送7000报文
-        if (retFtp == 0) {
-            int i = 0;
-            while (i++ < 4) {
-                QByteArray fileNameArr = fileName.toUtf8();
-                QByteArray  md5Arr = info->md5Arr();
-                QString md5Str = md5Arr.toHex().toUpper();
-                qDebug() << " before - md5Str:" << md5Str;
-
-                int ret = FileDownloadNotify(info->type(), (BYTE*)fileNameArr.data(), (BYTE*) info->md5Arr().data());
-                if (ret == 0) {
-                    fileOk = true;
-                    QString md5Str = info->md5Arr().toHex();
-                    qDebug() << "文件上传通知：" << ret << ", 文件名:" << fileName << ", md5:" << md5Str;
-                    break;
-                }
-            }
-        }
-
-        //TODO: 上传失败，记录文件信息
-        if (!fileOk) {
-
         }
     }
 

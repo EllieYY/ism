@@ -114,13 +114,10 @@ void DataCenter::secEvent()
 //    bool fileTriggered = true;
     // 交易文件定时上传
     bool fileTriggered = false;
-    if ((m_timeCount % 60) == 0 || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
+    if ((m_timeCount % m_tradeDataIntervalSec) == 0 || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
         fileTriggered = true;
         logger()->info("交易文件定时上送：%1, %2", m_timeCount, m_tradeDataIntervalSec);
         packageTradeFile();
-
-//        AFCTimerTask* task = new AFCTimerTask(TRADE_FILE);
-//        m_taskThread->addTask(task);
     }
 
     if (devTriggerd && fileTriggered) {
@@ -743,7 +740,7 @@ bool DataCenter::findFileForDelete(const QString filePath, int days)
     // 因为判断的是最后修改时间，所以天数要比传参多一天
     int deleteDays = std::abs(days);
 //    deleteDays = (deleteDays < 10) ? 10 : deleteDays;
-    deleteDays = (deleteDays < 30) ? 30 : deleteDays;
+    deleteDays = (deleteDays < 5) ? 5 : deleteDays;
     deleteDays = (deleteDays > 120) ? 120 : deleteDays;
 
     deleteDays = - deleteDays + 1;
@@ -777,8 +774,10 @@ bool DataCenter::findFileForDelete(const QString filePath, int days)
             QDateTime delDateTime = QDateTime::currentDateTime().addDays(deleteDays);
             qint64 nSecs = delDateTime.secsTo(fileInfo.lastModified());
             if (nSecs < 0) {
-                qDebug() << qPrintable(QString("%1 %2 %3").arg(fileInfo.size(), 10)
-                                                    .arg(fileInfo.fileName(),10).arg(fileInfo.path()))<<endl;
+                qDebug() << qPrintable(QString("%1 %2 %3")
+                                       .arg(fileInfo.size(), 10)
+                                       .arg(fileInfo.fileName(),10)
+                                       .arg(fileInfo.path()));
                 //删除文件
                 fileInfo.dir().remove(fileInfo.fileName());
             }
@@ -1550,7 +1549,7 @@ void DataCenter::serviceStateCheck()
 
 //    // TODO:test code  测试代码，务必删除
 //    startSec = 14 * 3600 + 41 * 60;
-//    endSec = 22 * 3600 + 34 * 60;
+//    endSec = 13 * 3600 + 58 * 60;
 //    endSec = SettingCenter::getThis()->getTestServiceOffTime();
 
     // 交集为反
@@ -1582,12 +1581,19 @@ void DataCenter::serviceOffHandle()
     ISMHttpTask* ismTask = new ISMHttpTask();
     m_taskThread->addTask(ismTask);
 
-    // 交易文件删除 -- 任务
-    QString path = QDir::currentPath() + QDir::separator() + TRADE_FILE_PATH;
+    // 交易文件删除
+    QString path1 = QDir::currentPath() + QDir::separator() + TRADE_FILE_PATH;
     int tradeFileDays = m_basicInfo->tradeFileDays();
-    logger()->info("交易文件删除：path=%1, days=%2", path, tradeFileDays);
-    FileDeleteTask* task = new FileDeleteTask(path, tradeFileDays);
-    m_taskThread->addTask(task);
+    logger()->info("交易文件删除：path=%1, days=%2", path1, tradeFileDays);
+    FileDeleteTask* fileTask1 = new FileDeleteTask(path1, tradeFileDays);
+    m_taskThread->addTask(fileTask1);
+
+    // 第三方库日志文件删除
+    QString path2 = QDir::currentPath() + QDir::separator() + "WYK_LIB";
+    logger()->info("日志文件删除：path=%1, days=%2", path2, tradeFileDays);
+    FileDeleteTask* fileTask2 = new FileDeleteTask(path2, tradeFileDays);
+    m_taskThread->addTask(fileTask2);
+
 }
 
 void DataCenter::testTask()

@@ -1097,7 +1097,7 @@ long SettingCenter::getTestServiceOffTime()
 void SettingCenter::addTradeFileInfo(QString dateStr, QString md5Str, QString tradeFileName)
 {
     // 获取文件信息
-    QString fileName = QString("%1/TradeFileInfo_%2.json").arg(TRADE_FILE_PATH).arg(dateStr);
+    QString fileName = QString("%1/tradeFileUpload_%2.json").arg(TRADE_FILE_PATH).arg(dateStr);
 
     // 读取内容
     QJsonDocument jsonDocument = readJsonFile(fileName);
@@ -1116,7 +1116,7 @@ void SettingCenter::deleteTradeFileInfo(QString dateStr, QString md5Str)
     // 获取文件信息
     QDateTime curTime = QDateTime::currentDateTime();
     QString curTimeStr = curTime.toString("yyyyMMdd");
-    QString fileName = QString("%1/TradeFileInfo_%2.json").arg(TRADE_FILE_PATH).arg(dateStr);
+    QString fileName = QString("%1/tradeFileUpload_%2.json").arg(TRADE_FILE_PATH).arg(dateStr);
 
     // 读取
     QJsonDocument jsonDocument = readJsonFile(fileName);
@@ -1134,7 +1134,7 @@ void SettingCenter::deleteTradeFileInfo(QString dateStr, QString md5Str)
 
 QMap<QString, QVariant> SettingCenter::getTradeFileToUploadByDate(QString dateStr)
 {
-    QString fileName = QString("%1/TradeFileInfo_%2.json").arg(TRADE_FILE_PATH).arg(dateStr);
+    QString fileName = QString("%1/tradeFileUpload_%2.json").arg(TRADE_FILE_PATH).arg(dateStr);
 
     // 读取文件
     QJsonDocument jsonDocument = readJsonFile(fileName);
