@@ -78,17 +78,17 @@ bool TicketReregisterWidget::showData()
     }
 
     // TODO:确认什么时候关闭限制
-    // 限制一卡通的使用
-    if (info->icType() == OCT_CARD) {
-        ui->selectBtn2->setDisabled(true);
-        ui->selectBtn3->setDisabled(true);
+//    // 限制一卡通的使用
+//    if (info->icType() == OCT_CARD) {
+//        ui->selectBtn2->setDisabled(true);
+//        ui->selectBtn3->setDisabled(true);
 
-        ui->textTips->setText("无法操作洪城一卡通，请联系人工处理。");
-        ui->cashPollBtn->setDisabled(true);
-        ui->tUpdateBtn->setDisabled(true);
+//        ui->textTips->setText("无法操作洪城一卡通，请联系人工处理。");
+//        ui->cashPollBtn->setDisabled(true);
+//        ui->tUpdateBtn->setDisabled(true);
 
-        return true;
-    }
+//        return true;
+//    }
 
     // 进站时间 | 出站时间 | 更新原因 | 应收费用
     ui->lineEdit1->setText("");
