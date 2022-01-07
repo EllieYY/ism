@@ -1094,40 +1094,76 @@ long SettingCenter::getTestServiceOffTime()
 }
 
 // 交易信息维护
-void SettingCenter::addTradeFileInfo(X7000FileInfo *info)
+void SettingCenter::addTradeFileInfo(QString dateStr, QString md5Str, QString tradeFileName)
 {
-    QDateTime curTime = QDateTime::currentDateTime();
-    QString curTimeStr = curTime.toString("yyyyMMdd");
-    QString fileName = QString("%1/TradeFileInfo_%2.json").arg(TRADE_FILE_PATH).arg(curTimeStr);
+    // 获取文件信息
+    QString fileName = QString("%1/TradeFileInfo_%2.json").arg(TRADE_FILE_PATH).arg(dateStr);
 
+    // 读取内容
     QJsonDocument jsonDocument = readJsonFile(fileName);
-    QJsonObject rootObject;
-    QJsonArray jsonArray;
-    if (!jsonDocument.isNull() && !jsonDocument.isEmpty()) {
-        rootObject = jsonDocument.object();
-        if(rootObject.contains("tradeFiles") && rootObject.value("tradeFiles").isArray()) {
-            jsonArray = rootObject.value("versions").toArray();
-        }
-    }
+    QMap<QString, QVariant> srcMap = json2map(jsonDocument);
 
-    QJsonObject leafObject;
-    leafObject.insert("fileName", info->fileName());
-    QString md5Str = info->md5Arr().toHex();
-    leafObject.insert("md5Str", md5Str);
-    leafObject.insert("type", info->type());
+    // 操作
+    srcMap.insert(md5Str, tradeFileName);
 
-    jsonArray.append(leafObject);
-    rootObject.insert("tradeFiles", jsonArray);
-
+    // 写文件
+    QJsonObject rootObject = map2json(srcMap);
     saveJsonFile(rootObject, fileName);
 }
 
-void SettingCenter::deleteTradeFileInfo(QString md5Str)
+void SettingCenter::deleteTradeFileInfo(QString dateStr, QString md5Str)
 {
+    // 获取文件信息
+    QDateTime curTime = QDateTime::currentDateTime();
+    QString curTimeStr = curTime.toString("yyyyMMdd");
+    QString fileName = QString("%1/TradeFileInfo_%2.json").arg(TRADE_FILE_PATH).arg(dateStr);
 
+    // 读取
+    QJsonDocument jsonDocument = readJsonFile(fileName);
+    QMap<QString, QVariant> srcMap = json2map(jsonDocument);
+    qDebug() << "srcMap size = " << srcMap.size();
+
+    // 操作
+    int ret = srcMap.remove(md5Str);
+    qDebug() << "remove:" << md5Str << ", ret = " << ret << ", size = " << srcMap.size();
+
+    // 保存
+    QJsonObject rootObject = map2json(srcMap);
+    saveJsonFile(rootObject, fileName);
 }
 
+QMap<QString, QVariant> SettingCenter::getTradeFileToUploadByDate(QString dateStr)
+{
+    QString fileName = QString("%1/TradeFileInfo_%2.json").arg(TRADE_FILE_PATH).arg(dateStr);
 
+    // 读取文件
+    QJsonDocument jsonDocument = readJsonFile(fileName);
+    QMap<QString, QVariant> srcMap = json2map(jsonDocument);
+    return srcMap;
+}
+
+QJsonObject SettingCenter::map2json(QMap<QString, QVariant> mapData)
+{
+    QJsonDocument doc = QJsonDocument::fromVariant(QVariant(mapData)); // 转化成documnet对象
+    QByteArray bJson = doc.toJson();
+    QString sJson = QString(bJson); //转化为字符串
+    QByteArray bsJson = sJson.toUtf8();   // 字符串转化为字节数组
+
+    QJsonObject jobj = QJsonObject(QJsonDocument::fromJson(bsJson).object()); // 字节数组转化为Json对象
+
+    return jobj;
+}
+
+QMap<QString, QVariant> SettingCenter::json2map(QJsonDocument document)
+{
+    // 将qjsonddocument转换为提供格式的UTF-8编码JSON文档。
+    // 将紧凑输出定义如下：
+    QByteArray byteArray = document.toJson(QJsonDocument::Compact);
+    QJsonObject json = document.object();
+    QString strJson(byteArray); // 转化成字符串
+    QVariantMap map = json.toVariantMap();
+    return map;
+}
 
 void SettingCenter::clearJsonObject(QJsonObject &object)
 {

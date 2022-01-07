@@ -277,7 +277,7 @@ int LibcurlFtp::ftpUpload(QString remotePath, QString fileName, QString localPat
     }
     fsize = (curl_off_t)file_info.st_size;
 
-    logger()->info("Local file size: %" CURL_FORMAT_CURL_OFF_T " bytes.\n", fsize);
+    logger()->info("Local file size: %1 bytes.\n", fsize);
 
     /* get a FILE * of the same file */
     hd_src = fopen(localFile, "rb");

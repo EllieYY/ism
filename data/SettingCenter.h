@@ -76,8 +76,11 @@ public:
     long getTestServiceOffTime();
 
     // 交易文件信息维护
-    void addTradeFileInfo(X7000FileInfo* info);
-    void deleteTradeFileInfo(QString md5Str);
+    void addTradeFileInfo(QString dateStr, QString md5Str, QString tradeFileName);
+    void deleteTradeFileInfo(QString dateStr, QString md5Str);
+    QMap<QString,QVariant> getTradeFileToUploadByDate(QString dateStr);
+    QJsonObject map2json(QMap<QString, QVariant> map);
+    QMap<QString, QVariant> json2map(QJsonDocument document);
 
 private:
     QList<InterchangeInfo*> matchInterchangeStations(QList<InterchangeInfo*> stations, QString lineCode);

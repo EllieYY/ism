@@ -114,7 +114,7 @@ void DataCenter::secEvent()
 //    bool fileTriggered = true;
     // 交易文件定时上传
     bool fileTriggered = false;
-    if ((m_timeCount % m_tradeDataIntervalSec) == 0 || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
+    if ((m_timeCount % 60) == 0 || m_tradeFileInfo->fileCount() >= m_tradeDataCountLT) {
         fileTriggered = true;
         logger()->info("交易文件定时上送：%1, %2", m_timeCount, m_tradeDataIntervalSec);
         packageTradeFile();
@@ -791,9 +791,10 @@ bool DataCenter::findFileForDelete(const QString filePath, int days)
 
 int DataCenter::packageTradeFile()
 {
-    if (m_tradeFileInfo == nullptr || m_tradeFileInfo->fileCount() <= 0) {
-        return -1;
-    }
+    // TODO:打开限制
+//    if (m_tradeFileInfo == nullptr || m_tradeFileInfo->fileCount() <= 0) {
+//        return -1;
+//    }
 
     qDebug() << "fileCount" << m_tradeFileInfo->fileCount();
 
