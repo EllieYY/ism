@@ -1,4 +1,4 @@
-#include "MainWidget.h"
+﻿#include "MainWidget.h"
 #include "ui_MainWidget.h"
 #include "CommonHead.h"
 #include "WidgetMng.h"
@@ -87,18 +87,18 @@ void MainWidget::secEvent()
     // AFC状态控制
 //    if (m_dataUpdateNum[AFC_ONLINE_STATE_ID])
 //    {
-//        int afcNetState = DataCenter::getThis()->getNetState();
-//        if (afcNetState == 0) {
-//            ui->cardBtn->setDisabled(false);
-//        } else {
-//            ui->cardBtn->setDisabled(true);
-//        }
+        int afcNetState = DataCenter::getThis()->getNetState();
+        if (afcNetState == 0) {
+            ui->cardBtn->setDisabled(false);
+        } else {
+            ui->cardBtn->setDisabled(true);
+        }
 
 //        m_dataUpdateNum[AFC_ONLINE_STATE_ID] = false;
 //    }
 
 //    if (DataCenter::getThis()->getIsReaderUsable()) {
-        ui->cardBtn->setDisabled(false);
+//        ui->cardBtn->setDisabled(false);
 //    } else {
 //        ui->cardBtn->setDisabled(true);
 //    }

@@ -1,4 +1,4 @@
-#include "TitleBar.h"
+﻿#include "TitleBar.h"
 #include "ui_TitleBar.h"
 #include "DataCenter.h"
 #include "WidgetMng.h"
@@ -43,6 +43,7 @@ bool TitleBar::showData()
 
     QString modeStr = getModeStr(mode, netState);
     ui->stateLabel->setText(modeStr);
+    ui->stateLabel->setStyleSheet(styleSheet);
 
     // 当前时间
     QDateTime currentDateTime = QDateTime::currentDateTime();

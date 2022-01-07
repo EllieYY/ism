@@ -1368,6 +1368,8 @@ void DataCenter::afcHeart(bool onlineFlag)
     if (onlineFlag) {
         m_afcNetState = 0;
         m_hrtCnt[AFC_HRT] = 0;
+        // 通知页面
+        WidgetMng::notify(AFC_ONLINE_STATE_ID);
     }
 }
 
