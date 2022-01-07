@@ -128,7 +128,7 @@ void DataCenter::secEvent()
 void DataCenter::init()
 {
     m_ismVersion = "00000011";
-    logger()->info("ISM version:%1", "20210106-1103-%1", m_ismVersion);
+    logger()->info("ISM version:%1", "20210107-1551-%1-关闭一卡通业务", m_ismVersion);
     initData();    // 默认数据
 
     /* 基础信息 */
