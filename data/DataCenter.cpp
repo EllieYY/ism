@@ -275,6 +275,7 @@ void DataCenter::initParamVersion()
 // 使用待更新的参数文件:更新失败的参数重新写入待更新文件记录
 void DataCenter::updateParamVersion()
 {
+    qDebug() << "参数更新。";
     QString path = QDir::currentPath() + QDir::separator() + PARAM_FILE_PATH + QDir::separator();
     QList<UpdateParamInfo*> list = SettingCenter::getThis()->getUpdateParamInfo(path + "updateVersion.json");
     QList<UpdateParamInfo*> updateFailedList;
@@ -289,6 +290,7 @@ void DataCenter::updateParamVersion()
         QString fileName = info->fileName();
         QString filePath = path + fileName;
         int ret = ismParamParse(type, filePath);
+        logger()->info("参数[%1]更新,解析结果：%2", filePath, ret);
 
         // 避免界面被阻塞
         QCoreApplication::processEvents();
@@ -327,6 +329,7 @@ void DataCenter::updateParamVersion()
 
     // 版本信息存储
     SettingCenter::getThis()->saveParamVersionInfo(m_paramVersionMap.values(), "version.json");
+    SettingCenter::getThis()->saveUpdateParamInfo(list, "updateVersion.json");
     // 更新失败的参数文件存储
     SettingCenter::getThis()->saveUpdateParamInfo(updateFailedList, "updateFailedVersion.json");
 }
@@ -672,10 +675,9 @@ void DataCenter::taskFinished(int taskId, bool success)
     // 参数文件下载任务完成
     if (taskId == m_curParamTaskId) {
         m_curParamTaskId = -1;
-        if (success) {
-            //参数文件更新
-            updateParamVersion();
-        }
+        //参数文件更新
+        updateParamVersion();
+
     }
 
     if (taskId == m_curSoftwareTaskId) {
@@ -790,12 +792,9 @@ bool DataCenter::findFileForDelete(const QString filePath, int days)
 
 int DataCenter::packageTradeFile()
 {
-    // TODO:打开限制
-//    if (m_tradeFileInfo == nullptr || m_tradeFileInfo->fileCount() <= 0) {
-//        return -1;
-//    }
-
-    qDebug() << "fileCount" << m_tradeFileInfo->fileCount();
+    if (m_tradeFileInfo == nullptr || m_tradeFileInfo->fileCount() <= 0) {
+        return -1;
+    }
 
 //    int fileCount = m_tradeFileInfo->fileCount();
     QSet<QString> fileNameList = m_tradeFileInfo->fileNameSet();

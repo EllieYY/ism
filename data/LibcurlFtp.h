@@ -1,4 +1,4 @@
-#ifndef LIBCURLFTP_H
+﻿#ifndef LIBCURLFTP_H
 #define LIBCURLFTP_H
 
 #include <QObject>
@@ -25,7 +25,7 @@ public:
     int ftpUpload(QString remotePath, QString fileName, QString localPath);
 
     //获得指定ftp目录的文件列表
-    bool ftpList(QString &remotpath, QString &myfloderlist, QString &localpath,
+    int ftpList(QString &remotpath, QString &myfloderlist, QString &localpath,
                  QHash<int, long> fileFilterInfo, bool isForceUpdate);
 
 private:

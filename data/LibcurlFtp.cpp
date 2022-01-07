@@ -25,10 +25,10 @@ LibcurlFtp::LibcurlFtp(QObject *parent) : QObject(parent)
 
 
 // QHash<int, int> fileFilterInfo : 文件类型，文件版本
-bool LibcurlFtp::ftpList(QString &remotePath, QString &listFileName, QString &localPath,
+int LibcurlFtp::ftpList(QString &remotePath, QString &listFileName, QString &localPath,
                          QHash<int, long> fileFilterInfo, bool isForceUpdate)
 {
-    int ret = true;
+    int ret = 0;
     // 格式转换
     QByteArray remoteArray = remotePath.toUtf8();
     const char* remotePathStr = remoteArray.constData();
@@ -54,7 +54,7 @@ bool LibcurlFtp::ftpList(QString &remotePath, QString &listFileName, QString &lo
         /* Check for errors */
 
         if(res != CURLE_OK) {
-            ret = false;
+            ret = -1;
             logger()->error("curl_easy_perform() failed: %1, %2", res, curl_easy_strerror(res));
         }
 
@@ -68,7 +68,7 @@ bool LibcurlFtp::ftpList(QString &remotePath, QString &listFileName, QString &lo
     QFile file(listFilePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         logger()->info("[getFileList] cannot open file %: " , listFilePath);
-        return false;
+        return -1;
     }
 
     QList<QString> fileList;  fileList.clear();
@@ -80,7 +80,7 @@ bool LibcurlFtp::ftpList(QString &remotePath, QString &listFileName, QString &lo
         QChar type;
         processLine(line, fileName, type);
 
-        if (type == 'd') {
+        if (type == 'd' || !fileName.contains("PRM")) {
             continue;
         }
         fileList.append(fileName);
@@ -92,7 +92,7 @@ bool LibcurlFtp::ftpList(QString &remotePath, QString &listFileName, QString &lo
     updateFileList.clear();
 //    QList<QString> failedFile;   // 记录下载失败的文件名
     for (QString name : fileList) {
-        UpdateParamInfo* info = new UpdateParamInfo(this);
+        UpdateParamInfo* info = new UpdateParamInfo();
         if (!paramFileFilter(name, fileFilterInfo, isForceUpdate, info)) {
             delete info;
             info = nullptr;
@@ -146,15 +146,18 @@ bool LibcurlFtp::paramFileFilter(QString fileName, QHash<int, long> fileFilterIn
         return false;
     }
 
+    // code不为零的时候要判断，为0则不管
     if (code > 0 && code != 0x0400) {
         return false;
     }
 
+    // 参数版本不一致则同步！！！不一致，不是比大小！
     int curSerial = fileFilterInfo.contains(type);
-    if (isForceUpdate || curSerial < serial) {
+    if (isForceUpdate || curSerial != serial) {
         info->setType(type);
         info->setVersion(serial);
         info->setFileName(fileName);
+        qDebug() << "版本有变更：" << fileName;
         return true;
     }
 
