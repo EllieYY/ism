@@ -742,8 +742,8 @@ bool DataCenter::findFileForDelete(const QString filePath, int days)
     // 因为判断的是最后修改时间，所以天数要比传参多一天
     int deleteDays = std::abs(days);
 //    deleteDays = (deleteDays < 10) ? 10 : deleteDays;
-    deleteDays = (deleteDays < 5) ? 5 : deleteDays;
-    deleteDays = (deleteDays > 120) ? 120 : deleteDays;
+    deleteDays = (deleteDays < 180) ? 180 : deleteDays;
+    deleteDays = (deleteDays > 365) ? 365 : deleteDays;
 
     deleteDays = - deleteDays + 1;
 
