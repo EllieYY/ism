@@ -1,4 +1,4 @@
-#include "QNChatMessage.h"
+﻿#include "QNChatMessage.h"
 
 #include <QFontMetrics>
 #include <QPaintEvent>
@@ -12,7 +12,7 @@ QNChatMessage::QNChatMessage(QWidget *parent) : QWidget(parent)
 {
     QFont te_font = this->font();
     te_font.setFamily("MicrosoftYaHei");
-    te_font.setPointSize(15);
+    te_font.setPointSize(18);
     this->setFont(te_font);
     m_leftPixmap = QPixmap("images/inquiry/service.png");
     m_rightPixmap = QPixmap("images/inquiry/user.png");
@@ -50,7 +50,7 @@ QSize QNChatMessage::fontRect(QString str)
 
     QSize size = getRealString(m_msg); // 整个的size
 
-    qDebug() << "fontRect Size:" << size;
+//    qDebug() << "fontRect Size:" << size;
     int hei = size.height() < minHei ? minHei : size.height();
 
     m_triangleLeftRect = QRect(iconWH+iconSpaceW+iconRectW, m_lineHeight/2, sanJiaoW, hei - m_lineHeight);
