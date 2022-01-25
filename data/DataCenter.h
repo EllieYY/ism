@@ -309,6 +309,7 @@ private:
 
     // ISM版本号
     QString m_ismVersion;
+    QString m_ismVersionSub;
 
 signals:
     void sigSerivceOff();           // 运营结束信号

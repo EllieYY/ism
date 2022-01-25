@@ -90,7 +90,7 @@ TradeFileInfo* SettingCenter::getTradeFileInfo()
     }
 
 
-    int fileCount = rootObject.value("fileCount").toInt();
+//    int fileCount = rootObject.value("fileCount").toInt();
     ulong fileSerial = rootObject.value("fileSerialNo").toString().toULong();
     ulong devTradeSerial = rootObject.value("deviceSerialNo").toString().toULong();
     QString timeStr = rootObject.value("datetime").toString();

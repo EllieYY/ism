@@ -128,7 +128,8 @@ void DataCenter::secEvent()
 void DataCenter::init()
 {
     m_ismVersion = "00000011";
-    logger()->info("ISM version:%1", "20210121-1540-%1-02", m_ismVersion);
+    m_ismVersionSub = QString("%1_%2").arg(m_ismVersion).arg("03");
+    logger()->info("ISM version:%1", m_ismVersionSub);
     initData();    // 默认数据
 
     /* 基础信息 */
@@ -742,7 +743,7 @@ bool DataCenter::findFileForDelete(const QString filePath, int days)
     // 因为判断的是最后修改时间，所以天数要比传参多一天
     int deleteDays = std::abs(days);
 //    deleteDays = (deleteDays < 10) ? 10 : deleteDays;
-    deleteDays = (deleteDays < 180) ? 180 : deleteDays;
+    deleteDays = (deleteDays < 90) ? 90 : deleteDays;
     deleteDays = (deleteDays > 365) ? 365 : deleteDays;
 
     deleteDays = - deleteDays + 1;
@@ -1574,8 +1575,17 @@ void DataCenter::serviceStateCheck()
 void DataCenter::serviceOffHandle()
 {
     logger()->info("运营日结束。");
+    logger()->info("ISM version:%1", m_ismVersionSub);
     // 数据复位 -- 是否需要重新读取配置文件
     // 数据会自动循环，或者按文件规则来，无需额外复位。
+    // 交易序列号 -- 运营日结束后从1开始
+    if (m_tradeFileInfo == nullptr) {
+        m_tradeFileInfo = new TradeFileInfo(this);
+    }
+    m_tradeFileInfo->setFileTradeSerial(1);
+    m_tradeFileInfo->setDeviceTradeSerial(1);
+    m_tradeFileInfo->reset();
+
 
     // ISM后台数据拉取
     logger()->info("ISM后台数据拉取");
