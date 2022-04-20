@@ -363,8 +363,8 @@ void TicketReregisterWidget::cashSupplementary()
     m_difference = 100 * iAmount;
 
     // TODO:test code 2022-04-20
-    iAmount = 3;
-    m_difference = 100;
+//    iAmount = 3;
+//    m_difference = 100;
 
     if (m_difference > 0) {
         BYTE state = DataCenter::getThis()->getCashboxState();
