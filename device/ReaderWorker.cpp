@@ -185,7 +185,7 @@ int ReaderWorker::readBasicInfo()
     int ret = readTicketInfo(anti);
 
 //    qDebug() << "[readTicketInfo]=" << ret;
-//    // TODO: 使用测试数据
+    // TODO: 使用测试数据
 //    ret = 0x00;
 ////    setTestData();
 //    if (m_testFlag == 0) {
@@ -326,14 +326,14 @@ void ReaderWorker::setTestData()
     QString type = DataCenter::getThis()->getTicketTypeString(typeNum);
     TicketBasicInfo* ticket = new TicketBasicInfo(
                 0x58, type, "30010088562007", "20200901", "20231001", 1, 1, 500);
-    ticket->setIsAllowOctPay(true);
+    ticket->setIsAllowOctPay(false);
     ticket->setIsAllowUpdate(true);
     ticket->setUpdateType(FARE_EN);
     ticket->setEnStationCode("0203");
     ticket->setEnTime("20211115212305");
     ticket->setExStationCode("0306");
     ticket->setExTime("19700101000000");
-    ticket->setUpdateAmount(500);
+    ticket->setUpdateAmount(200);
     ticket->setIcType(METRO_CARD);
     ticket->setBalance(800);
     ticket->setErrorCode(0);

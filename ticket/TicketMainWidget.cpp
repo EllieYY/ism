@@ -53,6 +53,10 @@ void TicketMainWidget::onBtn(int btnId)
 
     if  (btnId >= 0 && btnId < TICKET_WIDGET_NUM)
     {
+        // TODO:test code 2022-04-20
+//        WidgetMng::getThis()->showWidget(widgetIdx[btnId]);
+
+        // TODO:打开注释 2022-04-20
         m_cardReadWidget->show();
         m_cardReadWidget->readCard(widgetIdx[btnId]);
     }

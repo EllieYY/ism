@@ -127,8 +127,8 @@ void DataCenter::secEvent()
 
 void DataCenter::init()
 {
-    m_ismVersion = "00000011";
-    m_ismVersionSub = QString("%1_%2").arg(m_ismVersion).arg("03");
+    m_ismVersion = "00000012";
+    m_ismVersionSub = QString("%1_%2").arg(m_ismVersion).arg("01");
     logger()->info("ISM version:%1", m_ismVersionSub);
     initData();    // 默认数据
 

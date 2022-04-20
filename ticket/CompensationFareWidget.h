@@ -38,8 +38,9 @@ private:
     void startPaying();                             // 开始投币
     void continuePaying();                          // 继续投币
     void amountCheck();                             // 投币金额检查
-    void onReturnMoney();                           // 退币
+    void onReturnMoney(bool isManual = true);                           // 退币
     void onAmountConfirm(int banknotes, int coins); // 投币金额确认
+    bool changeMoney(int changeAmount, int banknotes, int coins);      // 找零
 
     void deviceStateShow();                         // 设备在线状态显示
     void showInfo(QString info);                    // 操作信息显示

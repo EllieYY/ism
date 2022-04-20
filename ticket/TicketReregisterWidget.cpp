@@ -34,14 +34,21 @@ void TicketReregisterWidget::setDeviceManager(DeviceManager *devManager)
 
 bool TicketReregisterWidget::showData()
 {
+    // TODO:test 2022-04-20
+//    ui->cashPollBtn->setDisabled(false);
+//    return true;
+
+
     // 更新锁定状态
     if (m_updateLock) {
         return true;
     }
 
+
 //    ui->calcFareBtn->hide();
 //    ui->cashPollBtn->setDisabled(true);
 //    ui->tUpdateBtn->setDisabled(true);
+
 
     if (!m_dataUpdateNum[TICKET_REREGISTER]) {
         return true;
@@ -76,19 +83,6 @@ bool TicketReregisterWidget::showData()
         item->setForeground(QColor("#09262A"));
         ui->tableWidget->setItem(0, index++, item);
     }
-
-    // TODO:确认什么时候关闭限制
-//    // 限制一卡通的使用
-//    if (info->icType() == OCT_CARD) {
-//        ui->selectBtn2->setDisabled(true);
-//        ui->selectBtn3->setDisabled(true);
-
-//        ui->textTips->setText("无法操作洪城一卡通，请联系人工处理。");
-//        ui->cashPollBtn->setDisabled(true);
-//        ui->tUpdateBtn->setDisabled(true);
-
-//        return true;
-//    }
 
     // 进站时间 | 出站时间 | 更新原因 | 应收费用
     ui->lineEdit1->setText("");
@@ -361,12 +355,16 @@ void TicketReregisterWidget::onUpdateTicket()
 // 现金补缴
 void TicketReregisterWidget::cashSupplementary()
 {
-    //TODO:test code
+    // TODO:test code
     //    m_difference = ui->lineEdit6->text().toInt();
 
     float amount = ui->lineEdit6->text().toFloat();
     int iAmount = qCeil(amount);
     m_difference = 100 * iAmount;
+
+    // TODO:test code 2022-04-20
+    iAmount = 3;
+    m_difference = 100;
 
     if (m_difference > 0) {
         BYTE state = DataCenter::getThis()->getCashboxState();
@@ -447,6 +445,7 @@ void TicketReregisterWidget::onSupplementaryOk(bool result)
     } else {
         ui->tUpdateBtn->setDisabled(true);
         ui->cashPollBtn->setDisabled(false);
+        ui->textTips->setText("现金支付失败。");
         MyHelper::ShowMessageBoxError("现金支付失败。");
     }
 }

@@ -181,8 +181,8 @@ void CashboxWorker::cashboxChecking()
         } else {    // 检测超时：超时自动调用停止投币接口
             long diff = currentTime - m_startTime;
 
-            //TODO: test code
-//            if (diff > 10) {
+            //TODO: test code 2022-04-20
+//            if (diff > 3) {
 //                m_onChecking = false;
 //                emit receiveOk(5, 5);
 ////                emit checkState(0, 5, 5);
