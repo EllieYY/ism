@@ -29,6 +29,7 @@
 #include "LineStationTimetables.h"
 #include "StationTime.h"
 #include "X7000FileInfo.h"
+#include "OperatorInfo.h"
 
 SettingCenter* SettingCenter::m_pInstance = NULL;
 SettingCenter::SettingCenter(QObject *parent) : QObject(parent)
@@ -1064,6 +1065,45 @@ void SettingCenter::saveLineStationTimetables(QList<LineStationTimetables *> lin
 
     rootObject.insert("lineTimeTables", jsonArray);
     saveJsonFile(rootObject, "lineStationTimes.json");
+}
+
+QList<OperatorInfo *> SettingCenter::getOperatorConfig()
+{
+    QString fileName = QString("%1/operators.json").arg(PARAM_FILE_PATH);
+
+    QList<OperatorInfo *> operatorList;
+    QJsonDocument jsonDocument = readJsonFile(fileName);
+    if (jsonDocument.isNull() || jsonDocument.isEmpty()) {
+        return operatorList;
+    }
+    QJsonObject rootObject = jsonDocument.object();
+    if(!rootObject.contains("operators") || !rootObject.value("operators").isArray())
+    {
+        qDebug() << "No target value";
+        qDebug() << rootObject.keys();
+        return operatorList;
+    }
+
+    QJsonArray jsonArray = rootObject.value("operators").toArray();
+    for(auto iter = jsonArray.constBegin(); iter != jsonArray.constEnd(); ++iter)
+    {
+        QJsonObject jsonObject = (*iter).toObject();
+
+        if (jsonObject.contains("name") && jsonObject.value("name").isString() &&
+            jsonObject.contains("code") && jsonObject.value("code").isString() &&
+            jsonObject.contains("pwd") && jsonObject.value("pwd").isString()) {
+
+            OperatorInfo* operatorObj = new OperatorInfo();
+            operatorObj->setName(jsonObject.value("name").toString());
+            operatorObj->setCode(jsonObject.value("code").toString());
+            operatorObj->setPwd(jsonObject.value("pwd").toString());
+
+            operatorList.append(operatorObj);
+        }
+
+    }
+    return operatorList;
+
 }
 
 

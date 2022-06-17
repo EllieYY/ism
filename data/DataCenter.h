@@ -188,6 +188,7 @@ public:
     int parseParam1004(QString filePath);
     int parseParam2002(QString filePath);
     int parseParam2004(QString filePath);
+    int parseOperatorConfig();
     int parseParam2005(QString filePath);
     void param2afc(int paramType, long oldVersion, long newVersion);     //4001 参数上报
 

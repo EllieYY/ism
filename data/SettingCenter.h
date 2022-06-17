@@ -16,6 +16,7 @@ class ReaderSoftFileInfo;
 class UpdateParamInfo;
 class LineStationTimetables;
 class X7000FileInfo;
+class OperatorInfo;
 class SettingCenter : public QObject
 {
     Q_OBJECT
@@ -71,6 +72,9 @@ public:
     // 线路站点信息 - 配置文件版本
     QMap<int, LineStationTimetables*> getLineStationTimetables();
     void saveLineStationTimetables(QList<LineStationTimetables*> info);
+
+    // 操作员信息
+    QList<OperatorInfo*> getOperatorConfig();
 
     // 测试运营时间-设置运营结束时间文件
     long getTestServiceOffTime();

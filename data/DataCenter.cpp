@@ -127,7 +127,7 @@ void DataCenter::secEvent()
 
 void DataCenter::init()
 {
-    m_ismVersion = "00000012";
+    m_ismVersion = "00000013";
     m_ismVersionSub = QString("%1_%2").arg(m_ismVersion).arg("01");
     logger()->info("ISM version:%1", m_ismVersionSub);
     initData();    // 默认数据
@@ -219,6 +219,9 @@ void DataCenter::initData()
 
     // 参数版本信息获取
     initParamVersion();
+
+    // 操作员配置获取
+    parseOperatorConfig();
 
     // 心跳
     for (int i = 0; i < HEART_NUM; i++) {
@@ -345,7 +348,7 @@ int DataCenter::ismParamParse(int type, QString filePath)
     } else if (type == 0x2002) {
         ret = parseParam2002(filePath);
     } else if (type == 0x2004) {
-        ret = parseParam2004(filePath);
+//        ret = parseParam2004(filePath);
     } else if (type == 0x2005) {
         ret = parseParam2005(filePath);
     }
@@ -593,7 +596,7 @@ int DataCenter::parseParam2004(QString filePath)
         QString codeStr = QString(code.toHex());
         QString nameStr = MyHelper::getCorrectUnicode(name);
         OperatorInfo* info = new OperatorInfo();
-        info->setCode(code);
+        info->setCode(codeStr);
         info->setName(nameStr);
         info->setCard(QString(card.toHex()));
         info->setPwd(QString(pwd.toHex()));
@@ -616,6 +619,18 @@ int DataCenter::parseParam2004(QString filePath)
     file.close();
 
     return 0;
+}
+
+/**
+ *  从配置文件中读取操作员信息
+ */
+int DataCenter::parseOperatorConfig()
+{
+    m_operatorMap.clear();
+    QList<OperatorInfo*> operatorList = SettingCenter::getThis()->getOperatorConfig();
+    for (OperatorInfo* obj:operatorList) {
+        m_operatorMap.insert(obj->code(), obj);
+    }
 }
 
 int DataCenter::parseParam2005(QString filePath)
@@ -1179,10 +1194,10 @@ bool DataCenter::isValidUser(QString userCode, QString pwd)
     }
 
     // MD5校验值
-    QString md5Str = QCryptographicHash::hash(pwd.toLocal8Bit(), QCryptographicHash::Md5).toHex();
-    QString md5Pwd = md5Str.mid(0, 16);
+//    QString md5Str = QCryptographicHash::hash(pwd.toLocal8Bit(), QCryptographicHash::Md5).toHex();
+//    QString md5Pwd = md5Str.mid(0, 16);
     OperatorInfo* info = m_operatorMap.value(userCode);
-    if (info->pwd().compare(md5Pwd) == 0) {
+    if (info->pwd().compare(pwd) == 0) {
         return true;
     }
     return false;
