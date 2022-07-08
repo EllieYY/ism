@@ -1,4 +1,4 @@
-#ifndef LINEWIDGET_H
+﻿#ifndef LINEWIDGET_H
 #define LINEWIDGET_H
 
 #include <QWidget>
@@ -18,12 +18,21 @@ public:
     ~LineWidget();
 
     void onReadLines();
+    void onLineQuery(QString);
 
 
 private:
     void init();
     void onLineChange(int id);
     bool showData();
+
+    void lineQuery();
+
+private slots:
+    void onStartLineSelect(QString data);
+    void onEndLineSelect(QString data);
+
+    void showImage(QString lineImagePath);
 
 private:
     QList<LineInfo*>        m_lineInfoLst;

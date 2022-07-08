@@ -145,6 +145,7 @@ void ReaderWorker::ticketReading()
 
 void ReaderWorker::readTransactionInfo()
 {
+
     if (readBasicInfo() != 0) {
         return;
     }
@@ -187,7 +188,7 @@ int ReaderWorker::readBasicInfo()
 //    qDebug() << "[readTicketInfo]=" << ret;
     // TODO: 使用测试数据
 //    ret = 0x00;
-////    setTestData();
+//    setTestData();
 //    if (m_testFlag == 0) {
 //        setTestData1();
 //    } else {

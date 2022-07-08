@@ -103,6 +103,8 @@ public:
     TicketBasicInfo *getTicketBasicInfo() const;
     void setTicketBasicInfo(TicketBasicInfo *ticketInfo);
     QList<QTableWidgetItem*> getTicketItems(TicketBasicInfo *ticketInfo);
+    QList<QTableWidgetItem*> getTicketItemsWithName(TicketBasicInfo *ticketInfo);
+
 
     // 交易信息
     QList<TransactionInfo *> getTransInfoList() const;

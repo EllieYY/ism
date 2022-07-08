@@ -1,4 +1,4 @@
-#ifndef TICKETPRICEWIDGET_H
+﻿#ifndef TICKETPRICEWIDGET_H
 #define TICKETPRICEWIDGET_H
 
 #include <QWidget>
@@ -17,6 +17,8 @@ public:
     ~TicketPriceWidget();
 
     void onPriceRecv(double price);
+
+    bool showData();
 
 private:
     void setStyle();

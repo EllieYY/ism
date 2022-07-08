@@ -128,7 +128,7 @@ void DataCenter::secEvent()
 void DataCenter::init()
 {
     m_ismVersion = "00000013";
-    m_ismVersionSub = QString("%1_%2").arg(m_ismVersion).arg("01");
+    m_ismVersionSub = QString("%1_%2").arg(m_ismVersion).arg("02");
     logger()->info("ISM version:%1", m_ismVersionSub);
     initData();    // 默认数据
 
@@ -1751,6 +1751,83 @@ QList<QTableWidgetItem *> DataCenter::getTicketItems(TicketBasicInfo *info)
     return itemList;
 }
 
+// 车票基本信息格式化
+QList<QTableWidgetItem *> DataCenter::getTicketItemsWithName(TicketBasicInfo *info)
+{
+    QList<QTableWidgetItem*> itemList;
+
+    // 种类 | 卡号 | 创建时间 | 有效期 | 卡状态 | 余额(单位是分，显示为元)
+    QTableWidgetItem* item1N = new QTableWidgetItem("卡片类型");
+    QTableWidgetItem* item1 = new QTableWidgetItem(info->type());
+
+    QTableWidgetItem* item2N = new QTableWidgetItem("逻辑卡号");
+    QTableWidgetItem* item2 = new QTableWidgetItem(info->number());
+
+    QTableWidgetItem* item3N = new QTableWidgetItem("发售日期");
+    QTableWidgetItem* item3 = new QTableWidgetItem(info->createTime().toString("yyyy-MM-dd"));
+
+    QTableWidgetItem* item4N = new QTableWidgetItem("过期日期");
+    QTableWidgetItem* item4 = new QTableWidgetItem(info->validDate().toString("yyyy-MM-dd"));
+
+    // 卡状态
+    QTableWidgetItem* item5N = new QTableWidgetItem("卡片状态");
+    QString ticketStateStr = getTicketStateString(info->icType(), info->cardState());
+    QTableWidgetItem* item5 = new QTableWidgetItem(ticketStateStr);
+
+
+    QTableWidgetItem* item6N = new QTableWidgetItem("卡片余额");
+    float balance = 0.01 * info->balance();
+    QTableWidgetItem* item6 = new QTableWidgetItem(QString("%1").arg(balance, 0, 'f', 1));
+
+    // 进站时间 | 出站时间 | 进站车站 | 出站车站
+    QTableWidgetItem* item7N = new QTableWidgetItem("进站时间");
+    QTableWidgetItem* item7 = new QTableWidgetItem(info->enTime().toString("yyyy-MM-dd HH:mm:ss"));
+    QTableWidgetItem* item8N = new QTableWidgetItem("出站时间");
+    QTableWidgetItem* item8 = new QTableWidgetItem(info->exTime().toString("yyyy-MM-dd HH:mm:ss"));
+
+    QTableWidgetItem* item9N = new QTableWidgetItem("进站车站");
+    QString enStationName = this->stationCode2Name(info->enStationCode());
+    QTableWidgetItem* item9 = new QTableWidgetItem(enStationName);
+
+    QTableWidgetItem* item10N = new QTableWidgetItem("出站车站");
+    QString exStationName = this->stationCode2Name(info->exStationCode());
+    QTableWidgetItem* item10 = new QTableWidgetItem(exStationName);
+
+
+
+    itemList.append(item2N);
+    itemList.append(item2);
+
+    itemList.append(item1N);
+    itemList.append(item1);
+
+    itemList.append(item3N);
+    itemList.append(item3);
+
+    itemList.append(item4N);
+    itemList.append(item4);
+
+    itemList.append(item5N);
+    itemList.append(item5);
+
+    itemList.append(item6N);
+    itemList.append(item6);
+
+    itemList.append(item7N);
+    itemList.append(item7);
+
+    itemList.append(item8N);
+    itemList.append(item8);
+
+    itemList.append(item9N);
+    itemList.append(item9);
+
+    itemList.append(item10N);
+    itemList.append(item10);
+
+    return itemList;
+}
+
 // 网络状态
 int DataCenter::getNetState() const
 {
@@ -1920,6 +1997,9 @@ void DataCenter::setLineMap(QString lineCode, QString mapPath)
 {
     for (LineInfo* info:m_lineList) {
         if (info->getCode().compare(lineCode) == 0) {
+            if (mapPath.isEmpty()) {
+                continue;
+            }
             info->setPicPath(mapPath);
             break;
         }

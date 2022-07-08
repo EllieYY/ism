@@ -191,7 +191,7 @@ QList<LineInfo *> SettingCenter::parseLineBasicInfo(QJsonObject rootObject)
         QString color = jsonObject.value("lineColor").toString();
 
         // 线路图片路径
-        QString map = jsonObject.value("lineMap").toString();
+        QString map = "line" + code + ".jpg";
 
         LineInfo* line = new LineInfo(name, code, map, color);
         lines.append(line);

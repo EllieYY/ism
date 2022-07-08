@@ -287,8 +287,15 @@ void HttpTool::parse(QJsonObject data)
     if (data.contains("price") && data.value("price").isString()) {
         double price = data.value("price").toString().toDouble();
         emit priceReceived(price);
+    }
+
+    // 线路查询
+    if (data.contains("line_path") && data.value("line_path").isString()) {
+        QString info = data.value("line_path").toString();
+        emit lineInfoReceived(info);
         return;
     }
+
 
     // 线路基本信息
     if (data.contains("lineBasic")) {

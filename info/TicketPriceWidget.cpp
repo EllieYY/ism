@@ -1,4 +1,4 @@
-#include "TicketPriceWidget.h"
+﻿#include "TicketPriceWidget.h"
 #include "ui_TicketPriceWidget.h"
 #include "HttpTool.h"
 #include "StationSelectWidget.h"
@@ -60,6 +60,12 @@ void TicketPriceWidget::onPriceCal()
 void TicketPriceWidget::onPriceRecv(double price)
 {
     ui->lineEdit_3->setText(QString("%1").arg(price));
+}
+
+bool TicketPriceWidget::showData()
+{
+    ui->lineEdit_3->setText("");
+    return true;
 }
 
 

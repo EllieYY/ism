@@ -52,17 +52,32 @@ void TicketQueryWidget::showTicketBasicInfo()
 {
     // 车票基本信息
     TicketBasicInfo* tInfo = DataCenter::getThis()->getTicketBasicInfo();
-    QList<QTableWidgetItem*> itemList = DataCenter::getThis()->getTicketItems(tInfo);
+    QList<QTableWidgetItem*> itemList = DataCenter::getThis()->getTicketItemsWithName(tInfo);
 
-    int index = 0;
-    ui->tableWidget->clearContents();
-    for (QTableWidgetItem* item:itemList) {
+//    int index = 0;
+    int col = 0;
+    int row = 0;
+    ui->tableWidget_3->clearContents();
+    int size = itemList.size();
+    for (int i = 0; i < size; i++) {
+        row = i / 4;
+        col = i % 4;
+        QTableWidgetItem* item = itemList.at(i);
         item->setTextAlignment(Qt::AlignCenter);
         item->setFont(QFont("Microsoft YaHei",18,500));
         item->setForeground(QColor("#09262A"));
 
-        ui->tableWidget->setItem(0, index++, item);
+        ui->tableWidget_3->setItem(row, col, item);
+
+//        qDebug() << "row = " << row << ", col=" << col;
     }
+//    for (QTableWidgetItem* item:itemList) {
+//        item->setTextAlignment(Qt::AlignCenter);
+//        item->setFont(QFont("Microsoft YaHei",18,500));
+//        item->setForeground(QColor("#09262A"));
+
+//        ui->tableWidget_3->setItem(0, index++, item);
+//    }
 
 }
 
@@ -102,16 +117,16 @@ void TicketQueryWidget::init()
 
 void TicketQueryWidget::setStyle()
 {
-    ui->tableWidget->setFocusPolicy(Qt::NoFocus);    // 虚线框取消
-    ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
-    ui->tableWidget->verticalHeader()->setVisible(false);
-    ui->tableWidget->verticalHeader()->setDefaultSectionSize(70);
-    ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    ui->tableWidget->setFrameShape(QFrame::NoFrame);
-    ui->tableWidget->verticalHeader()->setVisible(false);                 // 列表头不可见
-    ui->tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);  // 表格不可编辑
-    ui->tableWidget->setSelectionMode(QAbstractItemView::SingleSelection); //设置只能选择一行，不能多行选中
+//    ui->tableWidget->setFocusPolicy(Qt::NoFocus);    // 虚线框取消
+//    ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
+//    ui->tableWidget->verticalHeader()->setVisible(false);
+//    ui->tableWidget->verticalHeader()->setDefaultSectionSize(70);
+//    ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+//    ui->tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+//    ui->tableWidget->setFrameShape(QFrame::NoFrame);
+//    ui->tableWidget->verticalHeader()->setVisible(false);                 // 列表头不可见
+//    ui->tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);  // 表格不可编辑
+//    ui->tableWidget->setSelectionMode(QAbstractItemView::SingleSelection); //设置只能选择一行，不能多行选中
 //    ui->tableWidget->setAlternatingRowColors(true);
 
 
@@ -126,6 +141,19 @@ void TicketQueryWidget::setStyle()
     ui->tableWidget_2->setSelectionMode(QAbstractItemView::SingleSelection); //设置只能选择一行，不能多行选中
     ui->tableWidget_2->setAlternatingRowColors(true);
     ui->tableWidget_2->horizontalHeader()->setStyleSheet(
+                "QHeaderView::section{background: #C1EAD8;font-size: 28px;color: #09262A;}");
+
+    ui->tableWidget_3->setFocusPolicy(Qt::NoFocus);    // 虚线框取消
+    ui->tableWidget_3->horizontalHeader()->setStretchLastSection(true);
+    ui->tableWidget_3->verticalHeader()->setVisible(false);
+    ui->tableWidget_3->verticalHeader()->setDefaultSectionSize(70);
+    ui->tableWidget_3->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableWidget_3->setFrameShape(QFrame::NoFrame);
+    ui->tableWidget_3->verticalHeader()->setVisible(false);                 // 列表头不可见
+    ui->tableWidget_3->setEditTriggers(QAbstractItemView::NoEditTriggers);  // 表格不可编辑
+    ui->tableWidget_3->setSelectionMode(QAbstractItemView::SingleSelection); //设置只能选择一行，不能多行选中
+    ui->tableWidget_3->setAlternatingRowColors(true);
+    ui->tableWidget_3->horizontalHeader()->setStyleSheet(
                 "QHeaderView::section{background: #C1EAD8;font-size: 28px;color: #09262A;}");
 }
 

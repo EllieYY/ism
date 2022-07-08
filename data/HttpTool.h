@@ -1,4 +1,4 @@
-#ifndef HTTPTOOL_H
+﻿#ifndef HTTPTOOL_H
 #define HTTPTOOL_H
 
 #include <QObject>
@@ -62,6 +62,7 @@ signals:
     void priceReceived(double price);
     void answerReceived(QString answer);
     void hotIssuesReceived(QList<QString> hotIssues);
+    void lineInfoReceived(QString info);
 
 };
 
