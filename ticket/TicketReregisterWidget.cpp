@@ -282,12 +282,14 @@ void TicketReregisterWidget::onUpdateTicket()
     updateIn.UpdateType = m_updateType;
     QString operatorIdStr = DataCenter::getThis()->getOperatorId();
 
-//    MyHelper::hexStrToByte(operatorIdStr, 4, updateIn.OperatorID);
-    // 读写器按10进制读取操作员编号
-    bool ok;
-    long operatorId = operatorIdStr.toLong(&ok, 16);
-    QString operatorStrD = QString("%1").arg(operatorId, 8, 10, QLatin1Char('0'));
-    MyHelper::hexStrToByte(operatorStrD, 4, updateIn.OperatorID);
+    MyHelper::hexStrToByte(operatorIdStr, 4, updateIn.OperatorID);
+//    // 读写器按10进制读取操作员编号
+//    bool ok;
+//    long operatorId = operatorIdStr.toLong(&ok, 16);
+//    QString operatorStrD = QString("%1").arg(operatorId, 8, 10, QLatin1Char('0'));
+//    MyHelper::hexStrToByte(operatorStrD, 4, updateIn.OperatorID);
+
+//    qDebug() << "operatorIdStr:" << operatorIdStr;
 
     QString stationStr = "";
     if (m_updateType == FARE_EX) {
@@ -299,10 +301,10 @@ void TicketReregisterWidget::onUpdateTicket()
     }
 
     // 票卡更新参数打印
-//    QByteArray array;
-//    array.append((char*)&updateIn, sizeof(updateIn));
-//    QString str = array.toHex().toUpper();
-//    logger()->info("票卡更新参数：%1", str);
+    QByteArray array;
+    array.append((char*)&updateIn, sizeof(updateIn));
+    QString str = array.toHex().toUpper();
+    logger()->info("票卡更新参数：%1", str);
     logger()->info("[票卡更新参数]设备交易流水=%1,车站模式=%2,车票类型=%3,支付方式=%4,交易金额=%5分,更新方式=%6,更新车站=%7",
                    tradeSerial, stationMode, m_ticketType, m_payType, m_difference, m_updateType, stationStr);
 

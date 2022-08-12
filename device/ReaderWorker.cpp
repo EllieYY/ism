@@ -329,12 +329,12 @@ void ReaderWorker::setTestData()
                 0x58, type, "30010088562007", "20200901", "20231001", 1, 1, 500);
     ticket->setIsAllowOctPay(false);
     ticket->setIsAllowUpdate(true);
-    ticket->setUpdateType(FARE_EN);
+    ticket->setUpdateType(OVER_TIME);
     ticket->setEnStationCode("0203");
     ticket->setEnTime("20211115212305");
     ticket->setExStationCode("0306");
     ticket->setExTime("19700101000000");
-    ticket->setUpdateAmount(200);
+    ticket->setUpdateAmount(0);
     ticket->setIcType(METRO_CARD);
     ticket->setBalance(800);
     ticket->setErrorCode(0);
